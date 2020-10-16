@@ -141,7 +141,7 @@ static const char PGnocache[] PROGMEM = "no-cache, no-store, must-revalidate";  
 
 static const char PGnameModel[] PROGMEM = __SSDPNAME;
 static const char PGurlModel[] PROGMEM = __SSDPURLMODEL;
-static const char PGversion[] PROGMEM = VERSION;
+static const char PGversion[] PROGMEM = TOSTRING(EMBUIVER);
 static const char PGurlManuf[] PROGMEM = __SSDPURLMANUF;
 static const char PGnameManuf[] PROGMEM = __SSDPMANUF;
 #endif
