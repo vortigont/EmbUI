@@ -32,7 +32,7 @@
         "AsyncWebServer-mod": "https://github.com/DmytroKorniienko/ESPAsyncWebServer",
         "AsyncMqttClient": "*"
     },
-    "build": [
+    "build": {
         "flags": [
             "-DVERSION=\"2.0.1\"",
             "-D__SSDPNAME=\"EmbUI(kDn)\"",
@@ -43,5 +43,5 @@
             "-D__DISABLE_BUTTON0"
         ],
         "srcDir": "EmbUI"
-    ]
+    }
 }
