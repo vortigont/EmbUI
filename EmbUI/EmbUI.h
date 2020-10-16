@@ -42,6 +42,10 @@
 #include <AsyncMqttClient.h>
 #include "LList.h"
 
+// STRING Macro
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 class Interface;
 
 #ifndef DELAY_AFTER_FS_WRITING
