@@ -35,7 +35,7 @@
     "build": {
         "flags": [
             "-DEMBUIVER=2.0.1",
-            "-D__SSDPNAME=EmbUI_kDn'",
+            "-D__SSDPNAME=EmbUI_kDn",
             "-D__SSDPURLMODEL='https://github.com/DmytroKorniienko/'",
             "-D__SSDPMODEL='https://github.com/DmytroKorniienko/'",
             "-D__SSDPURLMANUF='https://github.com/anton-zolotarev/'",
