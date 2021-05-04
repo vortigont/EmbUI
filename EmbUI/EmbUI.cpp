@@ -53,6 +53,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         AwsFrameInfo *info = (AwsFrameInfo*)arg;
         if(info->final && info->index == 0 && info->len == len){
             if (!strncmp_P((const char *)data+1, PSTR("\"pkg\":\"post\""), 12)) {
+
                 uint16_t objCnt = 2, tmpCnt=0; // минимально резервируем под 2 штуки
                 for(uint16_t i=0; i<len; i++)
                     if(data[i]=='"')
@@ -67,18 +68,22 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                     delete res;
                     return;
                 }
+                res->shrinkToFit();      // this doc should not grow anyway
                 LOG(printf_P, PSTR("UI: Deserialize OK, MEM: %u\n"), ESP.getFreeHeap());
-
-                JsonObject data = (*res)[F("data")]; // ссылка на интересующую часть документа, документ обязан существовать до конца использования!
-                embui.post(data);
 
                 // Отправка эхо клиентам тут
                 if (embui.ws.count()>1 && data){   // if there are multiple ws cliens connected, we must echo back data section, to reflect any changes
+
                     LOG(printf_P, PSTR("UI: preparing echo, MEM: %u\n"), ESP.getFreeHeap());
-                    JsonObject &_d = data;
-                    LOG(printf_P, PSTR("UI: =ECHO= MEM_1: %u\n"), _d.memoryUsage());
-                    Interface *interf = new Interface(&embui, &embui.ws, _d.memoryUsage() + 256);  // about 256 bytes requred for section structs
-                    if(interf){
+
+                    DynamicJsonDocument *echo = new DynamicJsonDocument(len+32);
+                    DeserializationError error = deserializeJson((*echo), data, info->len); // deserialize via zero-copy, it will be released once data copied to ws buffer
+                    if (error){
+                        LOG(printf_P, PSTR("UI: Echo deserialization err: %d\n"), error.code());
+                    } else {
+                        JsonObject _d = (*echo)[F("data")];
+                        LOG(printf_P, PSTR("UI: =ECHO= MEM_1: %u\n"), _d.memoryUsage());
+                        Interface *interf = new Interface(&embui, &embui.ws, len+128);      // about 128 bytes requred for section structs
                         interf->json_frame_value();
                         for (JsonPair kv : _d) {
                             interf->value(kv.key().c_str(),kv.value());
@@ -88,8 +93,18 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                         LOG(printf_P, PSTR("UI: Echo sending to WS, MEM: %u\n"), ESP.getFreeHeap());
                         delete interf;
                     }
+                    delete echo;
                 } // else { LOG(println, F("NO DATA or less than 1 ws client")); }
-                delete res;
+
+                //JsonObject data = (*res)[F("data")]; // ссылка на интересующую часть документа, документ обязан существовать до конца использования!
+
+                // откладываем обработку и освобождаем буфера ws
+                new Task(10, TASK_ONCE, nullptr, &ts, true, nullptr, [res](){
+                    JsonObject data = (*res)[F("data")];
+                    embui.post(data);
+                    delete res;
+                    TASK_RECYCLE;
+                });
             }
         }
         LOG(printf_P, PSTR("UI: ALL DONE, MEM: %u\n"), ESP.getFreeHeap());
