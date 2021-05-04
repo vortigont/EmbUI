@@ -49,6 +49,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         LOG(printf_P, PSTR("ws[%s][%u] pong[%u]: %s\n"), server->url(), client->id(), len, (len)?(char*)data:"");
     } else
     if(type == WS_EVT_DATA){
+        LOG(printf_P, PSTR("UI: WS_EVT_DATA, MEM: %u\n"), ESP.getFreeHeap());
         AwsFrameInfo *info = (AwsFrameInfo*)arg;
         if(info->final && info->index == 0 && info->len == len){
             if (!strncmp_P((const char *)data+1, PSTR("\"pkg\":\"post\""), 12)) {
@@ -57,7 +58,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                     if(data[i]=='"')
                         tmpCnt++;
                 objCnt += tmpCnt/4; // по кол-ву кавычек/4, т.к. "key":"value"
-                LOG(printf_P, PSTR("UI: =POST= LEN: %u, obj: %u\n"), len, tmpCnt/4);
+                LOG(printf_P, PSTR("UI: =POST= LEN: %u, obj: %u, MEM: %u\n"), len, tmpCnt/4, ESP.getFreeHeap());
                 DynamicJsonDocument *res = new DynamicJsonDocument(len + JSON_OBJECT_SIZE(objCnt)); // https://arduinojson.org/v6/assistant/
                 if(!res) return;
                 DeserializationError error = deserializeJson((*res), (const char*)data, len); // deserialize via copy to prevent dangling pointers in action()'s
@@ -66,11 +67,14 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                     delete res;
                     return;
                 }
+                LOG(printf_P, PSTR("UI: Deserialize OK, MEM: %u\n"), ESP.getFreeHeap());
+
                 JsonObject data = (*res)[F("data")]; // ссылка на интересующую часть документа, документ обязан существовать до конца использования!
                 embui.post(data);
 
                 // Отправка эхо клиентам тут
                 if (embui.ws.count()>1 && data){   // if there are multiple ws cliens connected, we must echo back data section, to reflect any changes
+                    LOG(printf_P, PSTR("UI: preparing echo, MEM: %u\n"), ESP.getFreeHeap());
                     JsonObject &_d = data;
                     LOG(printf_P, PSTR("UI: =ECHO= MEM_1: %u\n"), _d.memoryUsage());
                     Interface *interf = new Interface(&embui, &embui.ws, _d.memoryUsage() + 256);  // about 256 bytes requred for section structs
@@ -79,13 +83,16 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                         for (JsonPair kv : _d) {
                             interf->value(kv.key().c_str(),kv.value());
                         }
+                        LOG(printf_P, PSTR("UI: Echo is ready to send, MEM: %u\n"), ESP.getFreeHeap());
                         interf->json_frame_flush();
+                        LOG(printf_P, PSTR("UI: Echo sending to WS, MEM: %u\n"), ESP.getFreeHeap());
                         delete interf;
                     }
                 } // else { LOG(println, F("NO DATA or less than 1 ws client")); }
                 delete res;
             }
         }
+        LOG(printf_P, PSTR("UI: ALL DONE, MEM: %u\n"), ESP.getFreeHeap());
     }
 }
 
@@ -311,6 +318,8 @@ void EmbUI::begin(){
  * looks for registered action for the section name and calls the action with post data if found
  */
 void EmbUI::post(JsonObject &data){
+    LOG(printf_P, PSTR("UI: Processing POST begin, MEM: %u\n"), ESP.getFreeHeap());
+
     section_handle_t *section = nullptr;
 
     for (JsonPair kv : data) {
@@ -331,6 +340,7 @@ void EmbUI::post(JsonObject &data){
         section->callback(interf, &data);
         delete interf;
     }
+    LOG(printf_P, PSTR("UI: Processing POST end, MEM: %u\n"), ESP.getFreeHeap());
 }
 
 void EmbUI::send_pub(){
