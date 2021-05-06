@@ -100,7 +100,7 @@ class Interface {
     /**
      * @brief - add object to frame with mem overflow protection 
      */
-    void frame_add_safe(const JsonObjectConst &jobj);
+    void frame_add_safe(const JsonObject &jobj);
 
 
     public:
@@ -124,10 +124,11 @@ class Interface {
 
         void json_frame_value();
         void json_frame_interface(const String &name = "");
-        bool json_frame_add(JsonObjectConst obj);
+        bool json_frame_add(const JsonObject &obj);
         void json_frame_next();
         void json_frame_clear();
         void json_frame_flush();
+
         /**
          * @brief - serialize and send Interface object to the WebSocket 
          */
@@ -162,16 +163,22 @@ class Interface {
             obj[FPSTR(P_value)] = val;
             if (html) obj[FPSTR(P_html)] = true;
 
-            frame_add_safe(obj.as<JsonObject>());
+//            frame_add_safe(obj.as<JsonObject>()); // crashes in sys ctx
+            if (!json_frame_add(obj.as<JsonObject>())) {
+                value(id, val, html);
+            }
         };
 
+        /**
+         * @brief - Add embui's config param id as a 'value' to the Interface frame
+         */
         void value(const String &id, bool html = false);
 
         /**
          * @brief - Add the whole JsonObject to the Interface frame
          * actualy it is a copy-object method used to echo back the data to the WebSocket in one-to-many scenarios
          */
-        inline void value(JsonObjectConst data){
+        inline void value(const JsonObject &data){
             frame_add_safe(data);
         }
 
@@ -190,14 +197,14 @@ class Interface {
         void password(const String &id, const T &value, const String &label){ html_input(id, FPSTR(P_password), value, label); };
         void password(const String &id, const String &label);
 
-        /**
-         * @brief - create "number" html field with optional step, min, max constraints
-         * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
-         */
         void number(const String &id, const String &label){
             number(id, embui->param(id), label, 0);
         };
 
+        /**
+         * @brief - create "number" html field with optional step, min, max constraints
+         * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
+         */
         template <typename T>
         void number(const String &id, const String &label, T step = 0, T min = 0, T max = 0){
             number(id, embui->param(id), label, step, min, max);
@@ -220,9 +227,7 @@ class Interface {
             if (max) obj[FPSTR(P_max)] = max;
             if (step) obj[FPSTR(P_step)] = step;
 
-            if (!json_frame_add(obj.as<JsonObject>())) {
-                number(id, value, label, step, min, max);
-            }
+            frame_add_safe(obj.as<JsonObject>());
         };
 
         template <typename T>
@@ -268,13 +273,17 @@ class Interface {
             obj[FPSTR(P_max)] = max;
             obj[FPSTR(P_step)] = step;
 
-            if (!json_frame_add(obj.as<JsonObject>())) {
-                range(id, value, min, max, step, label, directly);
-            }
+            frame_add_safe(obj.as<JsonObject>());
         };
 
         void select(const String &id, const String &label, bool directly = false, bool skiplabel = false);
 
+        /**
+         * @brief - create drop-down selection list
+         * content of a large lists could be loaded with ajax from the client side
+         * @param exturl - an url for xhr request to fetch list content, it must be a valid json object
+         * with label/value pairs arranged in assoc array
+         */
         template <typename T>
         void select(const String &id, const T &value, const String &label, bool directly = false, bool skiplabel = false, const String &exturl = (char*)0){
             StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
@@ -283,21 +292,22 @@ class Interface {
             obj[FPSTR(P_value)] = value;
             obj[FPSTR(P_label)] = skiplabel ? "" : label;
             if (directly) obj[FPSTR(P_directly)] = true;
+
             if (!exturl.isEmpty())
                 obj[F("url")] = exturl;
 
-            if (!json_frame_add(obj.as<JsonObject>())) {
-                select(id, value, label, directly);
-                return;
-            }
+            frame_add_safe(obj.as<JsonObject>());
             section_stack.end()->idx--;
             json_section_begin(FPSTR(P_options), "", false, false, false, section_stack.end()->block.getElement(section_stack.end()->idx));
         };
 
+        /**
+         * @brief - create an option element for select drop-down list
+         */
         void option(const String &value, const String &label);
 
         /**
-         * элемент интерфейса checkbox
+         * @brief - элемент интерфейса checkbox
          * @param directly - значение чекбокса при изменении сразу передается на сервер без отправки формы
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
@@ -350,7 +360,7 @@ class Interface {
          * could be used for making all kinds of "sensor" outputs on the page with live-updated values without the need to redraw interface element
          * @param id - element/div DOM id
          * @param value  - element value (treated as text)
-         * @param class - base css class for Display, full css seletor created as "class id" to allow many sensors inherit base class
+         * @param class - base css class for Display, css selector value created as "class id" to allow many sensors inherit from the base class
          * @param params - additional parameters (reserved for future use)
          */
         template <typename T>
