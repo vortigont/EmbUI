@@ -12,9 +12,7 @@ void Interface::frame(const String &id, const String &value){
     obj[FPSTR(P_id)] = id;
     obj[FPSTR(P_value)] = value;
 
-    if (!json_frame_add(obj.as<JsonObject>())) {
-        frame(id, value);
-    }
+    frame_add_safe(obj.as<JsonObject>());
 }
 
 void Interface::frame2(const String &id, const String &value){
@@ -24,9 +22,7 @@ void Interface::frame2(const String &id, const String &value){
     obj[FPSTR(P_id)] = id;
     obj[FPSTR(P_value)] = value;
 
-    if (!json_frame_add(obj.as<JsonObject>())) {
-        frame2(id, value);
-    }
+    frame_add_safe(obj.as<JsonObject>());
 }
 
 void Interface::hidden(const String &id, const String &value){
@@ -35,9 +31,7 @@ void Interface::hidden(const String &id, const String &value){
     obj[FPSTR(P_id)] = id;
     obj[FPSTR(P_value)] = value;
 
-    if (!json_frame_add(obj.as<JsonObject>())) {
-        hidden(id, value);
-    }
+    frame_add_safe(obj.as<JsonObject>());
 }
 
 void Interface::hidden(const String &id){
@@ -51,9 +45,7 @@ void Interface::constant(const String &id, const String &value, const String &la
     obj[FPSTR(P_value)] = value;
     obj[FPSTR(P_label)] = label;
 
-    if (!json_frame_add(obj.as<JsonObject>())) {
-        constant(id, value, label);
-    }
+    frame_add_safe(obj.as<JsonObject>());
 }
 
 void Interface::constant(const String &id, const String &label){
@@ -89,9 +81,7 @@ void Interface::option(const String &value, const String &label){
     obj[FPSTR(P_label)] = label;
     obj[FPSTR(P_value)] = value;
 
-    if (!json_frame_add(obj.as<JsonObject>())) {
-        option(value, label);
-    }
+    frame_add_safe(obj.as<JsonObject>());
 }
 
 void Interface::select(const String &id, const String &label, bool directly, bool skiplabel){
@@ -113,9 +103,7 @@ void Interface::file(const String &name, const String &action, const String &lab
     obj[F("action")] = action;
     obj[FPSTR(P_label)] = label;
 
-    if (!json_frame_add(obj.as<JsonObject>())) {
-        file(name, action, label);
-    }
+    frame_add_safe(obj.as<JsonObject>());
 }
 
 void Interface::button(const String &id, const String &label, const String &color){
@@ -125,9 +113,7 @@ void Interface::button(const String &id, const String &label, const String &colo
     obj[FPSTR(P_color)] = color;
     obj[FPSTR(P_label)] = label;
 
-    if (!json_frame_add(obj.as<JsonObject>())) {
-        button(id, label, color);
-    }
+    frame_add_safe(obj.as<JsonObject>());
 }
 
 void Interface::button_submit(const String &section, const String &label, const String &color){
@@ -137,9 +123,7 @@ void Interface::button_submit(const String &section, const String &label, const 
     obj[FPSTR(P_color)] = color;
     obj[FPSTR(P_label)] = label;
 
-    if (!json_frame_add(obj.as<JsonObject>())) {
-        button_submit(section, label, color);
-    }
+    frame_add_safe(obj.as<JsonObject>());
 }
 
 void Interface::button_submit_value(const String &section, const String &value, const String &label, const String &color){
@@ -150,9 +134,7 @@ void Interface::button_submit_value(const String &section, const String &value, 
     obj[FPSTR(P_label)] = label;
     obj[FPSTR(P_value)] = value;
 
-    if (!json_frame_add(obj.as<JsonObject>())) {
-        button_submit_value(section, value, label, color);
-    }
+    frame_add_safe(obj.as<JsonObject>());
 }
 
 void Interface::spacer(const String &label){
@@ -160,9 +142,7 @@ void Interface::spacer(const String &label){
     obj[FPSTR(P_html)] = F("spacer");
     if (label != "") obj[FPSTR(P_label)] = label;
 
-    if (!json_frame_add(obj.as<JsonObject>())) {
-        spacer(label);
-    }
+    frame_add_safe(obj.as<JsonObject>());
 }
 
 void Interface::comment(const String &label){
@@ -170,9 +150,7 @@ void Interface::comment(const String &label){
     obj[FPSTR(P_html)] = F("comment");
     if (label != "") obj[FPSTR(P_label)] = label;
 
-    if (!json_frame_add(obj.as<JsonObject>())) {
-        comment(label);
-    }
+    frame_add_safe(obj.as<JsonObject>());
 }
 
 void Interface::textarea(const String &id, const String &label){
@@ -203,7 +181,7 @@ void Interface::json_frame_interface(const String &name){
     json_section_begin("root" + String(micros()));
 }
 
-bool Interface::json_frame_add(JsonObjectConst obj) {
+bool Interface::json_frame_add(const JsonObject &obj) {
     if (!obj.memoryUsage()) // пустышки не передаем
         return false;
 
@@ -350,7 +328,7 @@ void frameSendClient::send(const JsonObject& data){
 /**
  * @brief - add object to frame with mem overflow protection 
  */
-void Interface::frame_add_safe(const JsonObjectConst &jobj){
+void Interface::frame_add_safe(const JsonObject &jobj){
     size_t _cnt = FRAME_ADD_RETRY;
 
     do {
