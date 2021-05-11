@@ -95,23 +95,45 @@ var render = function(){
 		value: function(obj){
 			var frame = obj.block;
 			if (!obj.block) return;
-			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
-				var el = go("#"+frame[i].id);
+
+			/*
+			Sets the value 'val' to the DOM object with id 'key'  
+			*/
+			function setValue(key, val){
+				var el = go("#"+key);
 				if (el.length) {
 					if (frame[i].html) {	// update placeholders in html template, like {{value.pMem}}
-						global.value[frame[i].id] = frame[i].value
-						el.html(frame[i].value);
+						global.value[key] = val
+						el.html(val);
 					} else{
-						el[0].value = frame[i].value;
+						el[0].value = val;
 						if (el[0].type == "range") go("#"+el[0].id+"-val").html(": "+el[0].value);
 						// проверяем чекбоксы на значение вкл/выкл
 						if (el[0].type == "checkbox") {
 							// allow multiple types of TRUE value for checkboxes
-							el[0].checked = (frame[i].value == "1" || frame[i].value == 1 || frame[i].value == true || frame[i].value == "true" );
+							el[0].checked = (val == "1" || val == 1 || val == true || val == "true" );
 							//console.debug("processing checkbox num: ", i, "val: ", frame[i].value);
 						}
 					}
+				}	
+			}
+
+			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
+
+				// check if the object contains just a plain assoc array with key:value pairs
+				if (!frame[i].id && !frame[i].value){
+					for(var k in frame[i]) {
+						setValue(k, frame[i][k]);
+					}
+					continue;
 				}
+
+				/* otherwise it must be
+					{ "id": "someid",
+					  "value": "somevalue"
+					}
+				*/
+				setValue(frame[i].id, frame[i].value);
 			}
 		}
 	};

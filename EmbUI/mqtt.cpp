@@ -215,7 +215,8 @@ void EmbUI::onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProp
     } else if (embui.sysData.mqtt_remotecontrol && tpc.startsWith(F("embui/jsset/"))) {
         DynamicJsonDocument doc(1024);
         deserializeJson(doc, payload, len);
-        embui.post(doc.as<JsonObject>());
+        JsonObject obj = doc.as<JsonObject>();
+        embui.post(obj);
     } else {
         mqt(tpc, String(buffer));
     }
