@@ -20,6 +20,11 @@
  #define GZ_HEADER 0x1F
 #endif
 
+#define POST_ACTION_DELAY   50      // delay for large posts processing
+#define POST_LARGE_SIZE   256       // large post threshold
+
+
+
 void mqtt_emptyFunction(const String &, const String &);
 
 EmbUI embui;
@@ -52,43 +57,50 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         AwsFrameInfo *info = (AwsFrameInfo*)arg;
         if(info->final && info->index == 0 && info->len == len){
             LOG(printf_P, PSTR("UI: =POST= LEN: %u\n"), len);
+            // ignore all packets without 'post'
+            if (strncmp_P((const char *)data+1, PSTR("\"pkg\":\"post\""), 12))
+                return;
 
-            DynamicJsonDocument *doc = new DynamicJsonDocument(2*len + 32);
-            DeserializationError error = deserializeJson((*doc), (const char*)data, info->len); // deserialize via copy to prevent dangling pointers in action()'s
+            // deserializing data with deep copy to pass to post-action
+            uint16_t objCnt = 0;
+            for(uint16_t i=0; i<len; ++i)
+                if(data[i]==0x3a || data[i]==0x7b)    // считаем ':' и '{' это учитывает и пары k:v и вложенные массивы
+                    ++objCnt;
+
+            DynamicJsonDocument *res = new DynamicJsonDocument(len + JSON_OBJECT_SIZE(objCnt)); // https://arduinojson.org/v6/assistant/
+            if(!res->capacity())
+                return;
+
+            DeserializationError error = deserializeJson((*res), (const char*)data, len); // deserialize via copy to prevent dangling pointers in action()'s
             if (error){
                 LOG(printf_P, PSTR("UI: Post deserialization err: %d\n"), error.code());
+                delete res;
                 return;
             }
+            res->shrinkToFit();      // this doc should not grow anyway
 
-            if ((*doc)[FPSTR(P_pkg)] && (*doc)[FPSTR(P_pkg)] == F("post")) {
-                doc->shrinkToFit();      // this doc should not grow anyway
-                //LOG(printf_P, PSTR("UI: =POST= MEM_1: %u\n"), doc->memoryUsage());
+            if (embui.ws.count()>1 && data){   // if there are multiple ws cliens connected, we must echo back data section, to reflect any changes in UI
+                JsonObject _d = (*res)[F("data")];
+                Interface *interf = new Interface(&embui, &embui.ws, _d.memoryUsage()+128);      // about 128 bytes overhead requred for section structs
+                interf->json_frame_value();
+                interf->value(_d);              // copy values array as-is
+                interf->json_frame_flush();
+                delete interf;
 
-                if (embui.ws.count()>1 && (*doc)[F("data")]){   // if there are multiple ws cliens connected, we must echo back data section, to reflect any changes
-                    DynamicJsonDocument *echo = new DynamicJsonDocument(len+32);
-                    DeserializationError error = deserializeJson((*echo), data, info->len); // deserialize via zero-copy, it will be released once data copied to ws buffer
-                    if (error){
-                        LOG(printf_P, PSTR("UI: Echo deserialization err: %d\n"), error.code());
-                    } else {
-                        JsonObject _d = (*echo)[F("data")];
-                        LOG(printf_P, PSTR("UI: =ECHO= MEM_1: %u\n"), _d.memoryUsage());
-                        Interface *interf = new Interface(&embui, &embui.ws, len+128);      // about 128 bytes requred for section structs
-                        interf->json_frame_value();
-                        interf->value(_d);
-                        interf->json_frame_flush();
-                        delete interf;
-                        delete echo;
-                    }
-                } // else { LOG(println, F("NO DATA or less than 1 ws client")); }
-
-                // откладываем обработку и освобождаем буфера ws
-                new Task(100, TASK_ONCE, nullptr, &ts, true, nullptr, [doc](){
-                    JsonObject data = (*doc)[F("data")];
-                    embui.post(data);
-                    delete doc;
-                    TASK_RECYCLE;
-                });
+                if (len > POST_LARGE_SIZE){     // если прилетел большой пост, то откладываем обработку и даем возможность освободить часть памяти
+                    new Task(POST_ACTION_DELAY, TASK_ONCE, nullptr, &ts, true, nullptr, [res](){
+                        JsonObject data = (*res)[F("data")];
+                        embui.post(data);
+                        delete res;
+                        TASK_RECYCLE;
+                    });
+                    return;
+                }
             }
+
+            JsonObject data = (*res)[F("data")];
+            embui.post(data);
+            delete res;
         }
     }
 }
@@ -305,7 +317,7 @@ void EmbUI::begin(){
  * @brief - process posted data for the registered action
  * looks for registered action for the section name and calls the action with post data if found
  */
-void EmbUI::post(JsonObject data){
+void EmbUI::post(JsonObject &data){
     section_handle_t *section = nullptr;
 
     for (JsonPair kv : data) {
