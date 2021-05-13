@@ -1,5 +1,13 @@
 ## Changelog
 
+### v2.4.2  milestone
+js: ws.onvalue() accepts raw key:value assoc array
+ui: - common method to draw 'displays' with sensor's data, etc...
+      display's appearance could be customized with CSS
+    - weak function user_settings() for basicui class,
+        allows adding custom sections to the 'Settings' menu
+* some fixes and optimization
+
 ### v2.4.0  Release
 Added:
   - Optimizations:
