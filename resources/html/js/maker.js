@@ -91,27 +91,49 @@ var render = function(){
 			out.lockhist = false;
 		},
 		// обработка данных, полученных в пакете "pkg":"value"
-		// блок разбирается на объекты по id и их value применяются к элементам шаблона на html странице  
+		// блок разбирается на объекты по id и их value применяются к элементам шаблона на html странице
 		value: function(obj){
 			var frame = obj.block;
 			if (!obj.block) return;
-			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
-				var el = go("#"+frame[i].id);
+
+			/*
+			Sets the value 'val' to the DOM object with id 'key'  
+			*/
+			function setValue(key, val){
+				var el = go("#"+key);
 				if (el.length) {
-					if (frame[i].html) {
-						global.value[frame[i].id] = frame[i].value
-						el.html(frame[i].value);
+					if (frame[i].html) {	// update placeholders in html template, like {{value.pMem}}
+						global.value[key] = val
+						el.html(val);
 					} else{
-						el[0].value = frame[i].value;
+						el[0].value = val;
 						if (el[0].type == "range") go("#"+el[0].id+"-val").html(": "+el[0].value);
 						// проверяем чекбоксы на значение вкл/выкл
 						if (el[0].type == "checkbox") {
 							// allow multiple types of TRUE value for checkboxes
-							el[0].checked = (frame[i].value == "1" || frame[i].value == 1 || frame[i].value == true || frame[i].value == "true" );
+							el[0].checked = (val == "1" || val == 1 || val == true || val == "true" );
 							//console.debug("processing checkbox num: ", i, "val: ", frame[i].value);
 						}
 					}
+				}	
+			}
+
+			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
+
+				// check if the object contains just a plain assoc array with key:value pairs
+				if (!frame[i].id && !frame[i].value){
+					for(var k in frame[i]) {
+						setValue(k, frame[i][k]);
+					}
+					continue;
 				}
+
+				/* otherwise it must be
+					{ "id": "someid",
+					  "value": "somevalue"
+					}
+				*/
+				setValue(frame[i].id, frame[i].value);
 			}
 		}
 	};
@@ -125,6 +147,16 @@ var render = function(){
  */
 function rawdata_cb(msg){
     console.log('Got raw data, redefine rawdata_cb(msg) func to handle it.', msg);
+}
+
+/**
+ * User Callback for xload() function. Вызывается после завершения загрузки внешних данных, но
+ * перед предачей объекта обработчику шаблона. Если коллбек возвращает false, то вызов шаблонизатора не происходит.
+ * Может быть перенакрыта пользовательским скриптом для доп обработки загруженных данных
+ */
+function xload_cb(obj){
+//    console.log('redefine xload_cb(obj) func to handle it.', msg);
+	return true;
 }
 
 /**
@@ -155,7 +187,7 @@ function ajaxload(url, ok, err){
  * этот урл запрашивается и результат записывается в ключ 'block' текущей секции. Ожидается что по URL будет доступен корректный JSON.
  * Результат передается в рендерер и встраивается в страницу /Vortigont/
  * @param { * } msg - framework content/interface object
- * @returns
+ * @returns 
  */
 function xload(msg){
     if (!msg.block){
@@ -165,9 +197,11 @@ function xload(msg){
 
 	console.log('Run deepfetch');
 	deepfetch(msg.block).then(() => {
-		 var rdr = this.rdr = render();	// Interface rederer to pass updated objects to
-		 console.log(msg);
-		 rdr.make(msg);
+		 //console.log(msg);
+		 if (xload_cb(msg)){
+			var rdr = this.rdr = render();	// Interface rederer to pass updated objects to
+			rdr.make(msg);
+		 }
 	})
 }
 
@@ -188,7 +222,7 @@ async function deepfetch (obj) {
 							section['block'] = response;
 							delete section.url;	// удаляем url из элемента т.к. работает рекурсия
 							// пробегаемся рекурсивно по новым/вложенным объектам
-							if (section.block && typeof section.block == "object") {
+							if (section.block && typeof section.block == "object") { 
 								deepfetch(section.block).then(() => {
 									//console.log("Diving deeper");
 									next();
@@ -208,7 +242,7 @@ async function deepfetch (obj) {
 				deepfetch(section.block).then(() => {
 					next();
 				})
-			})
+			})			
 		}
 	}
 }

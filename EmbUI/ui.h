@@ -9,15 +9,23 @@
 #include "EmbUI.h"
 
 #ifdef ESP8266
-  #define IFACE_DYN_JSON_SIZE 3072
-  #define POST_DYN_JSON_SIZE  1024
+#ifndef IFACE_DYN_JSON_SIZE
+  #define IFACE_DYN_JSON_SIZE 2048
+#endif
+#ifndef SMALL_JSON_SIZE
+  #define SMALL_JSON_SIZE  768
+#endif
 #elif defined ESP32
+#ifndef IFACE_DYN_JSON_SIZE
   #define IFACE_DYN_JSON_SIZE 8192
-  #define POST_DYN_JSON_SIZE  2048
+#endif
+#ifndef SMALL_JSON_SIZE
+  #define SMALL_JSON_SIZE  1024
+#endif
 #endif
 
 // static json doc size
-#define IFACE_STA_JSON_SIZE 256
+#define IFACE_STA_JSON_SIZE SMALL_JSON_SIZE
 #define FRAME_ADD_RETRY 5
 
 class frameSend {
@@ -89,6 +97,12 @@ class Interface {
     frameSend *send_hndl;
     EmbUI *embui;
 
+    /**
+     * @brief - add object to frame with mem overflow protection 
+     */
+    void frame_add_safe(const JsonObject &jobj);
+
+
     public:
         Interface(EmbUI *j, AsyncWebSocket *server, size_t size = IFACE_DYN_JSON_SIZE): json(size), section_stack(){
             embui = j;
@@ -110,10 +124,11 @@ class Interface {
 
         void json_frame_value();
         void json_frame_interface(const String &name = "");
-        bool json_frame_add(JsonObjectConst obj);
+        bool json_frame_add(const JsonObject &obj);
         void json_frame_next();
         void json_frame_clear();
         void json_frame_flush();
+
         /**
          * @brief - serialize and send Interface object to the WebSocket 
          */
@@ -135,8 +150,6 @@ class Interface {
         void json_section_begin(const String &name, const String &label, bool main, bool hidden, bool line, JsonObject obj);
         void json_section_end();
 
-        void custom(const String &id, const String &type, const String &value, const String &label, const JsonObject &param = JsonObject());
-
         void frame(const String &id, const String &value);
         void frame2(const String &id, const String &value);
 
@@ -150,26 +163,23 @@ class Interface {
             obj[FPSTR(P_value)] = val;
             if (html) obj[FPSTR(P_html)] = true;
 
+//            frame_add_safe(obj.as<JsonObject>()); // crashes in sys ctx
             if (!json_frame_add(obj.as<JsonObject>())) {
                 value(id, val, html);
             }
         };
 
+        /**
+         * @brief - Add embui's config param id as a 'value' to the Interface frame
+         */
         void value(const String &id, bool html = false);
 
         /**
          * @brief - Add the whole JsonObject to the Interface frame
          * actualy it is a copy-object method used to echo back the data to the WebSocket in one-to-many scenarios
          */
-        inline void value(JsonObjectConst data){
-            size_t _cnt = FRAME_ADD_RETRY;
-            do {
-                --_cnt;
-                #ifdef EMBUI_DEBUG
-                    if (!_cnt)
-                        LOG(println, FPSTR(P_ERR_obj2large));
-                #endif
-            } while (!json_frame_add(data) && _cnt);
+        inline void value(const JsonObject &data){
+            frame_add_safe(data);
         }
 
         void hidden(const String &id);
@@ -187,14 +197,14 @@ class Interface {
         void password(const String &id, const T &value, const String &label){ html_input(id, FPSTR(P_password), value, label); };
         void password(const String &id, const String &label);
 
-        /**
-         * @brief - create "number" html field with optional step, min, max constraints
-         * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
-         */
         void number(const String &id, const String &label){
             number(id, embui->param(id), label, 0);
         };
 
+        /**
+         * @brief - create "number" html field with optional step, min, max constraints
+         * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
+         */
         template <typename T>
         void number(const String &id, const String &label, T step = 0, T min = 0, T max = 0){
             number(id, embui->param(id), label, step, min, max);
@@ -217,9 +227,7 @@ class Interface {
             if (max) obj[FPSTR(P_max)] = max;
             if (step) obj[FPSTR(P_step)] = step;
 
-            if (!json_frame_add(obj.as<JsonObject>())) {
-                number(id, value, label, step, min, max);
-            }
+            frame_add_safe(obj.as<JsonObject>());
         };
 
         template <typename T>
@@ -265,13 +273,17 @@ class Interface {
             obj[FPSTR(P_max)] = max;
             obj[FPSTR(P_step)] = step;
 
-            if (!json_frame_add(obj.as<JsonObject>())) {
-                range(id, value, min, max, step, label, directly);
-            }
+            frame_add_safe(obj.as<JsonObject>());
         };
 
         void select(const String &id, const String &label, bool directly = false, bool skiplabel = false);
 
+        /**
+         * @brief - create drop-down selection list
+         * content of a large lists could be loaded with ajax from the client side
+         * @param exturl - an url for xhr request to fetch list content, it must be a valid json object
+         * with label/value pairs arranged in assoc array
+         */
         template <typename T>
         void select(const String &id, const T &value, const String &label, bool directly = false, bool skiplabel = false, const String &exturl = (char*)0){
             StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
@@ -280,21 +292,22 @@ class Interface {
             obj[FPSTR(P_value)] = value;
             obj[FPSTR(P_label)] = skiplabel ? "" : label;
             if (directly) obj[FPSTR(P_directly)] = true;
+
             if (!exturl.isEmpty())
                 obj[F("url")] = exturl;
 
-            if (!json_frame_add(obj.as<JsonObject>())) {
-                select(id, value, label, directly);
-                return;
-            }
+            frame_add_safe(obj.as<JsonObject>());
             section_stack.end()->idx--;
             json_section_begin(FPSTR(P_options), "", false, false, false, section_stack.end()->block.getElement(section_stack.end()->idx));
         };
 
+        /**
+         * @brief - create an option element for select drop-down list
+         */
         void option(const String &value, const String &label);
 
         /**
-         * элемент интерфейса checkbox
+         * @brief - элемент интерфейса checkbox
          * @param directly - значение чекбокса при изменении сразу передается на сервер без отправки формы
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
@@ -339,16 +352,44 @@ class Interface {
             obj[FPSTR(P_label)] = label;
             if (direct) obj[FPSTR(P_directly)] = true;
 
-            size_t _cnt = FRAME_ADD_RETRY;
-
-            do {
-                --_cnt;
-                #ifdef EMBUI_DEBUG
-                    if (!_cnt)
-                        LOG(println, FPSTR(P_ERR_obj2large));
-                #endif
-            } while (!json_frame_add(obj.as<JsonObject>()) && _cnt );
+            frame_add_safe(obj.as<JsonObject>());
         };
+
+        /**
+         * @brief - create "display" div with custom css selector
+         * could be used for making all kinds of "sensor" outputs on the page with live-updated values without the need to redraw interface element
+         * @param id - element/div DOM id
+         * @param value  - element value (treated as text)
+         * @param class - base css class for Display, css selector value created as "class id" to allow many sensors inherit from the base class
+         * @param params - additional parameters (reserved for future use)
+         */
+        template <typename T>
+        void display(const String &id, const T &value, const String &css = String(), const JsonObject &params = JsonObject() ){
+            String cssclass(css);   // make css slector like "class id", id used as a secondary distinguisher 
+            if (!css.length())
+                cssclass += F("display");
+            cssclass += F(" ");
+            cssclass += id;
+            custom(id, F("txt"), value, cssclass, params);
+        };
+
+        /**
+         * @brief - Creates html element with cutomized type and arbitrary parameters
+         * used to create user-defined interface elements with custom css/js handlers
+         */
+        template <typename T>
+        void custom(const String &id, const String &type, const T &value, const String &label, const JsonObject &param = JsonObject()){
+            StaticJsonDocument<IFACE_STA_JSON_SIZE*2> obj; // по этот контрол выделяем IFACE_STA_JSON_SIZE*2 т.к. он может быть большой...
+            obj[FPSTR(P_html)] = F("custom");;
+            obj[FPSTR(P_type)] = type;
+            obj[FPSTR(P_id)] = id;
+            obj[FPSTR(P_value)] = value;
+            obj[FPSTR(P_label)] = label;
+            JsonObject nobj = obj.createNestedObject(String(F("param")));
+            nobj.set(param);
+            frame_add_safe(obj.as<JsonObject>());
+        }
+
 };
 
 #endif

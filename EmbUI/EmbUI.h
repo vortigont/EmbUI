@@ -107,7 +107,7 @@ class Interface;
 
 #define CALL_INTF(key, val, call) { \
     obj[key] = val; \
-    Interface *interf = embui.ws.count()? new Interface(&embui, &embui.ws, 1000) : nullptr; \
+    Interface *interf = embui.ws.count()? new Interface(&embui, &embui.ws, SMALL_JSON_SIZE) : nullptr; \
     call(interf, &obj); \
     if (interf) { \
         interf->json_frame_value(); \
@@ -118,7 +118,7 @@ class Interface;
 }
 
 #define CALL_INTF_OBJ(call) { \
-    Interface *interf = embui.ws.count()? new Interface(&embui, &embui.ws, 1000) : nullptr; \
+    Interface *interf = embui.ws.count()? new Interface(&embui, &embui.ws, SMALL_JSON_SIZE*1.5) : nullptr; \
     call(interf, &obj); \
     if (interf) { \
         interf->json_frame_value(); \
@@ -221,7 +221,7 @@ class EmbUI
 
     ~EmbUI(){
         ts.deleteTask(tAutoSave);
-        ts.deleteTask(tValPublisher);
+        ts.deleteTask(*tValPublisher);
         ts.deleteTask(tHouseKeeper);
     }
 
@@ -252,6 +252,7 @@ class EmbUI
     void udp();
 
     // MQTT
+    bool isMQTTconected() { return sysData.mqtt_connected; }
     void pub_mqtt(const String &key, const String &value);
     void mqtt_handle();
     void subscribeAll(bool isOnlyGetSet=true);
@@ -281,7 +282,7 @@ class EmbUI
      * if post came from some other place - sends data to the WebUI
      * looks for registered action for the section name and calls the action with post data if found
      */
-    void post(JsonObject data);
+    void post(JsonObject &data);
 
     void send_pub();
     String id(const String &tpoic);
@@ -393,7 +394,7 @@ class EmbUI
 
     // Scheduler tasks
     Task embuischedw;       // WiFi reconnection helper
-    Task tValPublisher;     // Status data publisher
+    Task *tValPublisher;     // Status data publisher
     Task tHouseKeeper;     // Maintenance task, runs every second
     Task tAutoSave;          // config autosave timer
     std::vector<Task*> *taskTrash = nullptr;    // ptr to a vector container with obsolete tasks
