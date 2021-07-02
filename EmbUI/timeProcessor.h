@@ -7,80 +7,57 @@
 #define __TIMEPROCESSOR_H
 
 #include "globals.h"
-
-#ifndef TZONE
-    #include "ts.h"
-#endif
-
 #include "wi-fi.h"
 
+/*
+ * COUNTRY macro allows to select a specific country pool for ntp requests, like ru.pool.ntp.org, eu.pool.ntp.org, etc...
+ * otherwise a general pool "pool.ntp.org" is used as a fallback and vniiftri.ru's ntp is used as a primary
+ * 
+ */
+#if !defined NTP1ADDRESS && !defined NTP2ADDRESS
 #ifdef CONTRY
-    #define NTP2ADDRESS        COUNTRY "." "pool.ntp.org"    // пул серверов времени для NTP
-    #define NTP1ADDRESS        "ntp3.vniiftri.ru"
+    #define NTP1ADDRESS        COUNTRY ".pool.ntp.org"      // пул серверов времени для NTP
+    #define NTP2ADDRESS        "ntp3.vniiftri.ru"           // https://vniiftri.ru/catalog/services/sinkhronizatsiya-vremeni-cherez-ntp-servera/
 #else
     #define NTP1ADDRESS        "ntp3.vniiftri.ru"
     #define NTP2ADDRESS        ("pool.ntp.org")
 #endif
+#endif
 
 #define CUSTOM_NTP_INDEX    2
-#define TIMEAPI_BUFSIZE     600
 #define TM_BASE_YEAR        1900
 #define DAYSECONDS          (86400U)
 #define DATETIME_STRLEN     (19U)   // buffer for data/time string "YYYY-MM-DDThh:mm:ss"
-#define HTTPSYNC_DELAY      5
-#define HTTP_REFRESH_HRS    3     // время суток для обновления часовой зоны
-#define HTTP_REFRESH_MIN    3
 
-// http://worldtimeapi.org/api/ip
-// http://worldtimeapi.org/api/timezone
-static const char PG_timeapi_tz_url[] PROGMEM  = "http://worldtimeapi.org/api/timezone/";
-static const char PG_timeapi_ip_url[] PROGMEM  = "http://worldtimeapi.org/api/ip";
 
+// TimeProcessor class is a Singleton
 class TimeProcessor
 {
 private:
-    TimeProcessor(const TimeProcessor&);            // noncopyable
-    TimeProcessor& operator=(const TimeProcessor&); // noncopyable
+    TimeProcessor();
 
-#ifndef TZONE
-    Task _wrk;
-    /**
-     * Функция обращается к внешнему http-сервису, получает временную зону/летнее время
-     * на основании либо установленной переменной tzone, либо на основе IP-адреса
-     * в случае если временная зона содержит правила перехода на летнее время, функция
-     * запускает планировщик для автокоррекции временной зоны ежесуточно в 3 часа ночи
-     */
-    void getTimeHTTP();
-    unsigned int getHttpData(String &payload, const String &url);
-    /**
-     * функция установки планировщика обновления временной зоны
-     * при вызове без параметра выставляет отложенный запуск на HTTP_REFRESH_HRS:HTTP_REFRESH_MIN
-     */
-    void httprefreshtimer(const uint32_t delay=0);
-#endif
+    const char* ntp1 = NTP1ADDRESS;
+    const char* ntp2 = NTP2ADDRESS;
 
 protected:
-    callback_function_t _timecallback = nullptr;
-
-    String tzone;            // строка зоны для http-сервиса как она задана в https://raw.githubusercontent.com/nayarsystems/posix_tz_db/master/zones.csv
-
-    bool isSynced = false;      // флаг, означает что время было синхронизированно
-
-    // используем http-сервис для смещени TZ
-    #ifdef TZONE
-        bool usehttpzone = false;
-    #else
-        bool usehttpzone = true;
-    #endif
+    static callback_function_t timecb;
 
     /**
      * Timesync callback
      */
-    virtual void timeavailable();       // колбэк установки времени
+#ifdef ESP8266
+    static void timeavailable();
+#endif
+#ifdef ESP32
+    static void timeavailable(struct timeval *t);
+#endif
 
 
 public:
-    TimeProcessor();
+    // this is a singleton
+    TimeProcessor(TimeProcessor const&) = delete;
+    void operator=(TimeProcessor const&) = delete;
+
 
     /**
      * обратный вызов при подключении к WiFi точке доступа
@@ -95,14 +72,13 @@ public:
     void WiFiEvent(WiFiEvent_t event, system_event_info_t info);
 #endif
 
-
     /**
-     * установка строки с текущей временной зоной в текстовом виде,
-     * влияет, на запрос через http-api за временем в конкретной зоне,
-     * вместо автоопределения по ip
-     * !ВНИМАНИЕ! Никакого отношения к текущей системной часовой зоне эта функция не имеет!!! 
+     * obtain a pointer to singleton instance
      */
-    void httpTimezone(const char *var);
+    static TimeProcessor& getInstance(){
+        static TimeProcessor inst;
+        return inst;
+    }
 
     /**
      * Функция установки системного времени, принимает в качестве аргумента указатель на строку в формате
@@ -138,10 +114,14 @@ public:
      */
     void setOffset(const int val);
 
+    /**
+     * Attach user-defined call-back function that would be called on time-set event
+     * 
+     */
     void attach_callback(callback_function_t callback);
 
     void dettach_callback(){
-        _timecallback = nullptr;
+        timecb = nullptr;
     }
 
     /**
@@ -172,11 +152,6 @@ public:
     }
 
     /**
-     * возвращает true если врямя еще не было синхронизированно каким либо из доступных источников
-     */
-    bool isDirtyTime() {return !isSynced;}
-
-    /**
      * функция допечатывает в переданную строку заданный таймстамп в дату/время в формате "9999-99-99T99:99"
      * @param _tstamp - преобразовать заданный таймстамп, если не задан используется текущее локальное время
      */
@@ -203,3 +178,61 @@ public:
     }
 
 };
+
+
+/*
+ * obsolete methods for using http API via worldtimeapi.org
+ * Using the API it is not possible to set TZ env var
+ * for proper DST/date changes and calculations. So it is deprecated
+ * and should NOT be used except for compatibility or some
+ * special cases like networks with blocked ntp service
+ */
+#ifdef USE_WORLDTIMEAPI
+#include "ts.h"
+
+#define TIMEAPI_BUFSIZE     600
+#define HTTPSYNC_DELAY      5
+#define HTTP_REFRESH_HRS    3     // время суток для обновления часовой зоны
+#define HTTP_REFRESH_MIN    3
+
+// TaskScheduler - Let the runner object be a global, single instance shared between object files.
+extern Scheduler ts;
+
+class WorldTimeAPI
+{
+private:
+    String tzone;            // строка зоны для http-сервиса как она задана в https://raw.githubusercontent.com/nayarsystems/posix_tz_db/master/zones.csv
+
+    Task _wrk;              // scheduler for periodic updates
+
+    unsigned int getHttpData(String &payload, const String &url);
+
+    /**
+     * Функция обращается к внешнему http-сервису, получает временную зону/летнее время
+     * на основании либо установленной переменной tzone, либо на основе IP-адреса
+     * в случае если временная зона содержит правила перехода на летнее время, функция
+     * запускает планировщик для автокоррекции временной зоны ежесуточно в 3 часа ночи
+     */
+    void getTimeHTTP();
+
+public:
+    WorldTimeAPI(){ ts.addTask(_wrk); };
+
+    ~WorldTimeAPI(){ ts.deleteTask(_wrk); };
+
+    /**
+     * установка строки с текущей временной зоной в текстовом виде,
+     * влияет, на запрос через http-api за временем в конкретной зоне,
+     * вместо автоопределения по ip
+     * !ВНИМАНИЕ! Никакого отношения к текущей системной часовой зоне эта функция не имеет!!! 
+     */
+    void httpTimezone(const char *var);
+
+    /**
+     * функция установки планировщика обновления временной зоны
+     * при вызове без параметра выставляет отложенный запуск на HTTP_REFRESH_HRS:HTTP_REFRESH_MIN
+     */
+    void httprefreshtimer(const uint32_t delay=0);
+
+};
+#endif // end of USE_WORLDTIMEAPI

@@ -229,7 +229,7 @@ class EmbUI
     AsyncWebServer server;
     AsyncWebSocket ws;
     mqttCallback onConnect;
-    TimeProcessor timeProcessor;
+    TimeProcessor& timeProcessor = TimeProcessor::getInstance();
 
     char mc[7]; // id из последних 3 байт mac-адреса "ffffff"
 

@@ -9,7 +9,6 @@
  #include <coredecls.h>                 // settimeofday_cb()
  #include <TZ.h>                        // TZ declarations https://github.com/esp8266/Arduino/blob/master/cores/esp8266/TZ.h
  #include <sntp.h>
- #include <ESP8266HTTPClient.h>
 
  #ifdef __NEWLIB__ 
   #if __NEWLIB__ >= 4
@@ -26,33 +25,28 @@
  #include <HTTPClient.h>
 #endif
 
-#ifndef TZONE
-  #include <ArduinoJson.h>
-#endif
-
 #define TZ_DEFAULT PSTR("GMT0")         // default Time-Zone
 static const char P_LOC[] PROGMEM = "LOC";
 
+// static member must be defined outside the class
+callback_function_t TimeProcessor::timecb = nullptr;
+
 TimeProcessor::TimeProcessor()
 {
-    //configTzTime(); for esp32 https://github.com/espressif/arduino-esp32/blob/master/cores/esp32/esp32-hal-time.c
-
+// time set event handler
 #ifdef ESP8266
     settimeofday_cb( [this]{ timeavailable();} );
 #endif
-
-/*
-для ESP32 функциональный коллбек не поддерживается :( 
+   
 #ifdef ESP32
-    sntp_set_time_sync_notification_cb(timeavailable);
+    sntp_set_time_sync_notification_cb( [](struct timeval *tv){ timeavailable(tv);} );
 #endif
-*/
 
     #ifdef TZONE
-          configTzTime(TZONE, NTP1ADDRESS, NTP2ADDRESS);
+        configTzTime(TZONE, ntp1, ntp2);
         LOG(print, F("TIME: Time Zone set to: "));      LOG(print, TZONE);
     #else
-          configTzTime(TZ_DEFAULT, NTP1ADDRESS, NTP2ADDRESS);
+        configTzTime(TZ_DEFAULT, ntp1, ntp2);
     #endif
 
     sntp_stop();    // отключаем ntp пока нет подключения к AP
@@ -66,17 +60,6 @@ String TimeProcessor::getFormattedShortTime()
 }
 
 /**
- * установка строки с текущей временной зоной в текстовом виде
- * влияет, на запрос через http-api за временем в конкретной зоне,
- * вместо автоопределения по ip
- */
-void TimeProcessor::httpTimezone(const char *var){
-  if (!var)
-    return;
-  tzone = var;
-}
-
-/**
  * по идее это функция установки времени из гуя.
  * Но похоже что выставляет она только часы и минуты, и то не очень понятно куда?
  * надо переделать под выставление даты/веремени из браузера (например) когда нормально заработает гуй
@@ -86,6 +69,9 @@ void TimeProcessor::setTime(const char *timestr){
     setTime(_str);
 }
 
+/**
+ * Set current system time from a string "YYYY-MM-DDThh:mm:ss"    [19]
+ */
 void TimeProcessor::setTime(const String &timestr){
     //"YYYY-MM-DDThh:mm:ss"    [19]
     if (timestr.length()<DATETIME_STRLEN)
@@ -145,17 +131,128 @@ void TimeProcessor::tzsetup(const char* tz){
     }
 
     tzset();
-    tzone = ""; // сбрасываем костыльную зону
-    usehttpzone = false;  // запрещаем использование http
     LOG(printf_P, PSTR("TIME: TZSET rules changed to: %s\n"), tz);
 }
 
-#ifndef TZONE
+
+/**
+ * обратный вызов при подключении к WiFi точке доступа
+ * запускает синхронизацию времени
+ */
+#ifdef ESP8266
+void TimeProcessor::onSTAGotIP(const WiFiEventStationModeGotIP ipInfo)
+{
+    sntp_init();
+}
+
+void TimeProcessor::onSTADisconnected(const WiFiEventStationModeDisconnected event_info)
+{
+  sntp_stop();
+}
+#endif  //ESP8266
+
+#ifdef ESP32
+void TimeProcessor::WiFiEvent(WiFiEvent_t event, system_event_info_t info){
+    switch (event)
+    {
+    case SYSTEM_EVENT_STA_GOT_IP:
+        sntp_init();
+        LOG(println, F("UI TIME: Starting sntp sync"));
+        break;
+    case SYSTEM_EVENT_STA_DISCONNECTED:
+        sntp_stop();
+        break;
+    default:
+        break;
+    }
+}
+#endif  //ESP32
+
+
+#ifdef ESP8266
+void TimeProcessor::timeavailable()
+#endif
+#ifdef ESP32
+void TimeProcessor::timeavailable(struct timeval *t)
+#endif
+{    LOG(println, F("UI TIME: Event - Time adjusted"));
+    if(timecb)
+        timecb();
+}
+
+/**
+ * функция допечатывает в переданную строку передайнный таймстамп даты/времени в формате "9999-99-99T99:99"
+ * @param _tstamp - преобразовать заданный таймстамп, если не задан используется текущее локальное время
+ */
+void TimeProcessor::getDateTimeString(String &buf, const time_t _tstamp){
+  char tmpBuf[DATETIME_STRLEN];
+  const tm* tm = localtime(  _tstamp ? &_tstamp : now());
+  sprintf_P(tmpBuf,PSTR("%04u-%02u-%02uT%02u:%02u"), tm->tm_year + TM_BASE_YEAR, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min);
+  buf.concat(tmpBuf);
+}
+
+/**
+ * установка текущего смещения от UTC в секундах
+ */
+void TimeProcessor::setOffset(const int val){
+    LOG(printf_P, PSTR("UI Time: Set time zone offset to: %d\n"), val);
+
+    #ifdef ESP8266
+        sntp_set_timezone_in_seconds(val);
+    #elif defined ESP32
+        //setTimeZone((long)val, 0);    // this breaks linker in some weird way
+        configTime((long)val, 0, ntp1, ntp2, "");
+    #endif
+}
+
+/**
+ * Возвращает текущее смещение локального системного времени от UTC в секундах
+ * с учетом часовой зоны и правил смены сезонного времени (если эти параметры были
+ * корректно установленно ранее каким-либо методом)
+ */
+long int TimeProcessor::getOffset(){
+    const tm* tm = localtime(now());
+    auto tz = __gettzinfo();
+    return *(tm->tm_isdst == 1 ? &tz->__tzrule[1].offset : &tz->__tzrule[0].offset);
+}
+
+void TimeProcessor::setcustomntp(const char* ntp){
+    if (!ntp || !*ntp)
+             return;
+
+    sntp_setservername(CUSTOM_NTP_INDEX, (char*)ntp);
+    LOG(printf_P, PSTR("Set custom NTP to: %s\n"), ntp);
+}
+
+/**
+ * Attach user-defined call-back function that would be called on time-set event
+ * 
+ */
+void TimeProcessor::attach_callback(callback_function_t callback){
+    timecb = std::move(callback);
+}
+
+
+
+#ifdef USE_WORLDTIMEAPI
+
+#include <ArduinoJson.h>
+#ifdef ESP8266
+#include <ESP8266HTTPClient.h>
+#endif
+#ifdef ESP32
+#include <HTTPClient.h>
+#endif
+
+// worldtimeapi.org service URLs
+static const char PG_timeapi_tz_url[] PROGMEM  = "http://worldtimeapi.org/api/timezone/";
+static const char PG_timeapi_ip_url[] PROGMEM  = "http://worldtimeapi.org/api/ip";
+
 /**
  * берем урл и записываем ответ в переданную строку
  * в случае если в коде ответа ошибка, обнуляем строку
  */ 
-unsigned int TimeProcessor::getHttpData(String &payload, const String &url)
+unsigned int WorldTimeAPI::getHttpData(String &payload, const String &url)
 {
   WiFiClient client;
   HTTPClient http;
@@ -172,11 +269,8 @@ unsigned int TimeProcessor::getHttpData(String &payload, const String &url)
   return payload.length();
 }
 
-void TimeProcessor::getTimeHTTP()
+void WorldTimeAPI::getTimeHTTP()
 {
-    if (!usehttpzone)
-        return;     // выходим если не выставлено разрешение на использование http
-
     String result((char *)0);
     result.reserve(TIMEAPI_BUFSIZE);
     if(tzone.length()){
@@ -218,7 +312,9 @@ void TimeProcessor::getTimeHTTP()
     }
     LOG(printf_P, PSTR("HTTP TimeZone: %s, offset: %d, dst offset: %d\n"), tzone.c_str(), raw_offset, dst_offset);
 
-    setOffset(raw_offset+dst_offset);
+    TimeProcessor::getInstance().setOffset(raw_offset+dst_offset);
+
+    TimeProcessor::getInstance().setTime(doc[F("datetime")].as<String>());
 
     if (doc[F("dst_from")]!=nullptr){
         LOG(println, F("Zone has DST, rescheduling refresh"));
@@ -226,12 +322,7 @@ void TimeProcessor::getTimeHTTP()
     }
 }
 
-void TimeProcessor::httprefreshtimer(const uint32_t delay){
-    if (!usehttpzone){
-        _wrk.disable();
-        return;     // выходим если не выставлено разрешение на использование http
-    }
-
+void WorldTimeAPI::httprefreshtimer(const uint32_t delay){
     time_t timer;
 
     if (delay){
@@ -239,132 +330,29 @@ void TimeProcessor::httprefreshtimer(const uint32_t delay){
     } else {
         struct tm t;
         tm *tm=&t;
-        localtime_r(now(), tm);
+        localtime_r(TimeProcessor::now(), tm);
 
         tm->tm_mday++;                  // выставляем "завтра"
         tm->tm_hour= HTTP_REFRESH_HRS;
         tm->tm_min = HTTP_REFRESH_MIN;
 
-        timer = (mktime(tm) - getUnixTime())% DAYSECONDS;
+        timer = (mktime(tm) - TimeProcessor::getUnixTime())% DAYSECONDS;
 
         LOG(printf_P, PSTR("Schedule TZ refresh in %ld\n"), timer);
     }
 
     _wrk.set(timer * TASK_SECOND, TASK_ONCE, [this](){getTimeHTTP();});
     _wrk.restartDelayed();
-
-/*
-    #ifdef ESP8266
-        _wrk.once_scheduled(timer, std::bind(&TimeProcessor::getTimeHTTP, this));
-    #elif defined ESP32
-        _wrk.once((float)timer, std::bind(&TimeProcessor::getTimeHTTP, this));
-    #endif
-*/
-}
-#endif
-
-/**
- * обратный вызов при подключении к WiFi точке доступа
- * запускает синхронизацию времени
- */
-#ifdef ESP8266
-void TimeProcessor::onSTAGotIP(const WiFiEventStationModeGotIP ipInfo)
-{
-    sntp_init();
-    #ifndef TZONE
-        // отложенный запрос смещения зоны через http-сервис
-        httprefreshtimer(HTTPSYNC_DELAY);
-    #endif
-}
-
-void TimeProcessor::onSTADisconnected(const WiFiEventStationModeDisconnected event_info)
-{
-  sntp_stop();
-  #ifndef TZONE
-    _wrk.disable();
-  #endif
-}
-#endif  //ESP8266
-
-#ifdef ESP32
-void TimeProcessor::WiFiEvent(WiFiEvent_t event, system_event_info_t info){
-    switch (event)
-    {
-    case SYSTEM_EVENT_STA_GOT_IP:
-        sntp_init();
-        #ifndef TZONE
-            // отложенный запрос смещения зоны через http-сервис
-            httprefreshtimer(HTTPSYNC_DELAY);
-        #endif
-        LOG(println, F("UI TIME: Starting sntp sync"));
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        sntp_stop();
-        #ifndef TZONE
-            _wrk.disable();
-        #endif
-        break;
-    default:
-        break;
-    }
-}
-#endif  //ESP32
-
-
-void TimeProcessor::timeavailable(){
-    LOG(println, F("UI TIME: Time adjusted"));
-    isSynced = true;
-    if(_timecallback)
-        _timecallback();
 }
 
 /**
- * функция допечатывает в переданную строку передайнный таймстамп даты/времени в формате "9999-99-99T99:99"
- * @param _tstamp - преобразовать заданный таймстамп, если не задан используется текущее локальное время
+ * установка строки с текущей временной зоной в текстовом виде
+ * влияет, на запрос через http-api за временем в конкретной зоне,
+ * вместо автоопределения по ip
  */
-void TimeProcessor::getDateTimeString(String &buf, const time_t _tstamp){
-  char tmpBuf[DATETIME_STRLEN];
-  const tm* tm = localtime(  _tstamp ? &_tstamp : now());
-  sprintf_P(tmpBuf,PSTR("%04u-%02u-%02uT%02u:%02u"), tm->tm_year + TM_BASE_YEAR, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min);
-  buf.concat(tmpBuf);
+void WorldTimeAPI::httpTimezone(const char *var){
+  if (!var)
+    return;
+  tzone = var;
 }
-
-/**
- * установка текущего смещения от UTC в секундах
- */
-void TimeProcessor::setOffset(const int val){
-    LOG(printf_P, PSTR("UI Time: Set time zone offset to: %d\n"), val);
-
-    #ifdef ESP8266
-        sntp_set_timezone_in_seconds(val);
-    #elif defined ESP32
-        //setTimeZone((long)val, 0);    // this breaks linker in some weird way
-        configTime((long)val, 0, NTP1ADDRESS, NTP2ADDRESS, "");
-    #endif
-
-    // в правилах TZSET смещение имеет обратный знак (TZ-OffSet=UTC)
-    // возможно это нужно будет учесть если задавать смещение для tz из правил (на будущее)
-}
-
-/**
- * Возвращает текущее смещение локального системного времени от UTC в секундах
- * с учетом часовой зоны и правил смены сезонного времени (если эти параметры были
- * корректно установленно ранее каким-либо методом)
- */
-long int TimeProcessor::getOffset(){
-    const tm* tm = localtime(now());
-    auto tz = __gettzinfo();
-    return *(tm->tm_isdst == 1 ? &tz->__tzrule[1].offset : &tz->__tzrule[0].offset);
-}
-
-void TimeProcessor::setcustomntp(const char* ntp){
-    if (!ntp || !*ntp)
-             return;
-
-    sntp_setservername(CUSTOM_NTP_INDEX, (char*)ntp);
-    LOG(printf_P, PSTR("Set custom NTP to: %s\n"), ntp);
-}
-
-void TimeProcessor::attach_callback(callback_function_t callback){
-    _timecallback = std::move(callback);
-}
+#endif // end of USE_WORLDTIMEAPI
