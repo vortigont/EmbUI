@@ -212,6 +212,12 @@ class EmbUI
 
   public:
     EmbUI() : cfg(__CFGSIZE), section_handle(), server(80), ws(F("/ws")){
+
+    // Enable persistent storage for ESP8266 Core >3.0.0 (https://github.com/esp8266/Arduino/pull/7902)
+    #ifdef WIFI_IS_OFF_AT_BOOT
+        enableWiFiAtBootTime(); // can be called from anywhere with the same effect
+    #endif
+
         memset(mc,0,sizeof(mc));
 
         ts.addTask(embuischedw);    // WiFi helper
