@@ -435,7 +435,6 @@ var wbs = function(url){
 		}
 		ws.onopen = function(){
 			console.log("WS Open");
-			connected = true;
 			if (fnopen) fnopen();
 			if (typeof out.onopen== "function") {
 				try{ out.onopen(); } catch(e){ console.log('Error onopen', e); }
@@ -443,7 +442,6 @@ var wbs = function(url){
 		},
 		ws.onclose = function(){
 			console.log("WS Close");
-			connected = false;
 			if (typeof out.onclose== "function") {
 				try{ out.onclose(); } catch(e){ console.log('Error onclose', e); }
 			}
@@ -474,7 +472,10 @@ var wbs = function(url){
 	send_msg = function(msg){
 		console.log('Sending message:', msg);
 		try{ lastmsg = JSON.stringify(msg); } catch(e){ console.log('Error stringify', e); return; }
-		if (connected) send(lastmsg);
+		if (ws.readyState === WebSocket.OPEN){
+			send(lastmsg);
+			lastmsg = null;
+		}
 	},
 
 	out = {
@@ -484,7 +485,7 @@ var wbs = function(url){
 			if (to) clearTimeout(to);
 			to = setTimeout(function(){open(function(){
 				to = null;
-				if (lastmsg) send(lastmsg);
+				if (lastmsg){ send(lastmsg); lastmsg = null; }
 			})}, 500);
 		},
 		send_post: function(dt){
