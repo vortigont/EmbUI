@@ -8,6 +8,7 @@
 
 #ifdef ESP8266
 #include "user_interface.h"
+
 void EmbUI::onSTAConnected(WiFiEventStationModeConnected ipInfo)
 {
     LOG(printf_P, PSTR("UI WiFi: STA connected - SSID:'%s'"), ipInfo.ssid.c_str());
@@ -20,12 +21,22 @@ void EmbUI::onSTAGotIP(WiFiEventStationModeGotIP ipInfo)
     sysData.wifi_sta = true;
     embuischedw.disable();
     LOG(printf_P, PSTR(", IP: %s\n"), ipInfo.ip.toString().c_str());
-    wifi_setmode(WIFI_STA);            // Shutdown internal Access Point
     timeProcessor.onSTAGotIP(ipInfo);
     if(_cb_STAGotIP)
         _cb_STAGotIP();        // execule callback
 
     setup_mDns();
+
+    // shutdown AP after timeout
+    embuischedw.disable();
+    embuischedw.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [](){
+        if(WiFi.getMode() == WIFI_STA)
+            return;
+
+        WiFi.enableAP(false);
+        LOG(println, F("UI WiFi: AP mode disabled"));
+    });
+    embuischedw.restartDelayed();
 }
 
 void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
@@ -33,10 +44,10 @@ void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
     LOG(printf_P, PSTR("UI WiFi: Disconnected from SSID: %s, reason: %d\n"), event_info.ssid.c_str(), event_info.reason);
     sysData.wifi_sta = false;       // to be removed and replaced with API-method
 
-    if(param(FPSTR(P_APonly)) == "1")
+    if (embuischedw.isEnabled())
         return;
 
-    if (embuischedw.isEnabled())
+    if(param(FPSTR(P_APonly)) == "1")
         return;
 
     /*
@@ -46,10 +57,13 @@ void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
       Далее делаем периодические попытки переподключений каждые WIFI_RECONNECT_TIMER секунд
     */
     embuischedw.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){
-        LOG(println, F("UI WiFi: switching to internal AP"));
-        wifi_setmode(WIFI_AP);
+        wifi_setAP();
+        WiFi.enableSTA(false);
         Task *t = new Task(WIFI_RECONNECT_TIMER * TASK_SECOND, TASK_ONCE,
-                [this](){ embuischedw.disable(); wifi_setmode(WIFI_AP_STA); WiFi.begin(); TASK_RECYCLE; },
+                [this](){ embuischedw.disable();
+                WiFi.enableSTA(true);
+                WiFi.begin();
+                TASK_RECYCLE; },
                 &ts, false
             );
         t->enableDelayed();
@@ -63,9 +77,11 @@ void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
 }
 
 void EmbUI::onWiFiMode(WiFiEventModeChange event_info){
+/*
     if(WiFi.getMode() == WIFI_AP){
         setup_mDns();
     }
+*/
 }
 #endif  //ESP8266
 
@@ -73,11 +89,12 @@ void EmbUI::onWiFiMode(WiFiEventModeChange event_info){
 void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 {
     switch (event){
+/*
     case SYSTEM_EVENT_AP_START:
         LOG(println, F("UI WiFi: Access-point started"));
         setup_mDns();
         break;
-
+*/
     case SYSTEM_EVENT_STA_CONNECTED:
         LOG(println, F("UI WiFi: STA connected"));
 
@@ -86,8 +103,6 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
         break;
 
     case SYSTEM_EVENT_STA_GOT_IP:
-        WiFi.mode(WIFI_STA);            // Shutdown internal Access Point
-
     	/* this is a weird hack to mitigate DHCP-client hostname issue
 	     * https://github.com/espressif/arduino-esp32/issues/2537
          * we use some IDF functions to restart dhcp-client, that has been disabled before STA connect
@@ -96,19 +111,23 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 	    tcpip_adapter_ip_info_t iface;
 	    tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &iface);
         if(!iface.ip.addr){
-            LOG(println, F("UI WiFi: DHCP discover..."));
+            LOG(print, F("UI WiFi: DHCP discover... "));
 	        return;
     	}
 
         LOG(printf_P, PSTR("SSID:'%s', IP: "), WiFi.SSID().c_str());  // IPAddress(info.got_ip.ip_info.ip.addr)
         LOG(println, IPAddress(iface.ip.addr));
 
-        if(WiFi.getMode() != WIFI_MODE_STA){    // Switch to STA only mode once IP obtained
-            WiFi.mode(WIFI_MODE_STA);
-            LOG(println, F("UI WiFi: switch to STA mode"));
-        }
-
         embuischedw.disable();
+        embuischedw.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [](){
+            if(WiFi.getMode() == WIFI_MODE_STA)
+                return;
+
+            WiFi.enableAP(false);
+            LOG(println, F("UI WiFi: AP mode disabled"));
+        });
+        embuischedw.restartDelayed();
+
         sysData.wifi_sta = true;
         setup_mDns();
         if(_cb_STAGotIP)
@@ -120,9 +139,11 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
         // https://github.com/espressif/arduino-esp32/blob/master/tools/sdk/include/esp32/esp_wifi_types.h
         if(WiFi.getMode() != WIFI_MODE_APSTA && !embuischedw.isEnabled()){
             LOG(println, PSTR("UI WiFi: Reconnect attempt"));
-            embuischedw.set(WIFI_BEGIN_DELAY* TASK_SECOND, TASK_ONCE, [this](){ WiFi.mode(WIFI_MODE_APSTA);
-                                                        LOG(println, F("UI WiFi: Switch to AP-Station mode"));
-                                                        embuischedw.disable();} );
+            embuischedw.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){
+                        LOG(println, F("UI WiFi: Switch to AP/STA mode"));
+                        WiFi.enableAP(true);
+                        WiFi.begin();
+                        } );
             embuischedw.restartDelayed();
         }
 
@@ -139,36 +160,30 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 #endif  //ESP32
 
 void EmbUI::wifi_init(){
-    String hn = param(FPSTR(P_hostname));
-    String appwd = param(FPSTR(P_APpwd));
-    getAPmac();
-    if (!hn.length()){
-        hn = String(__IDPREFIX) + mc;
-        var(FPSTR(P_hostname), hn, true);
-    }
-
-    if (appwd.length()<WIFI_PSK_MIN_LENGTH)
-        appwd = "";
-
-    LOG(printf_P, PSTR("UI WiFi: set AP params to SSID:%s, pwd:%s\n"), hn.c_str(), appwd.c_str());
-    WiFi.softAP(hn.c_str(), appwd.c_str());
 
     String apmode = param(FPSTR(P_APonly));
 
     LOG(print, F("UI WiFi: start in "));
     if (apmode == FPSTR(P_true)){
         LOG(println, F("AP-only mode"));
-        WiFi.mode(WIFI_AP);
-    } else {
+        wifi_setAP(true);
+        return;
+    }
+
+/*
     #ifdef ESP8266
         LOG(println, F("AP/STA mode"));
-        WiFi.mode(WIFI_AP_STA);     // we start in combined STA mode, than disable AP once client get's IP address
+        wifi_setAP(true);
+        WiFi.enableSTA(true);
     #elif defined ESP32
         LOG(println, F("STA mode"));
         WiFi.mode(WIFI_STA);       // we start in STA mode, esp32 can't set client's hotname in ap/sta
     #endif
+*/
+    LOG(println, F("STA mode"));
+    WiFi.enableSTA(true);
 
-
+    String hn = param(FPSTR(P_hostname));
     #ifdef ESP8266
         WiFi.hostname(hn);
         WiFi.begin();   // use internaly stored last known credentials for connection
@@ -180,35 +195,35 @@ void EmbUI::wifi_init(){
 	    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
         // use internaly stored last known credentials for connection
         if ( WiFi.begin() == WL_CONNECT_FAILED ){
-            embuischedw.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE, [this](){ WiFi.mode(WIFI_MODE_APSTA);
-                                                        LOG(println, F("UI WiFi: Switch to AP-Station mode"));
-                                                        embuischedw.disable();} );
+            embuischedw.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE, [this](){
+                            wifi_setAP();
+                            WiFi.enableSTA(true);
+                            LOG(println, F("UI WiFi: Switch to AP/STA mode"));}
+            );
             embuischedw.restartDelayed();
         }
 
 	    if (!WiFi.setHostname(hn.c_str()))
             LOG(println, F("UI WiFi: Failed to set hostname :("));
     #endif
-        LOG(println, F("UI WiFi: STA reconecting..."));
-    }
+    LOG(println, F("UI WiFi: STA reconecting..."));
 }
 
 void EmbUI::wifi_connect(const char *ssid, const char *pwd)
 {
-    if (ssid){
-        String _ssid(ssid); String _pwd(pwd);   // I need objects to pass it to the lambda
-        embuischedw.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE, [_ssid, _pwd, this](){
-                    LOG(printf_P, PSTR("UI WiFi: client connecting to SSID:%s, pwd:%s\n"), _ssid.c_str(), _pwd.c_str());
-                    #ifdef ESP32
-                        WiFi.disconnect();
-                	    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
-                    #endif
-                    WiFi.begin(_ssid.c_str(), _pwd.c_str());
-	                embuischedw.disable();
-            });
-    } else {
-        embuischedw.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE, [this](){ WiFi.begin(); embuischedw.disable();} );
-    }
+    String _ssid(ssid); String _pwd(pwd);   // I need objects to pass it to lambda
+    embuischedw.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE,
+        [_ssid, _pwd](){
+                LOG(printf_P, PSTR("UI WiFi: client connecting to SSID:%s, pwd:%s\n"), _ssid.c_str(), _pwd.c_str());
+                #ifdef ESP32
+                    WiFi.disconnect();
+                    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+                #endif
+                _ssid.length() ? WiFi.begin(_ssid.c_str(), _pwd.c_str()) : WiFi.begin();
+                ts.getCurrentTask()->disable();
+        }
+    );
+
     embuischedw.restartDelayed();
 }
 
@@ -255,4 +270,53 @@ void EmbUI::getAPmac(){
 
     LOG(printf_P,PSTR("UI MAC ID:%02X%02X%02X\n"), _mac[3], _mac[4], _mac[5]);
     sprintf_P(mc, PSTR("%02X%02X%02X"), _mac[3], _mac[4], _mac[5]);
+}
+
+/**
+ * Configure esp's internal AP
+ * default is to configure credentials from the config
+ * bool force - reapply credentials even if AP is already started, exit otherwise
+ */
+void EmbUI::wifi_setAP(bool force){
+
+    // check if AP is already started
+    if ((bool)(WiFi.getMode() & WIFI_AP) & !force)
+        return;
+
+    //LOG(printf_P, PSTR("UI WiFi: Mode:%d\n"), WiFi.getMode());
+
+    String hn = param(FPSTR(P_hostname));
+    String appwd = param(FPSTR(P_APpwd));
+
+    // clear short passwords in config to avoid confusion
+    if (appwd.length()<WIFI_PSK_MIN_LENGTH){
+        appwd = "";
+        var(FPSTR(P_APpwd), appwd);
+    }
+
+    getAPmac();
+    if (!hn.length()){
+        hn = String(__IDPREFIX) + mc;
+        var(FPSTR(P_hostname), hn, true);
+    }
+
+
+    LOG(printf_P, PSTR("UI WiFi: set AP params to SSID:%s, pwd:%s\n"), hn.c_str(), appwd.c_str());
+    WiFi.softAP(hn.c_str(), appwd.c_str());
+
+    // run mDNS in WiFi-AP mode
+    setup_mDns();
+}
+
+
+void EmbUI::wifi_updateAP() {
+    wifi_setAP(true);
+
+    String apmode = param(FPSTR(P_APonly));
+
+    if (apmode == FPSTR(P_true)){
+        LOG(println, F("UI WiFi: Force AP mode"));
+        WiFi.enableAP(true);
+        WiFi.enableSTA(false);
+    }
 }

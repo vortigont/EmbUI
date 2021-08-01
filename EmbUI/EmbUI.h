@@ -293,6 +293,7 @@ class EmbUI
     void send_pub();
     String id(const String &tpoic);
 
+    // WiFi-related
     /**
      * Initialize WiFi using stored configuration
      */
@@ -302,6 +303,11 @@ class EmbUI
      * Подключение к WiFi AP в клиентском режиме
      */
     void wifi_connect(const char *ssid=nullptr, const char *pwd=nullptr);
+
+    /**
+      * update WiFi AP params and state
+      */
+    void wifi_updateAP();
 
     /**
      * метод для установки коллбеков на системные события, типа:
@@ -326,7 +332,7 @@ class EmbUI
      * beware of dangling pointers here passing non-static char*, use JsonVariant or String instead 
      */
     template <typename T> void var(const String &key, const T& value, bool force = false){
-            if (!force && !cfg.containsKey(key)) {
+        if (!force && !cfg.containsKey(key)) {
             LOG(printf_P, PSTR("UI ERR: KEY (%s) is NOT initialized!\n"), key.c_str());
             return;
         }
@@ -336,7 +342,6 @@ class EmbUI
             // cfg is out of mem, try to compact it
             //size_t mem = cfg.memoryUsage();
             cfg.garbageCollect();
-            //LOG(printf_P, PSTR("UI: cfg garbage cleaned: %u, free %u\n"), mem - cfg.memoryUsage(), cfg.capacity() - cfg.memoryUsage());
             LOG(printf_P, PSTR("UI: cfg garbage cleanup: %u free out of %u\n"), cfg.capacity() - cfg.memoryUsage(), cfg.capacity());
         }
 
@@ -372,17 +377,6 @@ class EmbUI
      */
     void taskRecycle(Task *t);
 
-
-    // WiFi-related
-    /**
-      * устанавлием режим WiFi в AP
-      */
-    void wifi_switchtoAP() {
-        LOG(println, F("UI WiFi: Force AP mode"));
-        WiFi.enableAP(true);    // включаю AP
-        WiFi.enableSTA(false);  // отключаю STA
-    }
-
   private:
     /**
      * call to create system-dependent variables,
@@ -410,6 +404,15 @@ class EmbUI
       * устанавлием режим WiFi
       */
     void wifi_setmode(WiFiMode_t mode);
+
+    /**
+     * Configure and bring up esp's internal AP
+     * defualt is to configure credentials from the config
+     * bool force - reapply credentials even if AP is already started, exit otherwise
+     */
+    void wifi_setAP(bool force=false);
+
+
 
 #ifdef ESP8266
     WiFiEventHandler e1, e2, e3, e4;

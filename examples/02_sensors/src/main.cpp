@@ -13,7 +13,9 @@
  #include "ftpSrv.h"
 #endif
 
-ADC_MODE(ADC_VCC);  // read internal Vcc
+#ifdef ESP8266
+  ADC_MODE(ADC_VCC);  // read internal Vcc
+#endif
 
 // MAIN Setup
 void setup() {

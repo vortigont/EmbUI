@@ -126,7 +126,13 @@ void block_demopage(Interface *interf, JsonObject *data){
     interf->json_section_line();             // "Live displays"
 
     // Voltage display, shows ESPs internal voltage
+#ifdef ESP8266
     interf->display(F("vcc"), ESP.getVcc()/1000.0);
+#endif
+
+#ifdef ESP32
+    interf->display(F("vcc"), 220); // supercharged esp :)
+#endif
 
     // Fake temperature sensor
     interf->display(F("temp"), 24);
@@ -158,7 +164,7 @@ void action_blink(Interface *interf, JsonObject *data){
   SETPARAM(FPSTR(V_LED));  // save new LED state to the config
 
   // set LED state to the new checkbox state
-  digitalWrite(LED_BUILTIN, !(*data)[FPSTR(V_LED)].as<unsigned int>()); // write inversed signal for biuldin LED
+  digitalWrite(LED_BUILTIN, !(*data)[FPSTR(V_LED)].as<unsigned int>()); // write inversed signal for build-in LED
   Serial.printf("LED: %d\n", (*data)[FPSTR(V_LED)].as<unsigned int>());
 }
 
@@ -181,7 +187,9 @@ void sensorPublisher() {
     interf->json_frame_value();
     // Voltage sensor
     //  id, value, html=true
+#ifdef ESP8266
     interf->value(F("vcc"), (ESP.getVcc() + random(-100,100))/1000.0, true); // html must be set 'true' so this value could be handeled properly for div elements
+#endif
     interf->value(F("temp"), 24 + random(-30,30)/10, true);                // add some random spikes to the temperature :)
 
     String clk; embui.timeProcessor.getDateTimeString(clk);
