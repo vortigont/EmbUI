@@ -1,5 +1,18 @@
 ## Changelog
 
+### v2.4.3  milestone
+WiFi: Mode switching code optimization
+      Gracefull mode switching for WiFi, now modes are switched with a slight delay
+      that allows WebUI to reflect all the changes happening and prevent dangling ws connections.
+JS lib: removed duplicate data repost on each ws reconnect
+esp8266: Multiple fixes for Arduino Core 3.0.0
+      + Enable WiFi persistency for Arduino Core
+      * build fixes
+      - obsolete MemInfo lib
+TimeProcessor:
+      * timeSync event now works for esp32 platform also
+      - Obsolete WorldTimeApi methods, kept in a sepparate class for reference
+
 ### v2.4.2  milestone
 js: ws.onvalue() accepts raw key:value assoc array
 ui: - common method to draw 'displays' with sensor's data, etc...
