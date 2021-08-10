@@ -73,8 +73,12 @@ void section_main_frame(Interface *interf, JsonObject *data){
     block_demopage(interf, data);                   // Строим блок с demo переключателями
   }
 
-  //block_more(interf, data);                     // у нас есть и другие блоки, но строить сразу все
+  interf->json_frame_flush();                       // Close interface section
 
+  // Publish firmware version (visible under menu section)
+  interf->json_frame_value();
+  interf->value(F("fwver"), F("demo_1.1"), true);   // just an example
+  interf->json_frame_flush();
 };
 
 

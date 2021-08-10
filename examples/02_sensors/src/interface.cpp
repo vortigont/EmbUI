@@ -80,6 +80,12 @@ void section_main_frame(Interface *interf, JsonObject *data){
     block_demopage(interf, data);                   // Строим блок с demo переключателями
   }
 
+  interf->json_frame_flush();                       // Close interface section
+
+  // Publish firmware version (visible under menu section)
+  interf->json_frame_value();
+  interf->value(F("fwver"), F("demo_1.1"), true);
+  interf->json_frame_flush();
 };
 
 
@@ -151,8 +157,6 @@ void block_demopage(Interface *interf, JsonObject *data){
 
     // Update rate slider
     interf->range(FPSTR(V_UPDRATE), tDisplayUpdater.getInterval()/1000, 1, 30, 1, F("Update Rate, sec"), true);
-
-    interf->json_section_end();
     interf->json_frame_flush();
 }
 
