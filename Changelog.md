@@ -12,6 +12,11 @@ esp8266: Multiple fixes for Arduino Core 3.0.0
 TimeProcessor:
       * timeSync event now works for esp32 platform also
       - Obsolete WorldTimeApi methods, kept in a sepparate class for reference
+EmbUI version defines, make it easy to control deps
+ChipID gen code cleanup
+unify json_frame*() methods for Interface class
+resources: generic html template now contains separate version placeholders for EmbUI and for Firmware
+
 
 ### v2.4.2  milestone
 js: ws.onvalue() accepts raw key:value assoc array

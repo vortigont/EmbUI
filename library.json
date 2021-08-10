@@ -3,7 +3,7 @@
     "frameworks": "arduino",
     "keywords": "embui, arduino",
     "description": "Embeded Web UI framework for esp8266/esp32 IoT prototyping",
-    "url": "https://github.com/DmytroKorniienko/EmbUI",
+    "url": "https://github.com/vortigont/EmbUI",
     "authors": [
         {
             "name": "Anton Zolotarev",
@@ -23,10 +23,10 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/DmytroKorniienko/EmbUI.git"
+        "url": "https://github.com/vortigont/EmbUI.git"
     },
     "platforms": ["espressif8266", "espressif32"],
-    "version": "2.4.2",
+    "version": "2.4.3",
     "dependencies":
     [
         {"owner": "bblanchon",
@@ -46,7 +46,6 @@
     ],
     "build": {
         "flags": [
-            "-DEMBUIVER=2.4.2",
             "-DCONFIG_LITTLEFS_FOR_IDF_3_2"
         ],
         "srcDir": "EmbUI"
