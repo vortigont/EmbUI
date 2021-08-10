@@ -24,10 +24,18 @@ void mqtt_emptyFunction(const String &, const String &);
 
 EmbUI embui;
 
+/**
+ * Those functions are weak, and by default do nothing
+ * it is up to user to redefine it for proper WS event handling
+ */
 void section_main_frame(Interface *interf, JsonObject *data) {}
 void pubCallback(Interface *interf){}
 String httpCallback(const String &param, const String &value, bool isSet) { return String(); }
 
+/**
+ * WebSocket events handler
+ *
+ */
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len){
     if(type == WS_EVT_CONNECT){
         LOG(printf_P, PSTR("UI: ws[%s][%u] connect MEM: %u\n"), server->url(), client->id(), ESP.getFreeHeap());
@@ -105,7 +113,6 @@ void notFound(AsyncWebServerRequest *request) {
 }
 
 void EmbUI::begin(){
-
     uint8_t retry_cnt = 3;
 
     // монтируем ФС только один раз при старте

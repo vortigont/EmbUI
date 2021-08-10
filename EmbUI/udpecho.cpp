@@ -10,7 +10,6 @@ WiFiUDP Udp;
 bool udpApply = false;
 
 void EmbUI::udp(){
-    getAPmac();
     udpMessage = mc;
 }
 

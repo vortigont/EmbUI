@@ -162,24 +162,31 @@ void Interface::value(const String &id, bool html){
 }
 
 ///////////////////////////////////////
-void Interface::json_frame_value(){
-    json[F("pkg")] = FPSTR(P_value);
+
+/**
+ * @brief - begin UI secton of the specified <type>
+ * generic frame creation method, used by other calls to create pther custom-typed frames 
+ */
+void Interface::json_frame(const String &type){
+    json[F("pkg")] = type;
     json[FPSTR(P_final)] = false;
 
     json_section_begin("root" + String(micros()));
 }
 
+
+/**
+ * @brief - begin Interface UI secton
+ * used to construc WebUI html elements
+ */
 void Interface::json_frame_interface(const String &name){
-    json[F("pkg")] = F("interface");
-    if (name != "") {
-        json[F("app")] = name;
-        json[F("mc")] = embui->mc;
-        json[F("ver")] = F(TOSTRING(EMBUIVER));
-    }
-    json[FPSTR(P_final)] = false;
+    json[F("app")] = name;
+    json[F("mc")] = embui->mc;
+    json[F("ver")] = F(EMBUI_VERSION_STRING);
 
-    json_section_begin("root" + String(micros()));
+    json_frame_interface();
 }
+
 
 bool Interface::json_frame_add(const JsonObject &obj) {
     if (!obj.memoryUsage()) // пустышки не передаем
@@ -222,23 +229,11 @@ void Interface::json_frame_clear(){
 
 void Interface::json_frame_flush(){
     if (!section_stack.size()) return;
-    LOG(println, F("json_frame_flush"));
+    LOG(println, F("UI: json_frame_flush"));
     json[FPSTR(P_final)] = true;
     json_section_end();
     json_frame_send();
     json_frame_clear();
-}
-
-/**
- * @brief - begin custom UI secton
- * открывает секцию с указаным типом 'pkg', может быть обработан на клиенсткой стороне отлично от
- * интерфейсных пакетов 
- */
-void Interface::json_frame_custom(const String &type){
-    json[F("pkg")] = type;
-    json[FPSTR(P_final)] = false;
-
-    json_section_begin("root" + String(micros()));
 }
 
 

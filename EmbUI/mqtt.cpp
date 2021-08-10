@@ -88,47 +88,39 @@ void EmbUI::mqtt(const String &pref, const String &host, int port, const String 
 }
 
 void EmbUI::mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload)){
-    getAPmac();
     mqtt(mc, host, port, user, pass, mqttFunction, false);
     onConnect = mqtt_dummy_connect;
 }
 
 void EmbUI::mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol){
-    getAPmac();
     mqtt(mc, host, port, user, pass, mqttFunction, remotecontrol);
     onConnect = mqtt_dummy_connect;
 }
 
 void EmbUI::mqtt(const String &host, int port, const String &user, const String &pass, bool remotecontrol){
-    getAPmac();
     mqtt(mc, host, port, user, pass, mqtt_emptyFunction, remotecontrol);
     onConnect = mqtt_dummy_connect;
 }
 
 void EmbUI::mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, bool remotecontrol){
-    getAPmac();
     mqtt(pref, host, port, user, pass, mqtt_emptyFunction, remotecontrol);
     onConnect = mqtt_dummy_connect;
 }
 
 void EmbUI::mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol){
-    getAPmac();
     mqtt(pref, host, port, user, pass, mqtt_emptyFunction, remotecontrol);
     onConnect = mqttConnect;
 
 }
 void EmbUI::mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) ()){
-    getAPmac();
     mqtt(pref, host, port, user, pass, mqttFunction, false);
     onConnect = mqttConnect;
 }
 void EmbUI::mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) ()){
-    getAPmac();
     mqtt(mc, host, port, user, pass, mqttFunction, false);
     onConnect = mqttConnect;
 }
 void EmbUI::mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol){
-    getAPmac();
     mqtt(mc, host, port, user, pass, mqttFunction, remotecontrol);
     onConnect = mqttConnect;
 }

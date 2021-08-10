@@ -6,6 +6,15 @@
 #include "EmbUI.h"
 #include "wi-fi.h"
 
+#ifdef ESP32
+union MacID
+{
+    uint64_t u64;
+    uint8_t mc[8];
+};
+#endif
+
+
 #ifdef ESP8266
 #include "user_interface.h"
 
@@ -170,16 +179,6 @@ void EmbUI::wifi_init(){
         return;
     }
 
-/*
-    #ifdef ESP8266
-        LOG(println, F("AP/STA mode"));
-        wifi_setAP(true);
-        WiFi.enableSTA(true);
-    #elif defined ESP32
-        LOG(println, F("STA mode"));
-        WiFi.mode(WIFI_STA);       // we start in STA mode, esp32 can't set client's hotname in ap/sta
-    #endif
-*/
     LOG(println, F("STA mode"));
     WiFi.enableSTA(true);
 
@@ -254,22 +253,28 @@ void EmbUI::setup_mDns(){
     LOG(printf_P, PSTR("UI mDNS: responder started: %s.local\n"),hostname.c_str());
 }
 
+
 /**
  * формирует chipid из MAC-адреса вида 'ddeeff'
  */
-void EmbUI::getAPmac(){
-    if(*mc) return;
+void EmbUI::getmacid(){
+#ifdef ESP32
+    MacID _mac;
+    _mac.u64 = ESP.getEfuseMac();
 
+    //LOG(printf_P,PSTR("UI MAC ID:%06llX\n"), _mac.id);
+    // EfuseMac LSB comes first, so need to transpose bytes
+    sprintf_P(mc, PSTR("%02X%02X%02X"), _mac.mc[3], _mac.mc[4], _mac.mc[5]);
+    LOG(printf_P,PSTR("UI ID:%02X%02X%02X\n"), _mac.mc[3], _mac.mc[4], _mac.mc[5]);
+#endif
+
+#ifdef ESP8266
     uint8_t _mac[6];
-
-    #ifdef ESP32
-        if(WiFi.getMode() == WIFI_MODE_NULL)
-            WiFi.mode(WIFI_MODE_AP);
-    #endif
     WiFi.softAPmacAddress(_mac);
 
-    LOG(printf_P,PSTR("UI MAC ID:%02X%02X%02X\n"), _mac[3], _mac[4], _mac[5]);
     sprintf_P(mc, PSTR("%02X%02X%02X"), _mac[3], _mac[4], _mac[5]);
+    LOG(printf_P,PSTR("UI ID:%02X%02X%02X\n"), _mac[3], _mac[4], _mac[5]);
+#endif
 }
 
 /**
@@ -294,10 +299,9 @@ void EmbUI::wifi_setAP(bool force){
         var(FPSTR(P_APpwd), appwd);
     }
 
-    getAPmac();
     if (!hn.length()){
         hn = String(__IDPREFIX) + mc;
-        var(FPSTR(P_hostname), hn, true);
+        //var(FPSTR(P_hostname), hn, true);
     }
 
 

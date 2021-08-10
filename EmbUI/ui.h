@@ -122,8 +122,28 @@ class Interface {
             embui = nullptr;
         }
 
-        void json_frame_value();
-        void json_frame_interface(const String &name = "");
+
+        /**
+         * @brief - begin UI secton of the specified <type>
+         * generic frame creation method, used by other calls to create custom-typed frames
+         */
+        void json_frame(const String &type);
+
+
+        /**
+         * @brief - begin Interface UI secton
+         * used to construct WebUI html elements
+         */
+        void json_frame_interface(){ json_frame(F("interface")); };
+        void json_frame_interface(const String &name);
+
+        /**
+         * @brief - begin Value UI secton
+         * used to supply WebUI with data (key:value pairs)
+         */
+        inline void json_frame_value(){ json_frame(FPSTR(P_value)); }
+
+
         bool json_frame_add(const JsonObject &obj);
         void json_frame_next();
         void json_frame_clear();
@@ -136,10 +156,9 @@ class Interface {
 
         /**
          * @brief - begin custom UI secton
-         * открывает секцию с указаным типом 'pkg', может быть обработан на клиенсткой стороне отлично от
-         * интерфейсных пакетов 
+         * for backward-compatibility only
          */
-        void json_frame_custom(const String &type);
+        inline void json_frame_custom(const String &type){ json_frame(type); };
 
         void json_section_menu();
         void json_section_content();

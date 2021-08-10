@@ -8,6 +8,18 @@
 
 #include "globals.h"
 
+#define EMBUI_VERSION_MAJOR     2
+#define EMBUI_VERSION_MINOR     4
+#define EMBUI_VERSION_REVISION  3
+
+/* make version as integer*/
+#define EMBUI_VERSION ((EMBUI_VERSION_MAJOR) << 16 | (EMBUI_VERSION_MINOR) << 8 | (EMBUI_VERSION_REVISION))
+
+/* make version as string*/
+#define EMBUI_VERSION_STRING   TOSTRING(EMBUI_VERSION_MAJOR) "." TOSTRING(EMBUI_VERSION_MINOR) "." TOSTRING(EMBUI_VERSION_REVISION)
+// compat definiton
+#define EMBUIVER    EMBUI_VERSION_STRING
+
 #include <FS.h>
 
 #ifdef ESP8266
@@ -219,6 +231,7 @@ class EmbUI
     #endif
 
         memset(mc,0,sizeof(mc));
+        getmacid();
 
         ts.addTask(embuischedw);    // WiFi helper
         tAutoSave.set(sysData.asave * AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
@@ -237,7 +250,7 @@ class EmbUI
     mqttCallback onConnect;
     TimeProcessor& timeProcessor = TimeProcessor::getInstance();
 
-    char mc[7]; // id из последних 3 байт mac-адреса "ffffff"
+    char mc[4]; // last 3 LSB's of mac addr used as an ID
 
     void section_handle_add(const String &btn, buttonCallback response);
     void section_handle_remove(const String &name);
@@ -390,7 +403,7 @@ class EmbUI
     void udpBegin();
     void udpLoop();
     void btn();
-    void getAPmac();
+    void getmacid();
 
     // Scheduler tasks
     Task embuischedw;       // WiFi reconnection helper
