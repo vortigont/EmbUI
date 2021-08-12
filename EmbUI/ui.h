@@ -328,11 +328,9 @@ class Interface {
         /**
          * @brief - элемент интерфейса checkbox
          * @param directly - значение чекбокса при изменении сразу передается на сервер без отправки формы
-         * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
-        template <typename T>
-        void checkbox(const String &id, const T& value, const String &label, bool directly = false){ html_input(id, F("checkbox"), value, label, directly); };
-        void checkbox(const String &id, const String &label, bool directly = false);
+        void checkbox(const String &id, const bool value, const String &label, const bool directly = false){ html_input(id, F("checkbox"), value, label, directly); };
+        void checkbox(const String &id, const String &label, const bool directly = false);
 
         template <typename T>
         void color(const String &id, const T &value, const String &label){ html_input(id, FPSTR(P_color), value, label); };

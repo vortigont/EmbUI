@@ -21,8 +21,8 @@ var render = function(){
 			var value = this.value, type = this.type;
 			if (type == "checkbox"){
 				var chbox=document.getElementById(id);
-				if (chbox.checked) value = "1";		// send 'checked' state as "1"
-				else value = "0";
+				if (chbox.checked) value = true;	// send 'checked' state as bool true
+				else value = false;
 			}
 			if (this.id != id){
 				custom_hook(this.id, d, id);

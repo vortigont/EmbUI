@@ -255,7 +255,24 @@ class EmbUI
     void section_handle_add(const String &btn, buttonCallback response);
     void section_handle_remove(const String &name);
     const char* param(const char* key);
+
+
+    /**
+     * @brief obtain cfg parameter as String
+     * Method tries to cast arbitrary JasonVariant types to string or return "" otherwise
+     * @param key - required cfg key
+     * @return String
+     */
     String param(const String &key);
+
+    /**
+     * @brief - return JsonVariant of a config param
+     * this method allows accessing cfg param JsonVariantConst and use member functions, like .as<T>
+     * unlike param(), this method does not Stringify config values
+     */
+    JsonVariantConst paramVariant(const String &key){ return cfg[key]; }
+
+
     bool isparamexists(const char* key){ return cfg.containsKey(key);}
     bool isparamexists(const String &key){ return cfg.containsKey(key);}
     void led(uint8_t pin, bool invert);

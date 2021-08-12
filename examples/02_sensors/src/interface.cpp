@@ -167,9 +167,9 @@ void action_blink(Interface *interf, JsonObject *data){
 
   SETPARAM(FPSTR(V_LED));  // save new LED state to the config
 
-  // set LED state to the new checkbox state
-  digitalWrite(LED_BUILTIN, !(*data)[FPSTR(V_LED)].as<unsigned int>()); // write inversed signal for build-in LED
-  Serial.printf("LED: %d\n", (*data)[FPSTR(V_LED)].as<unsigned int>());
+  // set LED state to match new checkbox state
+  digitalWrite(LED_BUILTIN, !(*data)[FPSTR(V_LED)]); // write inversed signal for build-in LED
+  Serial.printf("LED: %u\n", (*data)[FPSTR(V_LED)].as<bool>());
 }
 
 /**

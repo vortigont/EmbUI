@@ -390,8 +390,10 @@ const char* EmbUI::param(const char* key)
 }
 
 /**
- * обертка над param в виде String
- * В случае несуществующего ключа возвращает пустой String("")
+ * @brief obtain cfg parameter as String
+ * Method tries to cast arbitrary JasonVariant types to string or return "" otherwise
+ * @param key - required cfg key
+ * @return String
  * TODO: эти методы толком не работают с объектами типа "не строка", нужна нормальная реализация с шаблонами и ДжейсонВариант
  */
 String EmbUI::param(const String &key)
@@ -400,10 +402,11 @@ String EmbUI::param(const String &key)
     String v;
     if (cfg[key].is<int>()){ v = cfg[key].as<int>(); }
     else if (cfg[key].is<float>()) { v = cfg[key].as<float>(); }
-    else if (cfg[key].is<bool>()) { v = cfg[key].as<bool>(); }
-    else { v = cfg[key] | ""; } // откат, все что не специальный тип, то пустая строка 
+    else if (cfg[key].is<bool>()) {
+        v = cfg[key] ? '1' : '0';
+    } else { v = cfg[key] | ""; } // откат, все что не специальный тип, то пустая строка
 
-    LOG(printf_P, PSTR("string val (%s)\n"), v.c_str());
+    LOG(printf_P, PSTR(" VAL: '%s'\n"), v.c_str());
     return v;
 }
 

@@ -88,8 +88,8 @@ void Interface::select(const String &id, const String &label, bool directly, boo
     select(id, embui->param(id), label, directly, skiplabel);
 }
 
-void Interface::checkbox(const String &id, const String &label, bool directly){
-    checkbox(id, embui->param(id), label, directly);
+void Interface::checkbox(const String &id, const String &label, const bool directly){
+    checkbox(id, embui->paramVariant(id).as<bool>(), label, directly);
 }
 
 void Interface::color(const String &id, const String &label){
