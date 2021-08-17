@@ -323,7 +323,14 @@ class Interface {
         /**
          * @brief - create an option element for select drop-down list
          */
-        void option(const String &value, const String &label);
+        template <typename T>
+        void option(const T &value, const String &label){
+            StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
+            obj[FPSTR(P_label)] = label;
+            obj[FPSTR(P_value)] = value;
+
+            frame_add_safe(obj.as<JsonObject>());
+        }
 
         /**
          * @brief - элемент интерфейса checkbox

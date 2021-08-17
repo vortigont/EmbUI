@@ -5,14 +5,15 @@ var go = function(param, context){
 	return new GO(param);
 }
 
+// form data processing
 go.formdata = function(form){
 	var controls = {},
 	checkValue = function(element){
 		switch (element.type.toLowerCase()){
-			case 'checkbox':		// use "1" as a value for 'checked' boxes  
-				return element.checked?	"1" : "0";
+			case 'checkbox':		// use boolean true/false as a value for 'checked' boxes  
+				return element.checked?	true : false;
 			case 'radio':
-				if(element.checked) return element.value;
+				if(element.checked) return chkNumeric(element);
 				break;
 			case 'hidden':
 				if(element.id == "devicedatetime"){
@@ -29,8 +30,14 @@ go.formdata = function(form){
 				return dateString;
 				break;
 			default:
-				return element.value;
+				return chkNumeric(element);
 		}
+	},
+	chkNumeric = function(element){
+		if(isFinite(element.value)){
+			return Number(element.value);
+		} else
+		return element.value;
 	};
 
 	for(var i = 0; i < form.length; i++){
@@ -43,7 +50,7 @@ go.formdata = function(form){
 				break;
 			case 'textarea':
 			case 'select':
-				controls[el.name || el.id]= el.value;
+				controls[el.name || el.id]= chkNumeric(el);
 				break;
 			default:
 				continue;

@@ -76,14 +76,6 @@ void Interface::password(const String &id, const String &label){
     password(id, embui->param(id), label);
 }
 
-void Interface::option(const String &value, const String &label){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
-    obj[FPSTR(P_label)] = label;
-    obj[FPSTR(P_value)] = value;
-
-    frame_add_safe(obj.as<JsonObject>());
-}
-
 void Interface::select(const String &id, const String &label, bool directly, bool skiplabel){
     select(id, embui->param(id), label, directly, skiplabel);
 }

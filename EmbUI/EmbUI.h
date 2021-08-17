@@ -106,7 +106,7 @@ class Interface;
 //-----------------------
 #define TOGLE_STATE(val, curr) (val == "1")? true : (val == "0")? false : !curr;
 
-#define SETPARAM(key, call...) if (data->containsKey(key)) { \
+#define SETPARAM(key, call...) { \
     embui.var(key, (*data)[key]); \
     call; \
 }
