@@ -35,7 +35,7 @@ void BasicUI::add_sections(){
     embui.section_handle_add(FPSTR(T_SET_MQTT), set_settings_mqtt);         // обработка настроек MQTT
     embui.section_handle_add(FPSTR(T_SET_TIME), set_settings_time);         // установки даты/времени
     embui.section_handle_add(FPSTR(P_LANGUAGE), set_language);              // смена языка интерфейса
-    embui.section_handle_add(FPSTR(T_REBOOT), set_reboot);              // смена языка интерфейса
+    embui.section_handle_add(FPSTR(T_REBOOT), set_reboot);                  // ESP reboot action
 
     //embui.section_handle_add(FPSTR(T_004B), set_settings_other);
 }

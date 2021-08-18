@@ -25,19 +25,6 @@ void Interface::frame2(const String &id, const String &value){
     frame_add_safe(obj.as<JsonObject>());
 }
 
-void Interface::hidden(const String &id, const String &value){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
-    obj[FPSTR(P_html)] = FPSTR(P_hidden);
-    obj[FPSTR(P_id)] = id;
-    obj[FPSTR(P_value)] = value;
-
-    frame_add_safe(obj.as<JsonObject>());
-}
-
-void Interface::hidden(const String &id){
-    hidden(id, embui->param(id));
-}
-
 void Interface::constant(const String &id, const String &value, const String &label){
     StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
     obj[FPSTR(P_html)] = F("const");
@@ -48,44 +35,8 @@ void Interface::constant(const String &id, const String &value, const String &la
     frame_add_safe(obj.as<JsonObject>());
 }
 
-void Interface::constant(const String &id, const String &label){
-    constant(id, embui->param(id), label);
-}
-
-void Interface::text(const String &id, const String &label, bool directly){
-    text(id, embui->param(id), label, directly);
-}
-
-void Interface::time(const String &id, const String &label){
-    time(id, embui->param(id), label);
-}
-
-void Interface::date(const String &id, const String &label){
-    time(id, embui->param(id), label);
-}
-
-void Interface::datetime(const String &id, const String &label){
-    datetime(id, embui->param(id), label);
-}
-
-void Interface::email(const String &id, const String &label){
-    email(id, embui->param(id), label);
-}
-
-void Interface::password(const String &id, const String &label){
-    password(id, embui->param(id), label);
-}
-
-void Interface::select(const String &id, const String &label, bool directly, bool skiplabel){
-    select(id, embui->param(id), label, directly, skiplabel);
-}
-
 void Interface::checkbox(const String &id, const String &label, const bool directly){
     checkbox(id, embui->paramVariant(id).as<bool>(), label, directly);
-}
-
-void Interface::color(const String &id, const String &label){
-    color(id, embui->param(id), label);
 }
 
 void Interface::file(const String &name, const String &action, const String &label){
@@ -146,11 +97,7 @@ void Interface::comment(const String &label){
 }
 
 void Interface::textarea(const String &id, const String &label){
-    textarea(id, embui->param(id), label);
-}
-
-void Interface::value(const String &id, bool html){
-    value(id, embui->param(id), html);
+    textarea(id, embui->paramVariant(id), label);
 }
 
 ///////////////////////////////////////
@@ -228,25 +175,12 @@ void Interface::json_frame_flush(){
     json_frame_clear();
 }
 
-
-void Interface::json_section_menu(){
-    json_section_begin(FPSTR(P_menu));
-}
-
 void Interface::json_section_content(){
     json_section_begin(F("content"));
 }
 
 void Interface::json_section_line(const String &name){
     json_section_begin(name, "", false, false, true);
-}
-
-void Interface::json_section_main(const String &name, const String &label){
-    json_section_begin(name, label, true);
-}
-
-void Interface::json_section_hidden(const String &name, const String &label){
-    json_section_begin(name, label, false, true);
 }
 
 void Interface::json_section_begin(const String &name, const String &label, bool main, bool hidden, bool line){

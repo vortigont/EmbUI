@@ -160,13 +160,14 @@ class Interface {
          */
         inline void json_frame_custom(const String &type){ json_frame(type); };
 
-        void json_section_menu();
-        void json_section_content();
-        void json_section_line(const String &name = "");
-        void json_section_main(const String &name, const String &label);
-        void json_section_hidden(const String &name, const String &label);
         void json_section_begin(const String &name, const String &label = "", bool main = false, bool hidden = false, bool line = false);
         void json_section_begin(const String &name, const String &label, bool main, bool hidden, bool line, JsonObject obj);
+
+        void json_section_content();
+        void json_section_line(const String &name = "");
+        inline void json_section_menu(){ json_section_begin(FPSTR(P_menu)); };
+        inline void json_section_main(const String &name, const String &label){ json_section_begin(name, label, true); };
+        inline void json_section_hidden(const String &name, const String &label){ json_section_begin(name, label, false, true); };
         void json_section_end();
 
         void frame(const String &id, const String &value);
@@ -191,7 +192,7 @@ class Interface {
         /**
          * @brief - Add embui's config param id as a 'value' to the Interface frame
          */
-        void value(const String &id, bool html = false);
+        inline void value(const String &id, bool html = false){ value(id, embui->paramVariant(id), html); };
 
         /**
          * @brief - Add the whole JsonObject to the Interface frame
@@ -201,24 +202,33 @@ class Interface {
             frame_add_safe(data);
         }
 
-        void hidden(const String &id);
-        void hidden(const String &id, const String &value);
+        /**
+         * @brief Create hidden html field
+         *  could be used to pass some data between different sections
+         */
+        inline void hidden(const String &id){ hidden(id, embui->paramVariant(id)); };
+        template <typename T>
+        void hidden(const String &id, const T &value){
+            StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
+            obj[FPSTR(P_html)] = FPSTR(P_hidden);
+            obj[FPSTR(P_id)] = id;
+            obj[FPSTR(P_value)] = value;
+
+            frame_add_safe(obj.as<JsonObject>());
+        }
 
         void constant(const String &id, const String &value, const String &label);
-        void constant(const String &id, const String &label);
+        void constant(const String &id, const String &label){ constant(id, embui->paramVariant(id), label); };
 
         // 4-й параметр обязателен, т.к. компилятор умудряется привести F() к булевому виду и использует неверный оверлоад (под esp32)
         template <typename T>
         void text(const String &id, const T &value, const String &label, bool directly){ html_input(id, F("text"), value, label, directly); };
-        void text(const String &id, const String &label, bool directly = false);
+        inline void text(const String &id, const String &label, bool directly = false){ text(id, embui->paramVariant(id), label, directly); };
 
-        template <typename T>
-        void password(const String &id, const T &value, const String &label){ html_input(id, FPSTR(P_password), value, label); };
-        void password(const String &id, const String &label);
+        void password(const String &id, const String &value, const String &label){ html_input(id, FPSTR(P_password), value, label); };
+        inline void password(const String &id, const String &label){ password(id, embui->paramVariant(id), label); };
 
-        void number(const String &id, const String &label){
-            number(id, embui->param(id), label, 0);
-        };
+        inline void number(const String &id, const String &label){ number(id, embui->paramVariant(id), label, 0); };
 
         /**
          * @brief - create "number" html field with optional step, min, max constraints
@@ -226,7 +236,7 @@ class Interface {
          */
         template <typename T>
         void number(const String &id, const String &label, T step = 0, T min = 0, T max = 0){
-            number(id, embui->param(id), label, step, min, max);
+            number(id, embui->paramVariant(id), label, step, min, max);
         };
 
         template <typename V>
@@ -251,28 +261,26 @@ class Interface {
 
         template <typename T>
         void time(const String &id, const T &value, const String &label){ html_input(id, FPSTR(P_time), value, label); };
-        void time(const String &id, const String &label);
+        inline void time(const String &id, const String &label){ time(id, embui->paramVariant(id), label); };
 
         template <typename T>
         void date(const String &id, const T &value, const String &label){ html_input(id, FPSTR(P_date), value, label); };
-        void date(const String &id, const String &label);
+        inline void date(const String &id, const String &label){ time(id, embui->paramVariant(id), label); };
 
         template <typename T>
         void datetime(const String &id, const T &value, const String &label){ html_input(id, F("datetime-local"), value, label); };
-        void datetime(const String &id, const String &label);
+        inline void datetime(const String &id, const String &label){ datetime(id, embui->paramVariant(id), label); };
 
         template <typename T>
         void email(const String &id, const T &value, const String &label){ html_input(id, F("email"), value, label); };
-        void email(const String &id, const String &label);
+        inline void email(const String &id, const String &label){ email(id, embui->paramVariant(id), label); };
 
         /**
          * @brief - create "range" html field with step, min, max constraints
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
         template <typename T>
-        void range(const String &id, T min, T max, T step, const String &label, bool directly = false){
-            range(id, embui->param(id), min, max, step, label, directly);
-        };
+        inline void range(const String &id, T min, T max, T step, const String &label, bool directly = false){ range(id, embui->paramVariant(id), min, max, step, label, directly); };
 
         /**
          * @brief - create "range" html field with step, min, max constraints
@@ -294,8 +302,6 @@ class Interface {
 
             frame_add_safe(obj.as<JsonObject>());
         };
-
-        void select(const String &id, const String &label, bool directly = false, bool skiplabel = false);
 
         /**
          * @brief - create drop-down selection list
@@ -319,6 +325,7 @@ class Interface {
             section_stack.end()->idx--;
             json_section_begin(FPSTR(P_options), "", false, false, false, section_stack.end()->block.getElement(section_stack.end()->idx));
         };
+        inline void select(const String &id, const String &label, bool directly = false, bool skiplabel = false){ select(id, embui->paramVariant(id), label, directly, skiplabel); };
 
         /**
          * @brief - create an option element for select drop-down list
@@ -339,9 +346,8 @@ class Interface {
         void checkbox(const String &id, const bool value, const String &label, const bool directly = false){ html_input(id, F("checkbox"), value, label, directly); };
         void checkbox(const String &id, const String &label, const bool directly = false);
 
-        template <typename T>
-        void color(const String &id, const T &value, const String &label){ html_input(id, FPSTR(P_color), value, label); };
-        void color(const String &id, const String &label);
+        void color(const String &id, const String &value, const String &label){ html_input(id, FPSTR(P_color), value, label); };
+        inline void color(const String &id, const String &label){ color(id, embui->paramVariant(id), label); };
 
         /**
          * элемент интерфейса textarea
