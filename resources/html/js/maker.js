@@ -18,15 +18,41 @@ var render = function(){
 			}
 		},
 		on_change: function(d, id) {
-			var value = this.value, type = this.type;
-			if (type == "checkbox"){
-				var chbox=document.getElementById(id);
-				if (chbox.checked) value = true;	// send 'checked' state as bool true
-				else value = false;
+
+			chkNumeric = function(v){
+				// do not cast empty strings
+				if (typeof v === 'string' && v == ""){
+					return v;
+				}
+				if(isFinite(v)){
+					return Number(v);
+				} else {
+				return v; }
+			};
+
+			var value;
+			var type = this.type;
+			//console.log('Ch type: ' + type);
+			switch (type){
+				case 'checkbox':
+					var chbox=document.getElementById(id);
+					if (chbox.checked) value = true;		// send 'checked' state as boolean true/false
+					else value = false;
+					break;
+//				}
+				case 'input':
+				case 'select-one':
+				case 'range':
+					value = chkNumeric(this.value);
+					break;
+				default:
+					value = this.value;
 			}
+
 			if (this.id != id){
 				custom_hook(this.id, d, id);
 			}
+
 			var data = {}; data[id] = (value !== undefined)? value : null;
 			ws.send_post(data);
 		},
@@ -261,7 +287,6 @@ window.addEventListener("load", function(ev){
 	ws.onclose = ws.onerror = function(){
 		ws.connect();
 	}
-	ws.connect();
 
 	// any messages with "pkg":"rawdata" are handled here bypassing interface/value handlers
 	ws.onrawdata = function(mgs){
@@ -273,6 +298,8 @@ window.addEventListener("load", function(ev){
 		xload(mgs);
 	}
 
+
+	ws.connect();
 
 	var active = false, layout =  go("#layout");
 	go("#menuLink").bind("click", function(){

@@ -34,10 +34,15 @@ go.formdata = function(form){
 		}
 	},
 	chkNumeric = function(element){
+		// do not cast empty strings
+		if (typeof element.value === 'string' && element.value == ""){
+			return element.value;
+		}
+
 		if(isFinite(element.value)){
 			return Number(element.value);
-		} else
-		return element.value;
+		} else {
+		return element.value; }
 	};
 
 	for(var i = 0; i < form.length; i++){
