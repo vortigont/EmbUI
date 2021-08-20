@@ -123,6 +123,7 @@ void EmbUI::begin(){
         if (!retry_cnt){
             LOG(println, F("FS dirty, I Give up!"));
             fsDirty = true;
+            return;
         }
     }
 
@@ -131,7 +132,10 @@ void EmbUI::begin(){
     create_parameters();    // weak function, creates user-defined variables
     mqtt(param(FPSTR(P_m_pref)), param(FPSTR(P_m_host)), param(FPSTR(P_m_port)).toInt(), param(FPSTR(P_m_user)), param(FPSTR(P_m_pass)), mqtt_emptyFunction, false); // init mqtt
 
-    LOG(println, String(F("UI CONFIG: ")) + embui.deb());
+    LOG(print, F("UI CONFIG: "));
+    LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
+
+    // Set WiFi event handlers
     #ifdef ESP8266
         e1 = WiFi.onStationModeGotIP(std::bind(&EmbUI::onSTAGotIP, this, std::placeholders::_1));
         e2 = WiFi.onStationModeDisconnected(std::bind(&EmbUI::onSTADisconnected, this, std::placeholders::_1));
@@ -148,7 +152,7 @@ void EmbUI::begin(){
     // запускаем WiFi
     wifi_init();
     
-    ws.onEvent(onWsEvent);
+    ws.onEvent(onWsEvent);      // WebSocket event handler
     server.addHandler(&ws);
 
 #ifdef USE_SSDP
@@ -177,10 +181,12 @@ void EmbUI::begin(){
     });
 
     server.on(PSTR("/config"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        String config = deb();
-        AsyncWebServerResponse *response = request->beginResponse(200, FPSTR(PGmimejson), config);
 
+        AsyncResponseStream *response = request->beginResponseStream(FPSTR(PGmimejson));
         response->addHeader(FPSTR(PGhdrcachec), FPSTR(PGnocache));
+
+        serializeJson(cfg, *response);
+
         request->send(response);
     });
 
@@ -410,12 +416,6 @@ String EmbUI::param(const String &key)
     return v;
 }
 
-String EmbUI::deb()
-{
-    String cfg_str;
-    serializeJson(cfg, cfg_str);
-    return cfg_str;
-}
 
 void EmbUI::led(uint8_t pin, bool invert){
     if (pin == 31) return;

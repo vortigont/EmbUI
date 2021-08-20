@@ -22,8 +22,10 @@
   #endif
 
   #define LOG(func, ...) EMBUI_DEBUG_PORT.func(__VA_ARGS__)
+  #define LOG_CALL(call...) { call; }
 #else
   #define LOG(func, ...) ;
+  #define LOG_CALL(call...) ;
 #endif
 
 #ifdef ESP32

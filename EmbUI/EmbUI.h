@@ -254,7 +254,6 @@ class EmbUI
 
     void section_handle_add(const String &btn, buttonCallback response);
     void section_handle_remove(const String &name);
-    const char* param(const char* key);
 
 
     /**
@@ -264,6 +263,7 @@ class EmbUI
      * @return String
      */
     String param(const String &key);
+    const char* param(const char* key);
 
     /**
      * @brief - return JsonVariant of a config param
@@ -276,14 +276,15 @@ class EmbUI
     bool isparamexists(const char* key){ return cfg.containsKey(key);}
     bool isparamexists(const String &key){ return cfg.containsKey(key);}
     void led(uint8_t pin, bool invert);
-    String deb();
-    void init();
+
     void begin();
     void handle();
     void save(const char *_cfg = nullptr, bool force = false);
     void load(const char *cfgfile = nullptr);   // if null, than default cfg file is used
+
     //  * tries to load json file from FS and deserialize it into provided DynamicJsonDocument, returns false on error
     bool loadjson(const char *filepath, DynamicJsonDocument &obj);
+
     void udp(const String &message);
     void udp();
 
@@ -320,7 +321,6 @@ class EmbUI
      */
     void post(JsonObject &data);
 
-    void send_pub();
     String id(const String &tpoic);
 
     // WiFi-related
@@ -352,6 +352,10 @@ class EmbUI
      */
     void setPubInterval(uint16_t _t);
 
+    /**
+     * Publish status data to the WebUI
+     */
+    void send_pub();
 
     /**
      * @brief - set variable's value in the system config object
@@ -362,7 +366,7 @@ class EmbUI
      * beware of dangling pointers here passing non-static char*, use JsonVariant or String instead 
      */
     template <typename T> void var(const String &key, const T& value, bool force = false){
-        if (!force && !cfg.containsKey(key)) {
+        if (!force && cfg[key].isNull()) {
             LOG(printf_P, PSTR("UI ERR: KEY (%s) is NOT initialized!\n"), key.c_str());
             return;
         }

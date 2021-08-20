@@ -187,12 +187,13 @@ void EmbUI::onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProp
     memset(buffer, 0, sizeof(buffer));
     strncpy(buffer, payload, len);
 
-    String tpc = String(topic);
+    String tpc(topic);
     String m_pref = embui.param(FPSTR(P_m_pref)); 
     if (!m_pref.isEmpty()) tpc = tpc.substring(m_pref.length() + 1, tpc.length());
 
     if (tpc.equals(F("embui/get/config"))) {
-        embui.publish(F("embui/pub/config"), embui.deb(), false);    
+        String jcfg; serializeJson(embui.cfg, jcfg);
+        embui.publish(F("embui/pub/config"), jcfg, false);    
     } else if (tpc.startsWith(F("embui/get/"))) {
         String param = tpc.substring(10); // sizeof embui/set/
         if(embui.isparamexists(param))
