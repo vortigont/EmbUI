@@ -176,9 +176,20 @@ enum CallBack : uint8_t {
     TimeSet
 };
 
+typedef void (*buttonCallback) (Interface *interf, JsonObject *data);
+
+typedef struct section_handle_t{
+    String name;
+    buttonCallback callback;
+} section_handle_t;
+
+
 class EmbUI
 {
     friend void mqtt_dummy_connect();
+
+    typedef void (*mqttCallback) ();
+
     // оптимизация расхода памяти, все битовые флаги и другие потенциально "сжимаемые" переменные скидываем сюда
     //#pragma pack(push,1)
     typedef union _BITFIELDS {
@@ -210,13 +221,6 @@ class EmbUI
     //#pragma pack(pop)
 
     bool fsDirty = false;   // флаг поврежденной FS (ошибка монтирования)
-    typedef void (*buttonCallback) (Interface *interf, JsonObject *data);
-    typedef void (*mqttCallback) ();
-
-    typedef struct section_handle_t{
-      String name;
-      buttonCallback callback;
-    } section_handle_t;
 
     DynamicJsonDocument cfg;
     LList<section_handle_t*> section_handle;
@@ -492,6 +496,9 @@ class EmbUI
 
     // Dyn tasks garbage collector
     void taskGC();
+
+    // find callback section matching specified name
+    section_handle_t* sectionlookup(const char *id);
 
 #ifdef USE_SSDP
     void ssdp_begin() {

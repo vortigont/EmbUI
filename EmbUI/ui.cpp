@@ -49,37 +49,6 @@ void Interface::file(const String &name, const String &action, const String &lab
     frame_add_safe(obj.as<JsonObject>());
 }
 
-void Interface::button(const String &id, const String &label, const String &color){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
-    obj[FPSTR(P_html)] = FPSTR(P_button);
-    obj[FPSTR(P_id)] = id;
-    obj[FPSTR(P_color)] = color;
-    obj[FPSTR(P_label)] = label;
-
-    frame_add_safe(obj.as<JsonObject>());
-}
-
-void Interface::button_submit(const String &section, const String &label, const String &color){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
-    obj[FPSTR(P_html)] = FPSTR(P_button);
-    obj[FPSTR(P_submit)] = section;
-    obj[FPSTR(P_color)] = color;
-    obj[FPSTR(P_label)] = label;
-
-    frame_add_safe(obj.as<JsonObject>());
-}
-
-void Interface::button_submit_value(const String &section, const String &value, const String &label, const String &color){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
-    obj[FPSTR(P_html)] = FPSTR(P_button);
-    obj[FPSTR(P_submit)] = section;
-    obj[FPSTR(P_color)] = color;
-    obj[FPSTR(P_label)] = label;
-    obj[FPSTR(P_value)] = value;
-
-    frame_add_safe(obj.as<JsonObject>());
-}
-
 void Interface::spacer(const String &label){
     StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
     obj[FPSTR(P_html)] = F("spacer");

@@ -327,20 +327,17 @@ void EmbUI::begin(){
 void EmbUI::post(JsonObject &data){
     section_handle_t *section = nullptr;
 
-    for (JsonPair kv : data) {
-        const char *kname = kv.key().c_str();
-        for (int i = 0; !section && i < section_handle.size(); i++) {
-            const char *sname = section_handle[i]->name.c_str();
-            const char *mall = strchr(sname, '*');
-            unsigned len = mall? mall - sname - 1 : strlen(kname);
-            if (strncmp(sname, kname, len) == 0) {
-                section = section_handle[i];
-            }
-        };
+    const char *submit = data[FPSTR(P_submit)];
+
+    if ( submit ){  // if it was a form post, than only 'submit' key is checked for matching section, not all data keys
+        section = sectionlookup(submit);
+    } else {        // otherwise scan all possible keys
+        for (JsonPair kv : data)
+            section = sectionlookup(kv.key().c_str());
     }
 
     if (section) {
-        LOG(printf_P, PSTR("\nUI: POST SECTION: %s\n\n"), section->name.c_str());
+        LOG(printf_P, PSTR("UI: POST SECTION: %s\n"), section->name.c_str());
         Interface *interf = new Interface(this, &ws);
         section->callback(interf, &data);
         delete interf;
@@ -542,4 +539,21 @@ void EmbUI::taskGC(){
     delete taskTrash;
     taskTrash = nullptr;
     LOG(printf_P, PSTR("UI: task garbage collect: released %d bytes\n"), ESP.getFreeHeap() - heapbefore);
+}
+
+// find callback section matching specified name
+section_handle_t*  EmbUI::sectionlookup(const char *id){
+    unsigned _l = strlen(id);
+    for (int i = 0; i < section_handle.size(); i++) {
+        if (_l < section_handle[i]->name.length())  // skip sections with longer names, obviously a mismatch
+            continue;
+
+        const char *sname = section_handle[i]->name.c_str();
+        const char *mall = strchr(sname, '*');      // look for 'id*' template sections
+        unsigned len = mall? mall - sname - 1 : _l;
+        if (strncmp(sname, id, len) == 0) {
+            return section_handle[i];
+        }
+    };
+    return nullptr;
 }

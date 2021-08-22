@@ -17,7 +17,7 @@ var render = function(){
 				custom_hook(this.id, d, id);
 			}
 		},
-		on_change: function(d, id) {
+		on_change: function(d, id, val) {
 
 			chkNumeric = function(v){
 				// do not cast empty strings
@@ -32,23 +32,27 @@ var render = function(){
 
 			var value;
 			var type = this.type;
-			//console.log('Ch type: ' + type);
-			switch (type){
-				case 'checkbox':
-					var chbox=document.getElementById(id);
-					if (chbox.checked) value = true;		// send 'checked' state as boolean true/false
-					else value = false;
-					break;
-//				}
-				case 'input':
-				case 'select-one':
-				case 'range':
-					value = chkNumeric(this.value);
-					break;
-				default:
-					value = this.value;
-			}
 
+			// check if value has been supplied by templater
+			if (val !== undefined){
+				value = val;
+			} else {
+				switch (type){
+					case 'checkbox':
+						var chbox=document.getElementById(id);
+						if (chbox.checked) value = true;		// send 'checked' state as boolean true/false
+						else value = false;
+						break;
+					case 'input':
+					case 'select-one':
+					case 'range':
+	//				case 'textarea':
+						value = chkNumeric(this.value);
+						break;
+					default:
+						value = this.value;
+				}
+			}
 			if (this.id != id){
 				custom_hook(this.id, d, id);
 			}
@@ -59,9 +63,14 @@ var render = function(){
 		on_showhide: function(d, id) {
 			go("#"+id).showhide();
 		},
+		/**
+		 *  Process Submited form
+		 *  'submit' key defines action to be taken by the backend
+		 */
 		on_submit: function(d, id, val) {
 			var form = go("#"+id), data = go.formdata(go("input, textarea, select", form));
-			data[id] = val || null;
+			data['submit'] = id;
+			if (val !== undefined) { data[id] = val; }	// submit button _might_ have it's own additional value
 			ws.send_post(data);
 		}
 	},

@@ -102,6 +102,29 @@ class Interface {
      */
     void frame_add_safe(const JsonObject &jobj);
 
+    /**
+     * @brief - create html button to submit itself, value or section form
+     * on press button could send:
+     *  - it's id with null value
+     *  - id + value
+     *  - submit a form with section + it's own id
+     *  - submit a form with section + it's own id + value
+     */
+    template <typename T>
+    void button_generic(const String &id, const T &value, const String &label, const String &color, bool submit){
+        StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
+        obj[FPSTR(P_html)] = FPSTR(P_button);
+        if (color.length())
+            obj[FPSTR(P_color)] = color;
+
+        obj[FPSTR(P_label)] = label;
+
+        obj[ submit ? FPSTR(P_submit) : FPSTR(P_id) ] = id;
+        obj[FPSTR(P_value)] = value;
+
+        frame_add_safe(obj.as<JsonObject>());
+    };
+
 
     public:
         Interface(EmbUI *j, AsyncWebSocket *server, size_t size = IFACE_DYN_JSON_SIZE): json(size), section_stack(){
@@ -358,9 +381,18 @@ class Interface {
         void textarea(const String &id, const String &label);
 
         void file(const String &name, const String &action, const String &label);
-        void button(const String &id, const String &label, const String &color = "");
-        void button_submit(const String &section, const String &label, const String &color = "");
-        void button_submit_value(const String &section, const String &value, const String &label, const String &color = "");
+
+        /**
+         * @brief - create html button
+         * A button can send it's id/value or submit a form with section data
+         */
+        inline void button(const String &id, const String &label, const String &color = ""){ button_generic(id, nullptr, label, color, false); };
+        template <typename T>
+        inline void button_value(const String &id, const T &value, const String &label, const String &color = ""){ button_generic(id, value, label, color, false); };
+        inline void button_submit(const String &section, const String &label, const String &color = ""){ button_generic(section, nullptr, label, color, true); };
+        template <typename T>
+        inline void button_submit_value(const String &section, const T &value, const String &label, const String &color = ""){ button_generic(section, value, label, color, true); };
+
         void spacer(const String &label = "");
         void comment(const String &label = "");
 
