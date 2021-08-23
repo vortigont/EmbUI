@@ -2,6 +2,7 @@
 // then re-written and named by (c) 2020 Anton Zolotarev (obliterator) (https://github.com/anton-zolotarev)
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
 // and others people
+#ifdef EMBUI_UDP
 
 #include "EmbUI.h"
 #include <WiFiUdp.h>
@@ -54,3 +55,4 @@ void EmbUI::udpLoop(){
         delete[] data;
     }
 }
+#endif // EMBUI_UDP

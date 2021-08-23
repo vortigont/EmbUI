@@ -289,8 +289,10 @@ class EmbUI
     //  * tries to load json file from FS and deserialize it into provided DynamicJsonDocument, returns false on error
     bool loadjson(const char *filepath, DynamicJsonDocument &obj);
 
+#ifdef EMBUI_UDP
     void udp(const String &message);
     void udp();
+#endif // EMBUI_UDP
 
     // MQTT
     bool isMQTTconected() { return sysData.mqtt_connected; }
@@ -425,8 +427,6 @@ class EmbUI
     void led_off();
     void led_inv();
 
-    void udpBegin();
-    void udpLoop();
     void btn();
     void getmacid();
 
@@ -481,11 +481,12 @@ class EmbUI
     static void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total);
     static void onMqttPublish(uint16_t packetId);
 
+#ifdef EMBUI_UDP
     unsigned int localUdpPort = UDP_PORT;
-    //char udpRemoteIP[16];
-    String incomingPacket;
     String udpMessage; // буфер для сообщений Обмена по UDP
-    unsigned long astimer;
+    void udpBegin();
+    void udpLoop();
+#endif // EMBUI_UDP
 
     // callback pointers
     callback_function_t _cb_STAConnected = nullptr;

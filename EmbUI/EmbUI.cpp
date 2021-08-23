@@ -423,10 +423,13 @@ void EmbUI::led(uint8_t pin, bool invert){
 
 void EmbUI::handle(){
     mqtt_handle();
-    udpLoop();
     ts.execute();           // run task scheduler
     //btn();
     //led_handle();
+
+#ifdef EMBUI_UDP
+    void udpLoop();
+#endif // EMBUI_UDP
 }
 
 /**
