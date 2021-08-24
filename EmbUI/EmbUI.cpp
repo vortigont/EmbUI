@@ -560,3 +560,15 @@ section_handle_t*  EmbUI::sectionlookup(const char *id){
     };
     return nullptr;
 }
+
+void EmbUI::var_dropnulls(const String &key, const char* value){
+    (value && *value) ? var(key, (char*)value, true ) : var_remove(key);    // deep copy
+};
+
+void EmbUI::var_dropnulls(const String &key, JsonVariant value){
+    if (value.is<const char*>()){
+        var_dropnulls(key, value.as<const char*>());
+        return;
+    }
+    value ? var(key, value, true ) : var_remove(key);
+};

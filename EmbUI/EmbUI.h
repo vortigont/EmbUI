@@ -111,6 +111,12 @@ class Interface;
     call; \
 }
 
+// Saves non-null keys, otherwise - removes key
+#define SETPARAM_NONULL(key, call...) { \
+    embui.var_dropnulls(key, (JsonVariant)(*data)[key]); \
+    call; \
+}
+
 #define CALL_SETTER(key, val, call) { \
     obj[key] = val; \
     call(nullptr, &obj); \
@@ -318,6 +324,7 @@ class EmbUI
     void publish(const String &topic, const String &payload, bool retained);
     void publishto(const String &topic, const String &payload, bool retained);
     void remControl();
+    String id(const String &tpoic);
 
     /**
      * @brief - process posted data for the registered action
@@ -326,8 +333,6 @@ class EmbUI
      * looks for registered action for the section name and calls the action with post data if found
      */
     void post(JsonObject &data);
-
-    String id(const String &tpoic);
 
     // WiFi-related
     /**
@@ -377,16 +382,20 @@ class EmbUI
             return;
         }
 
-        String _v=value;
-        if ((cfg.capacity() - cfg.memoryUsage()) < _v.length()+16){
+        // do not update key if new value is the same as existing one
+        if ((cfg[key] == value)){
+            LOG(printf_P, PSTR("UI: skip same value for KEY:'%s'\n"), key.c_str());
+            return;
+        }
+
+        if ((cfg.capacity() - cfg.memoryUsage()) < 42){ // you know that 42 is THE answer, right?
             // cfg is out of mem, try to compact it
-            //size_t mem = cfg.memoryUsage();
             cfg.garbageCollect();
             LOG(printf_P, PSTR("UI: cfg garbage cleanup: %u free out of %u\n"), cfg.capacity() - cfg.memoryUsage(), cfg.capacity());
         }
 
         if (cfg[key].set(value)){
-            LOG(printf_P, PSTR("UI cfg WRITE key:'%s' val:'%s...', cfg mem free: %d\n"), key.c_str(), _v.substring(0, 15).c_str(), cfg.capacity() - cfg.memoryUsage());
+            LOG(printf_P, PSTR("UI cfg WRITE key:'%s' val:'%s...', cfg mem free: %d\n"), key.c_str(), cfg[key].as<String>().substring(0, 5).c_str(), cfg.capacity() - cfg.memoryUsage());
             autosave();
             return;
         }
@@ -398,13 +407,54 @@ class EmbUI
      * @brief - create varialbe template
      * it accepts types suitable to be added to the ArduinoJson cfg document used as a dictionary
      */
-    template <typename T> void var_create(const String &key, const T& value){
-        if(cfg[key].isNull()){
-            cfg[key].set(value);
-            LOG(printf_P, PSTR("UI CREATE key: (%s) value: (%s) RAM: %d\n"), key.c_str(), String(value).substring(0, 15).c_str(), ESP.getFreeHeap());
+    template <typename T>
+    inline void var_create(const String &key, const T& value){ if(cfg[key].isNull()){var(key, value, true );} }
+
+    /**
+     * @brief - remove key from config
+     */
+    void var_remove(const String &key){
+        if (!cfg[key].isNull()){
+            LOG(printf_P, PSTR("UI cfg REMOVE key:'%s'\n"), key.c_str());
+            cfg.remove(key);
             autosave();
         }
-    };
+    }
+
+    /**
+     * @brief create/update cfg key only with non-null value
+     If value casted to <bool> returns 'true' than provided config key is created/updated,
+     otherwise key is to be removed from config (if exist). This could be used to reduce doc size and
+     does not keep any keys with default "null-ish" values, like:
+        bools == false
+        int == 0
+        *char == ""
+     Note: removing existing key leaks dict memory, should NOT be used for frequently modified keys
+
+     *
+     * @tparam T ArduinoJson acceptable types
+     * @param key - config key
+     * @param value - keys' value
+     */
+    template <typename T>
+    void var_dropnulls(const String &key, const T& value){
+/*
+    // C++17, cant't build for esp32
+        if constexpr (std::is_same_v<T, const char*>){  // check if pointed str is not empty ""
+            (value && *value) ? var(key, (char*)value, true ) : var_remove(key);    // deep copy
+            return;
+        }
+        if constexpr (std::is_same_v<T, JsonVariant>){  // JVars that points to strings must be treaded differently
+            JsonVariant _v = value;
+            _v.is<const char*>() ? var_dropnulls(key, _v.as<const char*>()) : var_remove(key);
+            return;
+        }
+*/
+        value ? var(key, value, true ) : var_remove(key);
+    }
+
+    void var_dropnulls(const String &key, const char* value);
+    void var_dropnulls(const String &key, JsonVariant value);
 
     /**
      * @brief - initialize/restart config autosave timer
