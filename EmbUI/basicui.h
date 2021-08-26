@@ -18,7 +18,7 @@ extern uint8_t lang;
 
 // UI blocks
 static const char T_SETTINGS[] PROGMEM = "settings";
-static const char T_OPT_NETW[] PROGMEM = "networking";
+static const char T_OPT_NETW[] PROGMEM = "netwrk";
 
 // UI handlers
 static const char T_DO_OTAUPD[] PROGMEM = "update";
@@ -26,10 +26,13 @@ static const char T_SET_WIFI[] PROGMEM = "set_wifi";
 static const char T_SET_WIFIAP[] PROGMEM = "set_wifiAP";
 static const char T_SET_MQTT[] PROGMEM = "set_mqtt";
 static const char T_SET_TIME[] PROGMEM = "set_time";
+static const char T_SET_HOSTNAME[] PROGMEM = "shname";
 
-static const char T_SH_NETW[] PROGMEM = "sh_netw";
-static const char T_SH_TIME[] PROGMEM = "sh_time";
+static const char T_SH_SECT[] PROGMEM = "sh_sec";
 static const char T_REBOOT[] PROGMEM = "reboot";
+
+// Strings
+static const char T_GNRL_SETUP[] PROGMEM = "General setup";
 
 /*
     перенакрываемая функция для добавления пользовательских пунктов в меню "Настройки"
@@ -62,7 +65,10 @@ class BasicUI {
    */
   static void opt_setup(Interface *interf, JsonObject *data);
 
+    static void show_section(Interface *interf, JsonObject *data);
+    static void block_settings_gnrl(Interface *interf, JsonObject *data);
     static void block_settings_netw(Interface *interf, JsonObject *data);
+    static void block_settings_mqtt(Interface *interf, JsonObject *data);
     static void block_settings_update(Interface *interf, JsonObject *data);
     static void block_settings_time(Interface *interf, JsonObject *data);
 
@@ -74,5 +80,6 @@ class BasicUI {
     static void set_language(Interface *interf, JsonObject *data);
     static void embuistatus(Interface *interf);
     static void set_reboot(Interface *interf, JsonObject *data);
+    static void set_hostname(Interface *interf, JsonObject *data);
     //uint8_t uploadProgress(size_t len, size_t total);
 };
