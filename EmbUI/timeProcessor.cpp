@@ -25,7 +25,11 @@
  #include <HTTPClient.h>
 #endif
 
-#define TZ_DEFAULT PSTR("GMT0")         // default Time-Zone
+#ifndef TZONE
+#define TZONE PSTR("GMT0")         // default Time-Zone
+#endif
+
+// stub zone for a  <+-nn> names
 static const char P_LOC[] PROGMEM = "LOC";
 
 // static member must be defined outside the class
@@ -42,13 +46,7 @@ TimeProcessor::TimeProcessor()
     sntp_set_time_sync_notification_cb( [](struct timeval *tv){ timeavailable(tv);} );
 #endif
 
-    #ifdef TZONE
-        configTzTime(TZONE, ntp1, ntp2);
-        LOG(print, F("TIME: Time Zone set to: "));      LOG(print, TZONE);
-    #else
-        configTzTime(TZ_DEFAULT, ntp1, ntp2);
-    #endif
-
+    configTzTime(TZONE, ntp1, ntp2, ntpCustom.get());
     sntp_stop();    // отключаем ntp пока нет подключения к AP
 }
 
@@ -57,16 +55,6 @@ String TimeProcessor::getFormattedShortTime()
     char buffer[6];
     sprintf_P(buffer,PSTR("%02u:%02u"), localtime(now())->tm_hour, localtime(now())->tm_min);
     return String(buffer);
-}
-
-/**
- * по идее это функция установки времени из гуя.
- * Но похоже что выставляет она только часы и минуты, и то не очень понятно куда?
- * надо переделать под выставление даты/веремени из браузера (например) когда нормально заработает гуй
- */
-void TimeProcessor::setTime(const char *timestr){
-    String _str(timestr);
-    setTime(_str);
 }
 
 /**
@@ -115,9 +103,7 @@ void TimeProcessor::tzsetup(const char* tz){
      */
     if (tz[0] == 0x3C){     // check if first char is '<'
       String _tz(tz);
-      String _tzfix((char *)0);
-      _tzfix.reserve(sizeof(tz)) ;
-      _tzfix += FPSTR(P_LOC);
+      String _tzfix(FPSTR(P_LOC));
       if (_tz.indexOf('<',1) > 0){  // there might be two <> quotes
     	//LOG(print, "2nd pos: "); LOG(println, _tz.indexOf('<',1)); 
         _tzfix += _tz.substring(_tz.indexOf('>')+1, _tz.indexOf('<',1));
@@ -201,7 +187,7 @@ void TimeProcessor::setOffset(const int val){
         sntp_set_timezone_in_seconds(val);
     #elif defined ESP32
         //setTimeZone((long)val, 0);    // this breaks linker in some weird way
-        configTime((long)val, 0, ntp1, ntp2, "");
+        configTime((long)val, 0, ntp1, ntp2);
     #endif
 }
 
@@ -218,11 +204,31 @@ long int TimeProcessor::getOffset(){
 
 void TimeProcessor::setcustomntp(const char* ntp){
     if (!ntp || !*ntp)
-             return;
+        return;
 
-    sntp_setservername(CUSTOM_NTP_INDEX, (char*)ntp);
-    LOG(printf_P, PSTR("Set custom NTP to: %s\n"), ntp);
+    ntpCustom.reset(strcpy(new char[strlen(ntp) + 1], ntp));
+
+    sntp_setservername(CUSTOM_NTP_INDEX, ntpCustom.get());
+    LOG(printf_P, PSTR("Set custom NTP to: %s\n"), ntpCustom.get());
 }
+
+/**
+ * @brief - retreive NTP server name or IP
+ */
+String TimeProcessor::getserver(uint8_t idx){
+    if (sntp_getservername(idx)){
+        return String(sntp_getservername(idx));
+    } else {
+#ifdef ESP8266
+        IPAddress addr(sntp_getserver(idx));
+#endif
+#ifdef ESP32
+        const ip_addr_t * _ip = sntp_getserver(idx);
+        IPAddress addr(_ip->u_addr.ip4.addr);
+#endif
+        return addr.toString();
+    }
+};
 
 /**
  * Attach user-defined call-back function that would be called on time-set event
@@ -232,6 +238,17 @@ void TimeProcessor::attach_callback(callback_function_t callback){
     timecb = std::move(callback);
 }
 
+
+void TimeProcessor::ntpodhcp(bool enable){
+    sntp_servermode_dhcp(enable);
+
+    if (!enable){
+        LOG(println, F("TIME: Disabling NTP over DHCP"));
+        sntp_setservername(0, (char*)ntp1);
+        sntp_setservername(1, (char*)ntp2);
+        sntp_setservername(CUSTOM_NTP_INDEX, ntpCustom.get());
+    }
+};
 
 
 #ifdef USE_WORLDTIMEAPI

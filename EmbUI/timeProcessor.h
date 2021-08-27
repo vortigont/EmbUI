@@ -24,10 +24,16 @@
 #endif
 #endif
 
-#define CUSTOM_NTP_INDEX    2
+#ifdef ESP8266
+    #define CUSTOM_NTP_INDEX    2
+#endif
+#ifdef ESP32
+    #define CUSTOM_NTP_INDEX    0
+#endif
+
 #define TM_BASE_YEAR        1900
 #define DAYSECONDS          (86400U)
-#define DATETIME_STRLEN     (19U)   // buffer for data/time string "YYYY-MM-DDThh:mm:ss"
+#define DATETIME_STRLEN     (16U)   // ISO data/time string "YYYY-MM-DDThh:mm:ss", seconds optional
 
 
 // TimeProcessor class is a Singleton
@@ -38,6 +44,7 @@ private:
 
     const char* ntp1 = NTP1ADDRESS;
     const char* ntp2 = NTP2ADDRESS;
+    std::unique_ptr<char[]> ntpCustom;   // pointer for custom ntp hostname
 
 protected:
     static callback_function_t timecb;
@@ -84,8 +91,8 @@ public:
      * Функция установки системного времени, принимает в качестве аргумента указатель на строку в формате
      * "YYYY-MM-DDThh:mm:ss"
      */
-    static void setTime(const char *timestr);
     static void setTime(const String &timestr);
+    static inline void setTime(const char *timestr){ setTime(String (timestr)); };
 
     /**
      * установки системной временной зоны/правил сезонного времени.
@@ -105,6 +112,11 @@ public:
      * @param ntp - сервер в виде ip или hostname
      */
     void setcustomntp(const char* ntp);
+
+    /**
+     * @brief - retreive NTP server name or IP
+     */
+    String getserver(uint8_t idx);
 
     /**
      *  установка смещения текущего системного времени от UTC в секундах
@@ -176,6 +188,11 @@ public:
         else
           return true;
     }
+
+    /**
+     * @brief enable/disable NTP over DHCP
+     */
+    void ntpodhcp(bool enable);
 
 };
 
