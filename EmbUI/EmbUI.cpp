@@ -146,8 +146,12 @@ void EmbUI::begin(){
     #endif
 
     // восстанавливаем настройки времени
-    timeProcessor.tzsetup(param(FPSTR(P_TZSET)).substring(4).c_str());
-    timeProcessor.setcustomntp(param(FPSTR(P_userntp)).c_str());
+    timeProcessor.setcustomntp(paramVariant(FPSTR(P_userntp)).as<const char*>());
+    timeProcessor.tzsetup(param(FPSTR(P_TZSET)).substring(4).c_str());  // cut off 4 chars of html selector index
+#ifndef ESP32
+    if (paramVariant(FPSTR(P_noNTPoDHCP)))
+        timeProcessor.ntpodhcp(false);
+#endif
 
     // запускаем WiFi
     wifi_init();
@@ -486,8 +490,6 @@ void EmbUI::create_sysvars(){
     var_create(FPSTR(P_m_pref), embui.mc);             // MQTT topic == use ESP MAC address
     var_create(FPSTR(P_m_tupd), TOSTRING(MQTT_PUB_PERIOD));              // интервал отправки данных по MQTT в секундах
     // date/time related vars
-    var_create(FPSTR(P_TZSET), "");                   // TimeZone/DST rule (empty value == GMT/no DST)
-    var_create(FPSTR(P_userntp), "");                 // Backup NTP server
 }
 
 /**

@@ -67,7 +67,7 @@ void BasicUI::section_settings_frame(Interface *interf, JsonObject *data){
 
     //interf->button_value(FPSTR(T_SH_SECT), 0, FPSTR(T_GNRL_SETUP));                 // кнопка перехода в общие настройки
     interf->button_value(FPSTR(T_SH_SECT), 1, FPSTR(T_DICT[lang][TD::D_WiFi]));     // кнопка перехода в настройки сети
-    interf->button_value(FPSTR(T_SH_SECT), 2, FPSTR(T_DICT[lang][TD::D_Time]));     // кнопка перехода в настройки времени
+    interf->button_value(FPSTR(T_SH_SECT), 2, FPSTR(T_DICT[lang][TD::D_DATETIME]));     // кнопка перехода в настройки времени
     interf->button_value(FPSTR(T_SH_SECT), 3, FPSTR(T_EN_MQTT));     // кнопка перехода в настройки MQTT
 
 
@@ -213,10 +213,29 @@ void BasicUI::block_settings_time(Interface *interf, JsonObject *data){
     // Headline
     interf->json_section_main(FPSTR(T_SET_TIME), FPSTR(T_DICT[lang][TD::D_DATETIME]));
 
+    // Simple Clock display
+    String clk(F("Device time: ")); TimeProcessor::getDateTimeString(clk);
+    interf->constant(FPSTR(P_null), "", clk);
+
     interf->comment(FPSTR(T_DICT[lang][TD::D_MSG_TZSet01]));     // комментарий-описание секции
 
     // сперва рисуем простое поле с текущим значением правил временной зоны из конфига
     interf->text(FPSTR(P_TZSET), FPSTR(T_DICT[lang][TD::D_MSG_TZONE]));
+
+    interf->json_section_line();
+    interf->comment(F("NTP Servers"));
+
+// esp32 is not (yet) supported, see https://github.com/espressif/esp-idf/pull/7336
+#ifndef ESP32
+    interf->checkbox(FPSTR(P_noNTPoDHCP), F("Disable NTP over DHCP"));
+#endif
+    interf->json_section_end(); // line
+
+    interf->json_section_line();
+    for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
+        interf->constant(String(i), "", TimeProcessor::getInstance().getserver(i));
+
+    interf->json_section_end(); // line
 
     // user-defined NTP server
     interf->text(FPSTR(P_userntp), FPSTR(T_DICT[lang][TD::D_NTP_Secondary]));
@@ -232,17 +251,15 @@ void BasicUI::block_settings_time(Interface *interf, JsonObject *data){
     interf->button(FPSTR(T_SETTINGS), FPSTR(T_DICT[lang][TD::D_EXIT]));
 
     // close and send frame
-    interf->json_section_end();
-    interf->json_frame_flush();
+    interf->json_frame_flush(); // main
 
     // формируем и отправляем кадр с запросом подгрузки внешнего ресурса со списком правил временных зон
     // полученные данные заместят предыдущее поле выпадающим списком с данными о всех временных зонах
     interf->json_frame_custom(F("xload"));
     interf->json_section_content();
-                    //id            val                         label   direct  skipl URL for external data
-    interf->select(FPSTR(P_TZSET), embui.param(FPSTR(P_TZSET)), "",     false,  true, F("/js/tz.json"));
-    interf->json_section_end();
-    interf->json_frame_flush();
+                    //id           val                                 label direct  skipl URL for external data
+    interf->select(FPSTR(P_TZSET), embui.paramVariant(FPSTR(P_TZSET)),   "", false,  true, F("/js/tz.json"));
+    interf->json_frame_flush(); // xload
 
 }
 
@@ -327,13 +344,18 @@ void BasicUI::set_settings_time(Interface *interf, JsonObject *data){
     if (!data) return;
 
     // Save and apply timezone rules
+    SETPARAM_NONULL(FPSTR(P_TZSET))
+
     String tzrule = (*data)[FPSTR(P_TZSET)];
     if (!tzrule.isEmpty()){
-        SETPARAM(FPSTR(P_TZSET));
         embui.timeProcessor.tzsetup(tzrule.substring(4).c_str());   // cutoff '000_' prefix key
     }
 
-    SETPARAM(FPSTR(P_userntp), embui.timeProcessor.setcustomntp((*data)[FPSTR(P_userntp)]));
+    SETPARAM_NONULL(FPSTR(P_userntp), embui.timeProcessor.setcustomntp((*data)[FPSTR(P_userntp)]));
+
+#ifndef ESP32
+    SETPARAM_NONULL( FPSTR(P_noNTPoDHCP), embui.timeProcessor.ntpodhcp(!(*data)[FPSTR(P_noNTPoDHCP)]) )
+#endif
 
     LOG(printf_P,PSTR("UI: devicedatetime=%s\n"),(*data)[FPSTR(P_DEVICEDATETIME)].as<String>().c_str());
 

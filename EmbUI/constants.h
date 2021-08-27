@@ -55,6 +55,7 @@ static const char P_userntp[] PROGMEM = "userntp";      // user-defined NTP serv
 static const char P_DTIME[] PROGMEM = "datetime";
 static const char P_LANGUAGE[] PROGMEM = "lang";        // UI language
 static const char P_DEVICEDATETIME[] PROGMEM = "devicedatetime"; // hidden field for browser's date
+static const char P_noNTPoDHCP[] PROGMEM = "ntpod";     // Disable NTP over DHCP
 
 // WiFi vars
 static const char P_WCSSID[] PROGMEM = "wcssid";        // WiFi-Client SSID
