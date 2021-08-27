@@ -35,10 +35,6 @@ void Interface::constant(const String &id, const String &value, const String &la
     frame_add_safe(obj.as<JsonObject>());
 }
 
-void Interface::checkbox(const String &id, const String &label, const bool directly){
-    checkbox(id, embui->paramVariant(id).as<bool>(), label, directly);
-}
-
 void Interface::file(const String &name, const String &action, const String &label){
     StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
     obj[FPSTR(P_html)] = FPSTR(P_file);
@@ -52,7 +48,7 @@ void Interface::file(const String &name, const String &action, const String &lab
 void Interface::spacer(const String &label){
     StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
     obj[FPSTR(P_html)] = F("spacer");
-    if (label != "") obj[FPSTR(P_label)] = label;
+    if (label.length()) obj[FPSTR(P_label)] = label;
 
     frame_add_safe(obj.as<JsonObject>());
 }
@@ -60,14 +56,11 @@ void Interface::spacer(const String &label){
 void Interface::comment(const String &label){
     StaticJsonDocument<IFACE_STA_JSON_SIZE * 2> obj;
     obj[FPSTR(P_html)] = F("comment");
-    if (label != "") obj[FPSTR(P_label)] = label;
+    if (label.length()) obj[FPSTR(P_label)] = label;
 
     frame_add_safe(obj.as<JsonObject>());
 }
 
-void Interface::textarea(const String &id, const String &label){
-    textarea(id, embui->paramVariant(id), label);
-}
 
 ///////////////////////////////////////
 
@@ -142,10 +135,6 @@ void Interface::json_frame_flush(){
     json_section_end();
     json_frame_send();
     json_frame_clear();
-}
-
-void Interface::json_section_content(){
-    json_section_begin(F("content"));
 }
 
 void Interface::json_section_line(const String &name){

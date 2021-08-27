@@ -157,7 +157,7 @@ class Interface {
          * @brief - begin Interface UI secton
          * used to construct WebUI html elements
          */
-        void json_frame_interface(){ json_frame(F("interface")); };
+        inline void json_frame_interface(){ json_frame(F("interface")); };
         void json_frame_interface(const String &name);
 
         /**
@@ -183,14 +183,43 @@ class Interface {
          */
         inline void json_frame_custom(const String &type){ json_frame(type); };
 
+        /**
+         * @brief - start UI section
+         * A section contains html UI elements, this is generic one
+         */
         void json_section_begin(const String &name, const String &label = "", bool main = false, bool hidden = false, bool line = false);
         void json_section_begin(const String &name, const String &label, bool main, bool hidden, bool line, JsonObject obj);
 
-        void json_section_content();
+        /**
+         * @brief - content section is meant to replace existing data on the page
+         */
+        inline void json_section_content(){ json_section_begin(F("content")); };
+
+        /**
+         * @brief - opens section for UI elements that are aligned in one line on a page
+         * each json_section_line() must be closed by a json_section_end() call
+         */
         void json_section_line(const String &name = "");
+
+        /**
+         * @brief - start a section with left-side MENU elements
+         */
         inline void json_section_menu(){ json_section_begin(FPSTR(P_menu)); };
+
+        /**
+         * @brief - start a section with a new page content
+         * it replaces current page from scratch, may contain other nested sections
+         */
         inline void json_section_main(const String &name, const String &label){ json_section_begin(name, label, true); };
+
+        /**
+         * @brief - start hidden UI section with button to hide/unhide elements
+         */
         inline void json_section_hidden(const String &name, const String &label){ json_section_begin(name, label, false, true); };
+
+        /**
+         * @brief - close current UI section
+         */
         void json_section_end();
 
         void frame(const String &id, const String &value);
@@ -248,25 +277,14 @@ class Interface {
         void text(const String &id, const T &value, const String &label, bool directly){ html_input(id, F("text"), value, label, directly); };
         inline void text(const String &id, const String &label, bool directly = false){ text(id, embui->paramVariant(id), label, directly); };
 
-        void password(const String &id, const String &value, const String &label){ html_input(id, FPSTR(P_password), value, label); };
+        template <typename T>
+        void password(const String &id, const T &value, const String &label){ html_input(id, FPSTR(P_password), value, label); };
         inline void password(const String &id, const String &label){ password(id, embui->paramVariant(id), label); };
-
-        inline void number(const String &id, const String &label){ number(id, embui->paramVariant(id), label, 0); };
 
         /**
          * @brief - create "number" html field with optional step, min, max constraints
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
-        template <typename T>
-        void number(const String &id, const String &label, T step = 0, T min = 0, T max = 0){
-            number(id, embui->paramVariant(id), label, step, min, max);
-        };
-
-        template <typename V>
-        void number(const String &id, V value, const String &label){
-            number(id, value, label, 0);
-        };
-
         template <typename V, typename T>
         void number(const String &id, V value, const String &label, T step, T min = 0, T max = 0){
             StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
@@ -282,13 +300,25 @@ class Interface {
             frame_add_safe(obj.as<JsonObject>());
         };
 
+        inline void number(const String &id, const String &label){ number(id, embui->paramVariant(id), label, 0); };
+
+        template <typename T>
+        inline void number(const String &id, const String &label, T step = 0, T min = 0, T max = 0){
+            number(id, embui->paramVariant(id), label, step, min, max);
+        };
+
+        template <typename V>
+        inline void number(const String &id, V value, const String &label){
+            number(id, value, label, 0);
+        };
+
         template <typename T>
         void time(const String &id, const T &value, const String &label){ html_input(id, FPSTR(P_time), value, label); };
         inline void time(const String &id, const String &label){ time(id, embui->paramVariant(id), label); };
 
         template <typename T>
         void date(const String &id, const T &value, const String &label){ html_input(id, FPSTR(P_date), value, label); };
-        inline void date(const String &id, const String &label){ time(id, embui->paramVariant(id), label); };
+        inline void date(const String &id, const String &label){ date(id, embui->paramVariant(id), label); };
 
         template <typename T>
         void datetime(const String &id, const T &value, const String &label){ html_input(id, F("datetime-local"), value, label); };
@@ -367,7 +397,7 @@ class Interface {
          * @param directly - значение чекбокса при изменении сразу передается на сервер без отправки формы
          */
         void checkbox(const String &id, const bool value, const String &label, const bool directly = false){ html_input(id, F("checkbox"), value, label, directly); };
-        void checkbox(const String &id, const String &label, const bool directly = false);
+        inline void checkbox(const String &id, const String &label, const bool directly = false){ checkbox(id, embui->paramVariant(id).as<bool>(), label, directly); };
 
         void color(const String &id, const String &value, const String &label){ html_input(id, FPSTR(P_color), value, label); };
         inline void color(const String &id, const String &label){ color(id, embui->paramVariant(id), label); };
@@ -378,7 +408,7 @@ class Interface {
          */
         template <typename T>
         void textarea(const String &id, const T &value, const String &label){ html_input(id, F("textarea"), value, label); };
-        void textarea(const String &id, const String &label);
+        inline void textarea(const String &id, const String &label){ textarea(id, embui->paramVariant(id), label); };
 
         void file(const String &name, const String &action, const String &label);
 
@@ -386,12 +416,10 @@ class Interface {
          * @brief - create html button
          * A button can send it's id/value or submit a form with section data
          */
-        inline void button(const String &id, const String &label, const String &color = ""){ button_generic(id, nullptr, label, color, false); };
-        template <typename T>
-        inline void button_value(const String &id, const T &value, const String &label, const String &color = ""){ button_generic(id, value, label, color, false); };
-        inline void button_submit(const String &section, const String &label, const String &color = ""){ button_generic(section, nullptr, label, color, true); };
-        template <typename T>
-        inline void button_submit_value(const String &section, const T &value, const String &label, const String &color = ""){ button_generic(section, value, label, color, true); };
+        inline void button(const String &id, const String &label, const String &color = ""){ button_generic(id, "", label, color, false); };
+        inline void button_value(const String &id, const String &value, const String &label, const String &color = ""){ button_generic(id, value, label, color, false); };
+        inline void button_submit(const String &section, const String &label, const String &color = ""){ button_generic(section, "", label, color, true); };
+        inline void button_submit_value(const String &section, const String &value, const String &label, const String &color = ""){ button_generic(section, value, label, color, true); };
 
         void spacer(const String &label = "");
         void comment(const String &label = "");
@@ -426,10 +454,10 @@ class Interface {
          * @param params - additional parameters (reserved for future use)
          */
         template <typename T>
-        void display(const String &id, const T &value, const String &css = String(), const JsonObject &params = JsonObject() ){
-            String cssclass(css);   // make css slector like "class id", id used as a secondary distinguisher 
+        void display(const String &id, const T &value, const String &css = "", const JsonObject &params = JsonObject() ){
+            String cssclass(css);   // make css selector like "class id", id used as a secondary distinguisher 
             if (!css.length())
-                cssclass += F("display");
+                cssclass += F("display");   // "display is the default css selector"
             cssclass += F(" ");
             cssclass += id;
             custom(id, F("txt"), value, cssclass, params);
