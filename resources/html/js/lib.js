@@ -359,7 +359,11 @@ var mustache = function(tmpl,func){
 				return this._func[name].apply(this, arg);
 			}
 			out = go.path(data, name, stack);
-			return (typeof out != 'undefined')? out : "";
+			// treat undef/null values as empty string ""
+			if (typeof out == 'undefined' || typeof out == 'object')
+				return "";
+
+			return out;
 		}, this));
 		return tmpl;
 	}
