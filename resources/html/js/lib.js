@@ -34,10 +34,8 @@ go.formdata = function(form){
 		}
 	},
 	chkNumeric = function(element){
-		// do not cast empty strings
-		if (typeof element.value === 'string' && element.value == ""){
-			return element.value;
-		}
+		// cast empty strings to null
+		if (typeof element.value == 'string' && element.value == "") return null;
 
 		if(isFinite(element.value)){
 			return Number(element.value);

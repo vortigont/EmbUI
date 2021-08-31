@@ -20,14 +20,12 @@ var render = function(){
 		on_change: function(d, id, val) {
 
 			chkNumeric = function(v){
-				// do not cast empty strings
-				if (typeof v === 'string' && v == ""){
-					return v;
-				}
-				if(isFinite(v)){
+				// cast empty strings to null
+				if (typeof v == 'string' && v == "") return null;
+				if(isFinite(v))
 					return Number(v);
-				} else {
-				return v; }
+				else
+					return v;
 			};
 
 			var value;
@@ -46,9 +44,14 @@ var render = function(){
 					case 'input':
 					case 'select-one':
 					case 'range':
-	//				case 'textarea':
 						value = chkNumeric(this.value);
 						break;
+					case 'textarea':	// cast empty strings to null
+					if (typeof this.value == 'string' && this.value == "")
+						value = null;
+					else
+						value = this.value;
+					break;
 					default:
 						value = this.value;
 				}
