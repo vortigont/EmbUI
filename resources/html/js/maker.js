@@ -1,3 +1,17 @@
+/**
+ * A placeholder for user js-function that could be executed on button click
+ * any user-specific funcs could be appended here
+ * 
+ * UI method to create interactive button is
+ * Interface::button_js(const String &id, const String &label, const String &color = "", const T &value = nullptr)
+ * where:
+ *  'id' is function selector,
+ * 	'val' is passed value
+ */
+var customFuncs = {
+	//func1: function () {     console.log('Called func 1'); },
+	//func2: function () {     console.log('Called func 2'); }
+};
 
 var global = {menu_id:0, menu: [], value:{}};
 
@@ -73,8 +87,15 @@ var render = function(){
 		on_submit: function(d, id, val) {
 			var form = go("#"+id), data = go.formdata(go("input, textarea, select", form));
 			data['submit'] = id;
-			if (val !== undefined) { data[id] = val; }	// submit button _might_ have it's own additional value
+			if (val !== undefined && typeof val !== 'object') { data[id] = val; }	// submit button _might_ have it's own additional value
 			ws.send_post(data);
+		},
+		// run custom user-js function
+		on_js: function(d, id, val) {
+			if (id in customFuncs)
+				customFuncs[id](val);
+			else
+				console.log("Custom func undefined: ", id);
 		}
 	},
 	tmpl_section = new mustache(go("#tmpl_section")[0], fn_section),

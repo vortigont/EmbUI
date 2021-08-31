@@ -28,6 +28,14 @@
 #define IFACE_STA_JSON_SIZE SMALL_JSON_SIZE
 #define FRAME_ADD_RETRY 5
 
+// UI Button type enums
+enum BType : uint8_t {
+    generic = (0U),
+    submit,
+    js
+};
+
+
 class frameSend {
     public:
         virtual ~frameSend(){};
@@ -111,16 +119,15 @@ class Interface {
      *  - submit a form with section + it's own id + value
      */
     template <typename T>
-    void button_generic(const String &id, const T &value, const String &label, const String &color, bool submit){
+    void button_generic(const String &id, const T &value, const String &label, const String &color, BType type = generic){
         StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
         obj[FPSTR(P_html)] = FPSTR(P_button);
-        if (color.length())
-            obj[FPSTR(P_color)] = color;
-
+        obj[FPSTR(P_id)] = id;
+        obj[FPSTR(P_type)] = (uint8_t)type;
         obj[FPSTR(P_label)] = label;
-
-        obj[ submit ? FPSTR(P_submit) : FPSTR(P_id) ] = id;
         obj[FPSTR(P_value)] = value;
+        if (!color.isEmpty())
+            obj[FPSTR(P_color)] = color;
 
         frame_add_safe(obj.as<JsonObject>());
     };
@@ -269,8 +276,21 @@ class Interface {
             frame_add_safe(obj.as<JsonObject>());
         }
 
-        void constant(const String &id, const String &value, const String &label);
-        void constant(const String &id, const String &label){ constant(id, embui->paramVariant(id), label); };
+        /**
+         * @brief Create inactive button with a visible label that does nothing but (possibly) carries value
+         *  could be used the same way as 'hidden' element
+         */
+        template <typename T>
+        void constant(const String &id, const T &value, const String &label){
+            StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
+            obj[FPSTR(P_html)] = F("const");
+            obj[FPSTR(P_id)] = id;
+            obj[FPSTR(P_value)] = value;
+            obj[FPSTR(P_label)] = label;
+
+            frame_add_safe(obj.as<JsonObject>());
+        };
+        inline void constant(const String &id, const String &label){ constant(id, embui->paramVariant(id), label); };
 
         // 4-й параметр обязателен, т.к. компилятор умудряется привести F() к булевому виду и использует неверный оверлоад (под esp32)
         template <typename T>
@@ -416,10 +436,18 @@ class Interface {
          * @brief - create html button
          * A button can send it's id/value or submit a form with section data
          */
-        inline void button(const String &id, const String &label, const String &color = ""){ button_generic(id, "", label, color, false); };
-        inline void button_value(const String &id, const String &value, const String &label, const String &color = ""){ button_generic(id, value, label, color, false); };
-        inline void button_submit(const String &section, const String &label, const String &color = ""){ button_generic(section, "", label, color, true); };
-        inline void button_submit_value(const String &section, const String &value, const String &label, const String &color = ""){ button_generic(section, value, label, color, true); };
+        inline void button(const String &id, const String &label, const String &color = ""){ button_generic(id, nullptr, label, color); };
+        template <typename T>
+        inline void button_value(const String &id, const T &value, const String &label, const String &color = ""){ button_generic(id, value, label, color); };
+        inline void button_submit(const String &section, const String &label, const String &color = ""){ button_generic(section, nullptr, label, color, BType::submit); };
+        template <typename T>
+        inline void button_submit_value(const String &section, const T &value, const String &label, const String &color = ""){ button_generic(section, value, label, color, BType::submit); };
+        // Run user-js function on click, id - acts as a js function selector
+        inline void button_js(const String &id, const String &label, const String &color = ""){ button_generic(id, nullptr, label, color, BType::js); };
+        // Run user-js function on click, id - acts as a js function selector, value - any additional value or object passed to js function
+        template <typename T>
+        inline void button_js_value(const String &id, const T &value, const String &label, const String &color = ""){ button_generic(id, value, label, color, BType::js); };
+
 
         void spacer(const String &label = "");
         void comment(const String &label = "");
