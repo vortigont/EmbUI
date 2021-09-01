@@ -1,15 +1,35 @@
 /**
- * A placeholder for user js-function that could be executed on button click
- * any user-specific funcs could be appended here
+ * A placeholder array for user js-functions that could be executed on button click
+ * any user-specific funcs could be appended/removed/replaced to this array later on
  * 
  * UI method to create interactive button is
  * Interface::button_js(const String &id, const String &label, const String &color = "", const T &value = nullptr)
  * where:
  *  'id' is function selector,
- * 	'val' is passed value
+ * 	'value' is passed value
  */
 var customFuncs = {
-	//func1: function () {     console.log('Called func 1'); },
+	// BasicUI class - set system date/time from the browser
+	dtime: function (v) {
+		var t = new Date();
+		var tLocal = new Date(t - t.getTimezoneOffset() * 60 * 1000);
+		var isodate = tLocal.toISOString();
+		isodate = isodate.slice(0, 19);	// chop off chars after ss
+
+		var data = {};
+		if (typeof v == 'undefined' || typeof v == 'object'){
+			// if there was no 'value' given, than simply post the date string to MCU that triggers time/date setup
+			data["time"] = isodate;
+			ws.send_post(data);
+		} else {
+			// if there was a param 'value', then paste the date string into doc element with id='value'
+			// let's do this via simulating MCU value frame
+			data["block"] = [];
+			data.block.push({[v] : isodate});
+			var r = render();
+			r.value(data);
+		}
+	}//,
 	//func2: function () {     console.log('Called func 2'); }
 };
 
@@ -61,11 +81,11 @@ var render = function(){
 						value = chkNumeric(this.value);
 						break;
 					case 'textarea':	// cast empty strings to null
-					if (typeof this.value == 'string' && this.value == "")
-						value = null;
-					else
-						value = this.value;
-					break;
+						if (typeof this.value == 'string' && this.value == "")
+							value = null;
+						else
+							value = this.value;
+						break;
 					default:
 						value = this.value;
 				}
@@ -171,7 +191,6 @@ var render = function(){
 						if (el[0].type == "checkbox") {
 							// allow multiple types of TRUE value for checkboxes
 							el[0].checked = (val == "1" || val == 1 || val == true || val == "true" );
-							//console.debug("processing checkbox num: ", i, "val: ", frame[i].value);
 						}
 					}
 				}	

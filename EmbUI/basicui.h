@@ -81,5 +81,6 @@ class BasicUI {
     static void embuistatus(Interface *interf);
     static void set_reboot(Interface *interf, JsonObject *data);
     static void set_hostname(Interface *interf, JsonObject *data);
+    static void set_datetime(Interface *interf, JsonObject *data);
     //uint8_t uploadProgress(size_t len, size_t total);
 };

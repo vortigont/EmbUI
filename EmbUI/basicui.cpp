@@ -34,7 +34,7 @@ void BasicUI::add_sections(){
     embui.section_handle_add(FPSTR(T_SET_TIME), set_settings_time);         // установки даты/времени
     embui.section_handle_add(FPSTR(P_LANGUAGE), set_language);              // смена языка интерфейса
     embui.section_handle_add(FPSTR(T_REBOOT), set_reboot);                  // ESP reboot action
-
+    embui.section_handle_add(FPSTR(P_time), set_datetime);                  // set system date/time from a ISO string value
 }
 
 /**
@@ -214,14 +214,18 @@ void BasicUI::block_settings_time(Interface *interf, JsonObject *data){
     interf->json_section_main(FPSTR(T_SET_TIME), FPSTR(T_DICT[lang][TD::D_DATETIME]));
 
     // Simple Clock display
-    String clk(F("Device time: ")); TimeProcessor::getDateTimeString(clk);
-    interf->constant(FPSTR(P_null), "", clk);
+    interf->json_section_line();
+    String clk(F("Device date/time: ")); TimeProcessor::getDateTimeString(clk);
+    interf->constant(FPSTR(P_date), nullptr, clk);
+    interf->button_js(FPSTR(P_DTIME), F("Set local time"));     // run js function that post browser's date/time to device
+    interf->json_section_end(); // line
 
     interf->comment(FPSTR(T_DICT[lang][TD::D_MSG_TZSet01]));     // комментарий-описание секции
 
-    // сперва рисуем простое поле с текущим значением правил временной зоны из конфига
+    // Current TIME Zone string from config
     interf->text(FPSTR(P_TZSET), FPSTR(T_DICT[lang][TD::D_MSG_TZONE]));
 
+    // NTP servers section
     interf->json_section_line();
     interf->comment(F("NTP Servers"));
 
@@ -231,18 +235,22 @@ void BasicUI::block_settings_time(Interface *interf, JsonObject *data){
 #endif
     interf->json_section_end(); // line
 
+    // a list of ntp servers
     interf->json_section_line();
     for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
-        interf->constant(String(i), "", TimeProcessor::getInstance().getserver(i));
-
+        interf->constant(String(i), nullptr, TimeProcessor::getInstance().getserver(i));
     interf->json_section_end(); // line
 
-    // user-defined NTP server
+    // user-defined NTP server field
     interf->text(FPSTR(P_userntp), FPSTR(T_DICT[lang][TD::D_NTP_Secondary]));
+
     // manual date and time setup
     interf->comment(FPSTR(T_DICT[lang][TD::D_MSG_DATETIME]));
-    interf->text(FPSTR(P_DTIME), "", "", false);
-    interf->hidden(FPSTR(P_DEVICEDATETIME),""); // скрытое поле для получения времени с устройства
+    interf->json_section_line();
+    interf->datetime(FPSTR(P_time), nullptr, "");   // placeholder for ISO date/time string
+    interf->button_js_value(FPSTR(P_DTIME), FPSTR(P_time), F("Paste local time"));  // js function that paste browser's date into FPSTR(P_time) field
+    interf->json_section_end(); // line
+
     interf->button_submit(FPSTR(T_SET_TIME), FPSTR(T_DICT[lang][TD::D_SAVE]), FPSTR(P_GRAY));
 
     interf->spacer();
@@ -259,6 +267,7 @@ void BasicUI::block_settings_time(Interface *interf, JsonObject *data){
     interf->json_section_content();
                     //id           val                                 label direct  skipl URL for external data
     interf->select(FPSTR(P_TZSET), embui.paramVariant(FPSTR(P_TZSET)),   "", false,  true, F("/js/tz.json"));
+    interf->json_section_end(); // select
     interf->json_frame_flush(); // xload
 
 }
@@ -315,7 +324,7 @@ void BasicUI::set_settings_wifiAP(Interface *interf, JsonObject *data){
 
     embui.wifi_updateAP();
 
-    section_settings_frame(interf, data);   // переходим в раздел "настройки"
+    if (interf) section_settings_frame(interf, data);   // переходим в раздел "настройки"
 }
 
 /**
@@ -357,18 +366,22 @@ void BasicUI::set_settings_time(Interface *interf, JsonObject *data){
     SETPARAM_NONULL( FPSTR(P_noNTPoDHCP), embui.timeProcessor.ntpodhcp(!(*data)[FPSTR(P_noNTPoDHCP)]) )
 #endif
 
-    LOG(printf_P,PSTR("UI: devicedatetime=%s\n"),(*data)[FPSTR(P_DEVICEDATETIME)].as<String>().c_str());
+    // if there is a field with custom ISO date/time, call time setter
+    if ((*data)[FPSTR(P_time)])
+        set_datetime(nullptr, data);
 
-    String datetime=(*data)[FPSTR(P_DTIME)];
-    if (datetime.length())
-        embui.timeProcessor.setTime(datetime);
-    else if(!embui.sysData.wifi_sta) {
-        datetime=(*data)[FPSTR(P_DEVICEDATETIME)].as<String>();
-        if (datetime.length())
-            embui.timeProcessor.setTime(datetime);
-    }
+    section_settings_frame(interf, data);   // redirect to 'settings' page
+}
 
-    section_settings_frame(interf, data);
+/**
+ * @brief set system date/time from ISO string
+ * data obtained through "time":"YYYY-MM-DDThh:mm:ss" param
+ */
+void BasicUI::set_datetime(Interface *interf, JsonObject *data){
+    if (!data) return;
+    TimeProcessor::getInstance().setTime((*data)[FPSTR(P_time)].as<String>());
+    if (interf)
+        block_settings_time(interf, nullptr);
 }
 
 void BasicUI::set_language(Interface *interf, JsonObject *data){
@@ -398,6 +411,10 @@ void BasicUI::set_reboot(Interface *interf, JsonObject *data){
     }
 }
 
+/**
+ * @brief set system hostname
+ * if empty/missing param provided, than use autogenerated hostname
+ */
 void BasicUI::set_hostname(Interface *interf, JsonObject *data){
     if (!data) return;
 

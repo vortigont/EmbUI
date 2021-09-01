@@ -15,20 +15,7 @@ go.formdata = function(form){
 			case 'radio':
 				if(element.checked) return chkNumeric(element);
 				break;
-			case 'hidden':
-				if(element.id == "devicedatetime"){
-					var m = new Date(Date.now());
-					var dateString =
-					    m.getUTCFullYear() + "-" +
-					    ("0" + (m.getMonth()+1)).slice(-2) + "-" +
-					    ("0" + m.getDate()).slice(-2) + "T" +
-					    ("0" + m.getHours()).slice(-2) + ":" +
-					    ("0" + m.getMinutes()).slice(-2) + ":" +
-					    ("0" + m.getSeconds()).slice(-2);
-					//console.log(dateString);
-				} else return element.value;
-				return dateString;
-				break;
+//			case 'hidden':
 			default:
 				return chkNumeric(element);
 		}
