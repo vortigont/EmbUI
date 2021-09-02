@@ -35,6 +35,7 @@ void BasicUI::add_sections(){
     embui.section_handle_add(FPSTR(P_LANGUAGE), set_language);              // смена языка интерфейса
     embui.section_handle_add(FPSTR(T_REBOOT), set_reboot);                  // ESP reboot action
     embui.section_handle_add(FPSTR(P_time), set_datetime);                  // set system date/time from a ISO string value
+    embui.section_handle_add(FPSTR(T_SET_CFGCLEAR), set_cfgclear);          // clear sysconfig
 }
 
 /**
@@ -69,15 +70,12 @@ void BasicUI::section_settings_frame(Interface *interf, JsonObject *data){
     interf->button_value(FPSTR(T_SH_SECT), 1, FPSTR(T_DICT[lang][TD::D_WiFi]));     // кнопка перехода в настройки сети
     interf->button_value(FPSTR(T_SH_SECT), 2, FPSTR(T_DICT[lang][TD::D_DATETIME]));     // кнопка перехода в настройки времени
     interf->button_value(FPSTR(T_SH_SECT), 3, FPSTR(T_EN_MQTT));     // кнопка перехода в настройки MQTT
+    interf->button_value(FPSTR(T_SH_SECT), 4, FPSTR(T_DICT[lang][TD::D_SYSSET]));      // кнопка перехода в настройки System
 
+    interf->spacer();
 
     // call for user_defined function that may add more elements to the "settings page"
     user_settings_frame(interf, data);
-
-    interf->spacer();
-    block_settings_update(interf, data);                                     // добавляем блок интерфейса "обновления ПО"
-
-    interf->button(FPSTR(T_REBOOT), FPSTR(T_DICT[lang][TD::D_REBOOT]), FPSTR(P_RED));
 
     interf->json_frame_flush();
 }
@@ -97,19 +95,21 @@ void BasicUI::show_section(Interface *interf, JsonObject *data){
 //            block_settings_gnrl(interf, data);
 //            break;
         case 1 :    // WiFi network setup section
-            block_settings_netw(interf, data);
+            block_settings_netw(interf, nullptr);
             break;
         case 2 :    // time setup section
-            block_settings_time(interf, data);
+            block_settings_time(interf, nullptr);
             break;
         case 3 :    // MQTT setup section
-            block_settings_mqtt(interf, data);
+            block_settings_mqtt(interf, nullptr);
+            break;
+        case 4 :    // System setup section
+            block_settings_sys(interf, nullptr);
             break;
         default:
             //LOG(println, "Not found");
             return;
     }
-
 }
 
 /**
@@ -194,16 +194,6 @@ void BasicUI::block_settings_netw(Interface *interf, JsonObject *data){
 }
 
 /**
- *  BasicUI блок загрузки обновлений ПО
- */
-void BasicUI::block_settings_update(Interface *interf, JsonObject *data){
-    if (!interf) return;
-    interf->json_section_hidden(FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_Update]));
-    interf->spacer(FPSTR(T_DICT[lang][TD::D_FWLOAD]));
-    interf->file(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOAD]));
-}
-
-/**
  *  BasicUI блок настройки даты/времени
  */
 void BasicUI::block_settings_time(Interface *interf, JsonObject *data){
@@ -272,7 +262,6 @@ void BasicUI::block_settings_time(Interface *interf, JsonObject *data){
 
 }
 
-
 /**
  *  BasicUI блок интерфейса настроек MQTT
  */
@@ -296,6 +285,34 @@ void BasicUI::block_settings_mqtt(Interface *interf, JsonObject *data){
     interf->button(FPSTR(T_SETTINGS), FPSTR(T_DICT[lang][TD::D_EXIT]));
 
     interf->json_frame_flush();
+}
+
+/**
+ *  BasicUI блок настройки system
+ */
+void BasicUI::block_settings_sys(Interface *interf, JsonObject *data){
+    if (!interf) return;
+    interf->json_frame_interface();
+
+    // Headline
+    interf->json_section_main("", FPSTR(T_DICT[lang][TD::D_SYSSET]));
+
+    // FW update
+    interf->json_section_hidden(FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_Update]));
+    interf->spacer(FPSTR(T_DICT[lang][TD::D_FWLOAD]));
+    interf->file(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOAD]));
+    interf->json_section_end();
+
+    interf->button(FPSTR(T_SET_CFGCLEAR), F("Clear sys config"), FPSTR(P_RED));
+
+    interf->button(FPSTR(T_REBOOT), FPSTR(T_DICT[lang][TD::D_REBOOT]), FPSTR(P_RED));
+
+    interf->spacer();
+
+    // exit button
+    interf->button(FPSTR(T_SETTINGS), FPSTR(T_DICT[lang][TD::D_EXIT]));
+
+    interf->json_frame_flush(); // main
 }
 
 /**
@@ -406,7 +423,7 @@ void BasicUI::set_reboot(Interface *interf, JsonObject *data){
     t->enableDelayed();
     if(interf){
         interf->json_frame_interface();
-        block_settings_update(interf, nullptr);
+        block_settings_sys(interf, nullptr);
         interf->json_frame_flush();
     }
 }
@@ -421,6 +438,15 @@ void BasicUI::set_hostname(Interface *interf, JsonObject *data){
     embui.hostname((*data)[FPSTR(P_hostname)].as<const char*>());
     section_settings_frame(interf, data);           // переходим в раздел "настройки"
 }
+
+/**
+ * @brief clears EmbUI config
+ */
+void BasicUI::set_cfgclear(Interface *interf, JsonObject *data){
+    embui.cfgclear();
+    if (interf) section_settings_frame(interf, nullptr);
+}
+
 
 // stub function - переопределяется в пользовательском коде при необходимости добавить доп. пункты в меню настройки
 void user_settings_frame(Interface *interf, JsonObject *data){};

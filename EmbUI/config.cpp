@@ -77,3 +77,9 @@ bool EmbUI::loadjson(const char *filepath, DynamicJsonDocument &obj){
     LOG(printf_P, PSTR("UI: JSON deserializeJson error, file: %s, code: %d\n"), filepath, error.code());
     return false;
 }
+
+void EmbUI::cfgclear(){
+    LOG(println, F("UI: !CLEAR SYSTEM CONFIG!"));
+    cfg.clear();
+    autosave(true);
+}

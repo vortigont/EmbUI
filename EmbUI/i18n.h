@@ -63,6 +63,7 @@ enum TD : uint8_t {
     D_SAVE,
     D_Send,
     D_SETTINGS,
+    D_SYSSET,
     D_Text,
     D_Time,
     D_Update,
@@ -135,6 +136,7 @@ static const char T_EN_REPEAT[] PROGMEM = "Repeat";
 static const char T_EN_SAVE[] PROGMEM = "Save";
 static const char T_EN_Send[] PROGMEM = "Send";
 static const char T_EN_SETTINGS[] PROGMEM = "Settings";
+static const char T_EN_SYSSET[] PROGMEM = "System setup";
 static const char T_EN_Text[] PROGMEM = "Text";
 static const char T_EN_Time[] PROGMEM = "Time";
 static const char T_EN_Update[] PROGMEM = "FW Update";
@@ -197,6 +199,7 @@ static const char T_RU_REPEAT[] PROGMEM = "Повтор";
 static const char T_RU_SAVE[] PROGMEM = "Сохранить";
 static const char T_RU_Send[] PROGMEM = "Отправить";
 static const char T_RU_SETTINGS[] PROGMEM = "Настройки";
+static const char T_RU_SYSSET[] PROGMEM = "Системные настройки";
 static const char T_RU_Text[] PROGMEM = "Текст";
 static const char T_RU_Time[] PROGMEM = "Время";
 static const char T_RU_Update[] PROGMEM = "Обновление ПО";
@@ -271,6 +274,7 @@ static const char *const T_DICT[][DICT_SIZE] PROGMEM = {
     T_RU_SAVE,
     T_RU_Send,
     T_RU_SETTINGS,
+    T_RU_SYSSET,
     T_RU_Text,
     T_RU_Time,
     T_RU_Update,
@@ -340,6 +344,7 @@ static const char *const T_DICT[][DICT_SIZE] PROGMEM = {
     T_EN_SAVE,
     T_EN_Send,
     T_EN_SETTINGS,
+    T_EN_SYSSET,
     T_EN_Text,
     T_EN_Time,
     T_EN_Update,

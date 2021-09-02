@@ -27,12 +27,13 @@ static const char T_SET_WIFIAP[] PROGMEM = "set_wifiAP";
 static const char T_SET_MQTT[] PROGMEM = "set_mqtt";
 static const char T_SET_TIME[] PROGMEM = "set_time";
 static const char T_SET_HOSTNAME[] PROGMEM = "shname";
+static const char T_SET_CFGCLEAR[] PROGMEM = "s_cfgcl";
+
 
 static const char T_SH_SECT[] PROGMEM = "sh_sec";
 static const char T_REBOOT[] PROGMEM = "reboot";
 
 // Strings
-static const char T_GNRL_SETUP[] PROGMEM = "General setup";
 
 /*
     перенакрываемая функция для добавления пользовательских пунктов в меню "Настройки"
@@ -69,8 +70,8 @@ class BasicUI {
     static void block_settings_gnrl(Interface *interf, JsonObject *data);
     static void block_settings_netw(Interface *interf, JsonObject *data);
     static void block_settings_mqtt(Interface *interf, JsonObject *data);
-    static void block_settings_update(Interface *interf, JsonObject *data);
     static void block_settings_time(Interface *interf, JsonObject *data);
+    static void block_settings_sys(Interface *interf, JsonObject *data);
 
     static void section_settings_frame(Interface *interf, JsonObject *data);
     static void set_settings_wifi(Interface *interf, JsonObject *data);
@@ -82,5 +83,6 @@ class BasicUI {
     static void set_reboot(Interface *interf, JsonObject *data);
     static void set_hostname(Interface *interf, JsonObject *data);
     static void set_datetime(Interface *interf, JsonObject *data);
+    static void set_cfgclear(Interface *interf, JsonObject *data);
     //uint8_t uploadProgress(size_t len, size_t total);
 };
