@@ -426,8 +426,10 @@ void EmbUI::led(uint8_t pin, bool invert){
 }
 
 void EmbUI::handle(){
-    mqtt_handle();
     ts.execute();           // run task scheduler
+#ifdef EMBUI_MQTT
+    mqtt_handle();
+#endif // EMBUI_MQTT
     //btn();
     //led_handle();
 
