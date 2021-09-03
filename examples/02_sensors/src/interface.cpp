@@ -20,7 +20,7 @@
 extern Scheduler ts;
 
 // Periodic task that runs every 5 sec and calls sensor publishing method
-Task tDisplayUpdater(5 * TASK_SECOND, TASK_FOREVER, &sensorPublisher, &ts, true );
+Task tDisplayUpdater(SENSOR_UPDATE_RATE * TASK_SECOND, TASK_FOREVER, &sensorPublisher, &ts, true );
 
 
 /**
@@ -44,7 +44,7 @@ void create_parameters(){
     /**
      * регистрируем свои переменные
      */
-    embui.var_create(FPSTR(V_LED), "1");    // LED default status is on
+    embui.var_create(FPSTR(V_LED), true);    // LED default status is on
 
     /**
      * добавляем свои обрабочки на вывод UI-секций
@@ -54,7 +54,7 @@ void create_parameters(){
 
     // обработчики
     embui.section_handle_add(FPSTR(V_LED), action_blink);               // обработка рычажка светодиода
-    embui.section_handle_add(FPSTR(V_UPDRATE), setRate);                 // sensor data publisher rate change
+    embui.section_handle_add(FPSTR(V_UPDRATE), setRate);                // sensor data publisher rate change
 };
 
 /**
@@ -156,7 +156,7 @@ void block_demopage(Interface *interf, JsonObject *data){
     */
 
     // Update rate slider
-    interf->range(FPSTR(V_UPDRATE), tDisplayUpdater.getInterval()/1000, 1, 30, 1, F("Update Rate, sec"), true);
+    interf->range(FPSTR(V_UPDRATE), tDisplayUpdater.getInterval()/1000, 0, 30, 1, F("Update Rate, sec"), true);
     interf->json_frame_flush();
 }
 
@@ -167,7 +167,7 @@ void action_blink(Interface *interf, JsonObject *data){
 
   SETPARAM(FPSTR(V_LED));  // save new LED state to the config
 
-  // set LED state to match new checkbox state
+  // set LED state to the new checkbox state
   digitalWrite(LED_BUILTIN, !(*data)[FPSTR(V_LED)]); // write inversed signal for build-in LED
   Serial.printf("LED: %u\n", (*data)[FPSTR(V_LED)].as<bool>());
 }
@@ -184,7 +184,7 @@ void pubCallback(Interface *interf){
  * it reads (virtual) sensors and publishes values to the WebUI
  */
 void sensorPublisher() {
-    if (!embui.ws.count())
+    if (!embui.ws.count())    // send new values only if there are WebSocket clients
       return;
 
     Interface *interf = new Interface(&embui, &embui.ws, SMALL_JSON_SIZE);
@@ -209,5 +209,11 @@ void sensorPublisher() {
 void setRate(Interface *interf, JsonObject *data) {
   if (!data) return;
 
-  tDisplayUpdater.setInterval( (*data)[FPSTR(V_UPDRATE)].as<unsigned int>() * 1000 ); // set update rate in seconds
+  if (!(*data)[FPSTR(V_UPDRATE)]){    // disable update on interval '0'
+      tDisplayUpdater.disable();
+  } else {
+    tDisplayUpdater.setInterval( (*data)[FPSTR(V_UPDRATE)].as<unsigned int>() * TASK_SECOND ); // set update rate in seconds
+    tDisplayUpdater.enableIfNot();
+  }
+
 }

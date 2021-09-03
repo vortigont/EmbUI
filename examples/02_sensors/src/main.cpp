@@ -26,9 +26,10 @@ void setup() {
 
   // Start EmbUI framework
   embui.begin();
+  embui.setPubInterval(0);
 
-  LOG(println, "restore LED state from configuration param");
-  digitalWrite( LED_BUILTIN, !embui.paramVariant(FPSTR(V_LED)) );
+  // restore LED state from configuration
+  digitalWrite( LED_BUILTIN, !embui.param(FPSTR(V_LED)) );
 
   #ifdef USE_FTP
       ftp_setup(); // запуск ftp-сервера

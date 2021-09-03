@@ -43,10 +43,13 @@
 				<span class="menu-title">Uptime:</span><span id="pUptime" class="menu-value">{{value.pUptime}}</span>
 			</div>
 			<div>
-				<span class="menu-title">ID:</span><span class="menu-value">{{mc}}</span>
+				<span class="menu-title">ChipID:</span><span class="menu-value">{{mc}}</span>
 			</div>
 			<div>
-				<span class="menu-title">Version:</span><span class="menu-value">{{ver}}</span>
+				<span class="menu-title">EmbUI ver:</span><span class="menu-value">{{ver}}</span>
+			</div>
+			<div>
+				<span class="menu-title">Firmware ver:</span><span id="fwver" class="menu-value">{{value.fwver}}</span>
 			</div>
 			<div>
 				<span class="menu-title">Theme:</span><span class="menu-value">
@@ -95,11 +98,10 @@
 		{{/if}}
 		{{#if html == "button"}}
 			<div id="{{id}}" {{#if2 color}}style="background-color: {{color}}"{{/if2}} class="pure-u-1 pure-button pure-button-primary mr"
-				{{#if2 submit}}{{onevent "click", "on_submit", submit, value}}{{/if2}}
-				{{#if2 !submit}}{{onevent "click", "on_change", id}}{{/if2}}
-			>
-				{{label}}
-			</div>
+				{{#if2 type == 0}}{{onevent "click", "on_change", id, value}}{{/if2}}
+				{{#if2 type == 1}}{{onevent "click", "on_submit", id, value}}{{/if2}}
+				{{#if2 type == 2}}{{onevent "click", "on_js", id, value}}{{/if2}}
+			>{{label}}</div>
 		{{/if}}
 		{{#if html == "textarea"}}
 			<textarea class="pure-u-1" maxlength="255" id="{{id}}" name="{{id}}"
