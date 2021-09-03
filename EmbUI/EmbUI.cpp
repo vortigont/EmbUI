@@ -407,11 +407,10 @@ String EmbUI::param(const String &key)
 {
     LOG(printf_P, PSTR("UI READ KEY: '%s'"), key.c_str());
     String v;
-    if (cfg[key].is<int>()){ v = cfg[key].as<int>(); }
-    else if (cfg[key].is<float>()) { v = cfg[key].as<float>(); }
-    else if (cfg[key].is<bool>()) {
-        v = cfg[key] ? '1' : '0';
-    } else { v = cfg[key] | ""; } // откат, все что не специальный тип, то пустая строка
+    if (cfg[key].is<int>()){ v += cfg[key].as<int>(); }
+    else if (cfg[key].is<float>()) { v += cfg[key].as<float>(); }
+    else if (cfg[key].is<bool>())  { v += cfg[key] ? 1 : 0; }
+    else { v = cfg[key] | ""; } // откат, все что не специальный тип, то строка (пустая если null)
 
     LOG(printf_P, PSTR(" VAL: '%s'\n"), v.c_str());
     return v;
