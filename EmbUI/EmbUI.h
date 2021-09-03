@@ -9,8 +9,8 @@
 #include "globals.h"
 
 #define EMBUI_VERSION_MAJOR     2
-#define EMBUI_VERSION_MINOR     4
-#define EMBUI_VERSION_REVISION  3
+#define EMBUI_VERSION_MINOR     5
+#define EMBUI_VERSION_REVISION  0
 
 /* make version as integer*/
 #define EMBUI_VERSION ((EMBUI_VERSION_MAJOR) << 16 | (EMBUI_VERSION_MINOR) << 8 | (EMBUI_VERSION_REVISION))

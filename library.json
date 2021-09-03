@@ -11,13 +11,13 @@
         },
         {
             "name": "Dmytro Korniienko",
-            "url": "https://github.com/DmytroKorniienko",
-            "maintainer": true
+            "url": "https://github.com/DmytroKorniienko"
         },
         {
             "name": "Emil Muratov",
             "url": "https://github.com/vortigont",
-            "email": "gpm@hotplug.ru"
+            "email": "gpm@hotplug.ru",
+            "maintainer": true
         }
     ],
     "license": "MIT",
@@ -26,7 +26,7 @@
         "url": "https://github.com/vortigont/EmbUI.git"
     },
     "platforms": ["espressif8266", "espressif32"],
-    "version": "2.4.3",
+    "version": "2.5.0",
     "dependencies":
     [
         {"owner": "bblanchon",
@@ -53,18 +53,11 @@
     "examples": [
         {
             "name": "Generic UI",
-            "base": "examples/ex_generic",
-            "files": [
-                "platformio.ini",
-                "src/globals.h",
-                "src/i18n.h",
-                "src/interface.cpp",
-                "src/interface.h",
-                "src/main.cpp",
-                "src/main.h",
-                "src/uistrings.h",
-                "README.md"
-            ]
+            "base": "examples/01_generic"
+        },
+        {
+            "name": "Sensors display UI",
+            "base": "examples/02_sensors"
         }
     ]
 }
