@@ -42,7 +42,10 @@
          "version": "*"},
         {"name": "LITTLEFS",
          "version": "https://github.com/lorol/LITTLEFS.git",
-         "platforms": ["espressif32"]}
+         "platforms": ["espressif32"]},
+         {"owner": "ivanseidel",
+          "name": "LinkedList",
+          "version": "https://github.com/vortigont/LinkedList#feat"}
     ],
     "build": {
         "flags": [
