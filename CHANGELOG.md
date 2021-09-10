@@ -1,6 +1,8 @@
 ## Changelog
 
-### v2.5.0
+* remove bundled LinkedList library and declare as an external dependancy
+
+### v2.5.0 - 2021.09.3
 #### EmbUI:
   * saving/accessing config params as JsonVariant instead of cast to String's
   * do not save/overwrite config.json on param set if it's value has not changed
@@ -21,7 +23,7 @@
     - text/numeric/range fields casted to Numeric types if not NaN
     - empty strings casted to null (results in simplier backend operations on keys/string checking)
     - strings otherwise
-  ! treat received null values the same way as 'undef' (cast to empty string ""), fixes sporadic '[object Object]' strings in fields
+  - treat received null values the same way as 'undef' (cast to empty string ""), fixes sporadic '[object Object]' strings in fields
   + templater action for 'button' - js, triggers user-defined js function without sending any data to backend
     could be used to interact with UI elements or external data without posting calls to backend
   - user-js function to apply/copy current datetime from the browser via button's press
@@ -62,8 +64,8 @@
     * build fixes
     - obsolete MemInfo lib
 #### TimeProcessor:
-    * timeSync event now works for esp32 platform also
-    - Obsolete WorldTimeApi methods, kept in a sepparate class for reference
+  * timeSync event now works for esp32 platform also
+  * Obsolete WorldTimeApi methods, kept in a sepparate class for reference
 #### Other
   - EmbUI version defines, make it easy to control deps
   - ChipID gen code cleanup
