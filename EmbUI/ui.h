@@ -395,8 +395,9 @@ class Interface {
                 obj[F("url")] = exturl;
 
             frame_add_safe(obj.as<JsonObject>());
-            section_stack.end()->idx--;
-            json_section_begin(FPSTR(P_options), "", false, false, false, section_stack.end()->block.getElement(section_stack.end()->idx));
+            section_stack.tail()->idx--;
+            // open new section for 'option' elements
+            json_section_begin(FPSTR(P_options), "", false, false, false, section_stack.tail()->block.getElement(section_stack.tail()->block.size()-1));    // find last array element
         };
         inline void select(const String &id, const String &label, bool directly = false, bool skiplabel = false){ select(id, embui->paramVariant(id), label, directly, skiplabel); };
 

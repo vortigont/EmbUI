@@ -43,9 +43,9 @@
         {"name": "LITTLEFS",
          "version": "https://github.com/lorol/LITTLEFS.git",
          "platforms": ["espressif32"]},
-         {"owner": "ivanseidel",
+         {"owner": "vortigont",
           "name": "LinkedList",
-          "version": "https://github.com/vortigont/LinkedList#feat"}
+          "version": "https://github.com/vortigont/LinkedList#vortigont"}
     ],
     "build": {
         "flags": [

@@ -1,6 +1,8 @@
 ## Changelog
 
-* remove bundled LinkedList library and declare as an external dependancy
+* ui section log format corrections, some bugs cleaned
+* remove bundled LinkedList library and declare as an external dependency
+* adopted to LL iterators
 
 ### v2.5.0 - 2021.09.3
 #### EmbUI:

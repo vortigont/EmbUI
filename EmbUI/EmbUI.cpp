@@ -547,15 +547,15 @@ void EmbUI::taskGC(){
 // find callback section matching specified name
 section_handle_t*  EmbUI::sectionlookup(const char *id){
     unsigned _l = strlen(id);
-    for (int i = 0; i < section_handle.size(); i++) {
-        if (_l < section_handle[i]->name.length())  // skip sections with longer names, obviously a mismatch
+    for (const auto& i : section_handle){
+        if (_l < i->name.length())  // skip sections with longer names, obviously a mismatch
             continue;
 
-        const char *sname = section_handle[i]->name.c_str();
+        const char *sname = i->name.c_str();
         const char *mall = strchr(sname, '*');      // look for 'id*' template sections
         unsigned len = mall? mall - sname - 1 : _l;
         if (strncmp(sname, id, len) == 0) {
-            return section_handle[i];
+            return i;
         }
     };
     return nullptr;
