@@ -1,7 +1,8 @@
 # EmbUI
 Embedded WebUI Interface framework
 
-__[CHANGELOG](/CHANGELOG.md)__
+__[CHANGELOG](/CHANGELOG.md)__ | [![PlatformIO CI](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml/badge.svg)](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml)
+
 
 Фреймворк построения web-интерфейса и элементов управления для проектов под Arduino 
 ## Поддерживаемые платформы
