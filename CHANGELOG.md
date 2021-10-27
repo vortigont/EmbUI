@@ -1,6 +1,8 @@
 ## Changelog
 
-### v2.5.0
+* fixed buffer size for TimeProcessor datetime string
+
+### v2.5.0 - 2021.09.3
 #### EmbUI:
   * saving/accessing config params as JsonVariant instead of cast to String's
   * do not save/overwrite config.json on param set if it's value has not changed
