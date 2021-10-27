@@ -1,5 +1,6 @@
 ## Changelog
 
+* CI workflow added (builds examples)
 * ui section log format corrections, some bugs cleaned
 * remove bundled LinkedList library and declare as an external dependency
 * adopted to LL iterators
