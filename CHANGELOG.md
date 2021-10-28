@@ -1,6 +1,6 @@
 ## Changelog
 
-### v2.5.0 - 2021.10.28
+### v2.6.0 - 2021.10.28
 * BasicUI methods moved into namespace
 * fixed buffer size for TimeProcessor
 * CI workflow added (builds examples)
