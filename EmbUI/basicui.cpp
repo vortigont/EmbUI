@@ -2,6 +2,7 @@
 
 uint8_t lang;            // default language for text resources
 
+namespace basicui {
 
 /**
  * Define configuration variables and controls handlers
@@ -13,7 +14,7 @@ uint8_t lang;            // default language for text resources
  * this method owerrides weak definition in framework
  * 
  */
-void BasicUI::add_sections(){
+void add_sections(){
     LOG(println, F("UI: Creating webui vars"));
 
     // variable for UI language (specific to basic UI translations)
@@ -42,7 +43,7 @@ void BasicUI::add_sections(){
  * This code adds "Settings" section to the MENU
  * it is up to you to properly open/close Interface menu json_section
  */
-void BasicUI::opt_setup(Interface *interf, JsonObject *data){
+void opt_setup(Interface *interf, JsonObject *data){
     if (!interf) return;
     interf->option(FPSTR(T_SETTINGS), FPSTR(T_DICT[lang][TD::D_SETTINGS]));     // пункт меню "настройки"
 }
@@ -53,7 +54,7 @@ void BasicUI::opt_setup(Interface *interf, JsonObject *data){
  * других блоков/обработчиков
  * 
  */
-void BasicUI::section_settings_frame(Interface *interf, JsonObject *data){
+void section_settings_frame(Interface *interf, JsonObject *data){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -84,7 +85,7 @@ void BasicUI::section_settings_frame(Interface *interf, JsonObject *data){
  * @brief choose UI section to display based on supplied index
  * 
  */
-void BasicUI::show_section(Interface *interf, JsonObject *data){
+void show_section(Interface *interf, JsonObject *data){
     if (!interf || !data || (*data)[FPSTR(T_SH_SECT)].isNull()) return;  // bail out if no section specifier
 
     // find section index "sh_sec"
@@ -116,7 +117,7 @@ void BasicUI::show_section(Interface *interf, JsonObject *data){
  *  BasicUI - general settings
  */
 /*
-void BasicUI::block_settings_gnrl(Interface *interf, JsonObject *data){
+void block_settings_gnrl(Interface *interf, JsonObject *data){
     if (!interf) return;
 
     interf->json_frame_interface();
@@ -142,7 +143,7 @@ void BasicUI::block_settings_gnrl(Interface *interf, JsonObject *data){
 /**
  *  BasicUI блок интерфейса настроек WiFi
  */
-void BasicUI::block_settings_netw(Interface *interf, JsonObject *data){
+void block_settings_netw(Interface *interf, JsonObject *data){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -196,7 +197,7 @@ void BasicUI::block_settings_netw(Interface *interf, JsonObject *data){
 /**
  *  BasicUI блок настройки даты/времени
  */
-void BasicUI::block_settings_time(Interface *interf, JsonObject *data){
+void block_settings_time(Interface *interf, JsonObject *data){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -265,7 +266,7 @@ void BasicUI::block_settings_time(Interface *interf, JsonObject *data){
 /**
  *  BasicUI блок интерфейса настроек MQTT
  */
-void BasicUI::block_settings_mqtt(Interface *interf, JsonObject *data){
+void block_settings_mqtt(Interface *interf, JsonObject *data){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -290,7 +291,7 @@ void BasicUI::block_settings_mqtt(Interface *interf, JsonObject *data){
 /**
  *  BasicUI блок настройки system
  */
-void BasicUI::block_settings_sys(Interface *interf, JsonObject *data){
+void block_settings_sys(Interface *interf, JsonObject *data){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -318,7 +319,7 @@ void BasicUI::block_settings_sys(Interface *interf, JsonObject *data){
 /**
  * Обработчик настроек WiFi в режиме клиента
  */
-void BasicUI::set_settings_wifi(Interface *interf, JsonObject *data){
+void set_settings_wifi(Interface *interf, JsonObject *data){
     if (!data) return;
 
     const char *ssid = (*data)[FPSTR(P_WCSSID)];    // переменные доступа в конфиге не храним
@@ -333,7 +334,7 @@ void BasicUI::set_settings_wifi(Interface *interf, JsonObject *data){
 /**
  * Обработчик настроек WiFi в режиме AP
  */
-void BasicUI::set_settings_wifiAP(Interface *interf, JsonObject *data){
+void set_settings_wifiAP(Interface *interf, JsonObject *data){
     if (!data) return;
 
     embui.var_dropnulls(FPSTR(P_APonly), (*data)[FPSTR(P_APonly)]);
@@ -347,7 +348,7 @@ void BasicUI::set_settings_wifiAP(Interface *interf, JsonObject *data){
 /**
  * Обработчик настроек MQTT
  */
-void BasicUI::set_settings_mqtt(Interface *interf, JsonObject *data){
+void set_settings_mqtt(Interface *interf, JsonObject *data){
     if (!data) return;
     // сохраняем настройки в конфиг
     SETPARAM(FPSTR(P_m_host));
@@ -366,7 +367,7 @@ void BasicUI::set_settings_mqtt(Interface *interf, JsonObject *data){
 /**
  * Обработчик настроек даты/времени
  */
-void BasicUI::set_settings_time(Interface *interf, JsonObject *data){
+void set_settings_time(Interface *interf, JsonObject *data){
     if (!data) return;
 
     // Save and apply timezone rules
@@ -394,14 +395,14 @@ void BasicUI::set_settings_time(Interface *interf, JsonObject *data){
  * @brief set system date/time from ISO string
  * data obtained through "time":"YYYY-MM-DDThh:mm:ss" param
  */
-void BasicUI::set_datetime(Interface *interf, JsonObject *data){
+void set_datetime(Interface *interf, JsonObject *data){
     if (!data) return;
     TimeProcessor::getInstance().setTime((*data)[FPSTR(P_time)].as<String>());
     if (interf)
         block_settings_time(interf, nullptr);
 }
 
-void BasicUI::set_language(Interface *interf, JsonObject *data){
+void set_language(Interface *interf, JsonObject *data){
     if (!data) return;
 
     embui.var_dropnulls(FPSTR(P_LANGUAGE), (*data)[FPSTR(P_LANGUAGE)]);
@@ -409,7 +410,7 @@ void BasicUI::set_language(Interface *interf, JsonObject *data){
     section_settings_frame(interf, data);
 }
 
-void BasicUI::embuistatus(Interface *interf){
+void embuistatus(Interface *interf){
     if (!interf) return;
     interf->json_frame_value();
     interf->value(F("pTime"), embui.timeProcessor.getFormattedShortTime(), true);
@@ -418,7 +419,7 @@ void BasicUI::embuistatus(Interface *interf){
     interf->json_frame_flush();
 }
 
-void BasicUI::set_reboot(Interface *interf, JsonObject *data){
+void set_reboot(Interface *interf, JsonObject *data){
     Task *t = new Task(TASK_SECOND*5, TASK_ONCE, nullptr, &ts, false, nullptr, [](){ LOG(println, F("Rebooting...")); ESP.restart(); });
     t->enableDelayed();
     if(interf){
@@ -432,7 +433,7 @@ void BasicUI::set_reboot(Interface *interf, JsonObject *data){
  * @brief set system hostname
  * if empty/missing param provided, than use autogenerated hostname
  */
-void BasicUI::set_hostname(Interface *interf, JsonObject *data){
+void set_hostname(Interface *interf, JsonObject *data){
     if (!data) return;
 
     embui.hostname((*data)[FPSTR(P_hostname)].as<const char*>());
@@ -442,7 +443,7 @@ void BasicUI::set_hostname(Interface *interf, JsonObject *data){
 /**
  * @brief clears EmbUI config
  */
-void BasicUI::set_cfgclear(Interface *interf, JsonObject *data){
+void set_cfgclear(Interface *interf, JsonObject *data){
     embui.cfgclear();
     if (interf) section_settings_frame(interf, nullptr);
 }
@@ -451,3 +452,4 @@ void BasicUI::set_cfgclear(Interface *interf, JsonObject *data){
 // stub function - переопределяется в пользовательском коде при необходимости добавить доп. пункты в меню настройки
 void user_settings_frame(Interface *interf, JsonObject *data){};
 
+}   // end of "namespace basicui"
