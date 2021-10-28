@@ -39,7 +39,7 @@ void create_parameters(){
     *  - базовые настройки MQTT
     *  - OTA обновление прошивки и образа файловой системы
     */
-    BasicUI::add_sections();
+    basicui::add_sections();
 
     /**
      * регистрируем свои переменные
@@ -75,7 +75,7 @@ void section_main_frame(Interface *interf, JsonObject *data){
 
   if(!embui.sysData.wifi_sta){                      // если контроллер не подключен к внешней AP, сразу открываем вкладку с настройками WiFi
     LOG(println, F("UI: Opening network setup section"));
-    BasicUI::block_settings_netw(interf, data);
+    basicui::block_settings_netw(interf, data);
   } else {
     block_demopage(interf, data);                   // Строим блок с demo переключателями
   }
@@ -108,7 +108,7 @@ void block_menu(Interface *interf, JsonObject *data){
      * это автоматически даст доступ ко всем связанным секциям с интерфейсом для системных настроек
      * 
      */
-    BasicUI::opt_setup(interf, data);       // пункт меню "настройки"
+    basicui::opt_setup(interf, data);       // пункт меню "настройки"
     interf->json_section_end();
 }
 
@@ -176,7 +176,7 @@ void action_blink(Interface *interf, JsonObject *data){
  * обработчик статуса (периодического опроса контроллера веб-приложением)
  */
 void pubCallback(Interface *interf){
-    BasicUI::embuistatus(interf);
+    basicui::embuistatus(interf);
 }
 
 /**
