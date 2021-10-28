@@ -1,10 +1,12 @@
 ## Changelog
 
+### v2.5.0 - 2021.10.28
+* BasicUI methods moved into namespace
+* fixed buffer size for TimeProcessor
 * CI workflow added (builds examples)
 * ui section log format corrections, some bugs cleaned
 * remove bundled LinkedList library and declare as an external dependency
 * adopted to LL iterators
-* fixed buffer size for TimeProcessor
 
 ### v2.5.0 - 2021.09.3
 #### EmbUI:

@@ -26,7 +26,7 @@
         "url": "https://github.com/vortigont/EmbUI.git"
     },
     "platforms": ["espressif8266", "espressif32"],
-    "version": "2.5.0",
+    "version": "2.5.1",
     "dependencies":
     [
         {"owner": "bblanchon",
@@ -45,7 +45,7 @@
          "platforms": ["espressif32"]},
          {"owner": "vortigont",
           "name": "LinkedList",
-          "version": "https://github.com/vortigont/LinkedList#vortigont"}
+          "version": "https://github.com/vortigont/LinkedList"}
     ],
     "build": {
         "flags": [
