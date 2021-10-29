@@ -33,7 +33,7 @@
 
 #define TM_BASE_YEAR        1900
 #define DAYSECONDS          (86400U)
-#define DATETIME_STRLEN     (20U)   // ISO data/time string "YYYY-MM-DDThh:mm:ss", seconds optional
+#define DATETIME_STRLEN     (16U)   // ISO data/time string "YYYY-MM-DDThh:mm:ss", seconds optional
 
 
 // TimeProcessor class is a Singleton
@@ -76,7 +76,7 @@ public:
 #endif
 
 #ifdef ESP32
-    void WiFiEvent(WiFiEvent_t event, system_event_info_t info);
+    void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 #endif
 
     /**

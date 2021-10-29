@@ -144,7 +144,14 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
         break;
 
     case SYSTEM_EVENT_STA_DISCONNECTED:
-        LOG(printf_P, PSTR("UI WiFi: Disconnected, reason: %d\n"), info.disconnected.reason);
+        #ifdef ARDUINO  // stuped arduino core does not have defines for it's own version, so I use PIO's platform defs here
+            #if ARDUINO <= 10805
+                LOG(printf_P, PSTR("UI WiFi: Disconnected, reason: %d\n"), info.disconnected.reason);           // ARDUINO=10805    Core <=1.0.6
+            #else
+                LOG(printf_P, PSTR("UI WiFi: Disconnected, reason: %d\n"), info.wifi_sta_disconnected.reason);  // ARDUINO=10812    Core >=2.0.0
+            #endif
+        #endif
+        
         // https://github.com/espressif/arduino-esp32/blob/master/tools/sdk/include/esp32/esp_wifi_types.h
         if(WiFi.getMode() != WIFI_MODE_APSTA && !embuischedw.isEnabled()){
             LOG(println, PSTR("UI WiFi: Reconnect attempt"));
