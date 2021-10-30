@@ -6,9 +6,17 @@
 
 #ifdef ESP32
  #include <AsyncTCP.h>
- #include <LITTLEFS.h>
- #define FORMAT_LITTLEFS_IF_FAILED true
- #define LittleFS LITTLEFS
+ #if ARDUINO <= 10805
+  #include <LITTLEFS.h>
+  #define LittleFS LITTLEFS
+ #else
+  #include <LittleFS.h>
+ #endif
+
+  #ifndef FORMAT_LITTLEFS_IF_FAILED
+   #define FORMAT_LITTLEFS_IF_FAILED true
+  #endif
+
 #endif
 
 #ifndef FTP_USER
