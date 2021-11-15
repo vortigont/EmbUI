@@ -448,8 +448,7 @@ void set_cfgclear(Interface *interf, JsonObject *data){
     if (interf) section_settings_frame(interf, nullptr);
 }
 
+}   // end of "namespace basicui"
 
 // stub function - переопределяется в пользовательском коде при необходимости добавить доп. пункты в меню настройки
 void user_settings_frame(Interface *interf, JsonObject *data){};
-
-}   // end of "namespace basicui"
