@@ -1,5 +1,6 @@
 ## Changelog
 
+### v2.6.1 - 2021.11.27
 * Use embeded LittleFS lib for ESP32 Arduino core 2.0.0
 * building for ESP32 Arduino core v2.0.0
 
