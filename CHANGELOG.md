@@ -1,5 +1,8 @@
 ## Changelog
 
+* Use embeded LittleFS lib for ESP32 Arduino core 2.0.0
+* building for ESP32 Arduino core v2.0.0
+
 ### v2.6.0 - 2021.10.28
 * BasicUI methods moved into namespace
 * fixed buffer size for TimeProcessor
