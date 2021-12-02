@@ -43,10 +43,11 @@ void Interface::spacer(const String &label){
     frame_add_safe(obj.as<JsonObject>());
 }
 
-void Interface::comment(const String &label){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE * 2> obj;
+void Interface::comment(const String &id, const String &label){
+    StaticJsonDocument<IFACE_STA_JSON_SIZE * 2> obj;    // use a bit larger buffer for long texts
     obj[FPSTR(P_html)] = F("comment");
-    if (label.length()) obj[FPSTR(P_label)] = label;
+    if (id.length()) obj[FPSTR(P_id)] = id;
+    obj[FPSTR(P_label)] = label;
 
     frame_add_safe(obj.as<JsonObject>());
 }

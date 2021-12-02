@@ -108,7 +108,7 @@
 			></textarea>
 		{{/if}}
 		{{#if html == "comment"}}
-			<div class="comment">{{label}}</div>
+			<div id="{{id}}" class="comment">{{label}}</div>
 		{{/if}}
 		{{#if html == "file"}}
 			<form method="POST" action="/{{action}}" enctype="multipart/form-data" class="pure-form pure-g mr">

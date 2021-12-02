@@ -1,5 +1,6 @@
 ## Changelog
 
+* comment() html element could also be updated with json_section_content()
 * Use embeded LittleFS lib for ESP32 Arduino core 2.0.0
 * building for ESP32 Arduino core v2.0.0
 
