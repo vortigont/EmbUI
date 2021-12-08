@@ -51,7 +51,7 @@ void create_parameters(){
 };
 
 /**
- * Headlile section
+ * Headline section
  * this is an overriden weak method that builds our WebUI interface from the top
  * ==
  * Головная секция,
@@ -123,19 +123,23 @@ void block_demopage(Interface *interf, JsonObject *data){
 
     interf->text(FPSTR(V_VAR1), F("текстовое поле"));                                 // текстовое поле со значением переменной из конфигурации
     interf->text(FPSTR(V_VAR2), F("some default val"), F("Второе текстовое поле"), false);   // текстовое поле со значением "по-умолчанию"
+
     /*  кнопка отправки данных секции на обработку
-     *  первый параметр FPSTR(T_DEMO) определяет какая секция откроется
-     *  после обработки отправленных данных
+     *  первый параметр FPSTR(T_DEMO) определяет алиас акшена обработчика данных формы 
+     *  обработчк должен быть зарегистрирован через embui.section_handle_add()
      */ 
     interf->button_submit(FPSTR(T_SET_DEMO), FPSTR(T_DICT[lang][TD::D_Send]), FPSTR(P_GRAY));
-    interf->json_section_end();
     interf->json_frame_flush();
 }
 
+/**
+ * @brief action handler for demo form data
+ * 
+ */
 void action_demopage(Interface *interf, JsonObject *data){
     if (!data) return;
 
-    LOG(println, F("porcessig section demo"));
+    LOG(println, F("processing section demo"));
 
     // сохраняем значение 1-й переменной в конфиг фреймворка
     SETPARAM(FPSTR(V_VAR1));
@@ -153,7 +157,10 @@ void action_demopage(Interface *interf, JsonObject *data){
 
 }
 
-
+/**
+ * @brief interactive handler for LED switchbox
+ * 
+ */
 void action_blink(Interface *interf, JsonObject *data){
   if (!data) return;  // здесь обрабатывает только данные
 

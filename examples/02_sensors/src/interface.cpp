@@ -127,9 +127,19 @@ void block_demopage(Interface *interf, JsonObject *data){
     // переключатель, связанный со светодиодом. Изменяется синхронно
     interf->checkbox(FPSTR(V_LED), F("Onboard LED"), true);
 
-    interf->comment(F("Комментарий: набор сенсоров для демонстрации"));     // комментарий-описание секции
+    interf->comment(F("Комментарий: набор демонстрационных сенсоров"));     // комментарий-описание секции
 
-    interf->json_section_line();             // "Live displays"
+    interf->json_section_line();            // Open line section - next elements will be placed in a line
+
+    // Now I create a string of text that will follow LED's state
+    String cmt = F("Onboard LED is ");
+
+    if ( embui.paramVariant(FPSTR(V_LED)) ) // get LED's state from a configuration variable
+      cmt += "ON!";
+    else
+      cmt += "OFF!";
+
+    interf->comment(F("ledcmt"), cmt);        // Create a comment string  - LED state text, "ledcmt" is an element ID I will use to change text later
 
     // Voltage display, shows ESPs internal voltage
 #ifdef ESP8266
@@ -140,36 +150,57 @@ void block_demopage(Interface *interf, JsonObject *data){
     interf->display(F("vcc"), 220); // supercharged esp :)
 #endif
 
+    /*
+      Some display based on user defined CSS class - "mycssclass". CSS must be loaded in WebUI
+      Resulting CSS classes are defined as: class='mycssclass vcc'
+      So both could be used to customize display appearance 
+      interf->display(F("vcc"), 42, "mycssclass");
+    */
+
     // Fake temperature sensor
     interf->display(F("temp"), 24);
     interf->json_section_end();     // end of line
 
     // Simple Clock display
-    String clk; embui.timeProcessor.getDateTimeString(clk);
-    interf->display(F("clk"), clk);    // Clock sensor
+    String clk; TimeProcessor::getInstance().getDateTimeString(clk);
+    interf->display(F("clk"), clk);    // Clock DISPLAY
 
-    /*
-      Some display based on user defined CSS class - "mycssclass". CSS must be loaded in WebUI
-      Resulting CSS classes are defined as: class='mycssclass vcc'
-      So both could be used to customize display appearance 
-    interf->display(F("vcc"), 42, "mycssclass");
-    */
 
     // Update rate slider
     interf->range(FPSTR(V_UPDRATE), tDisplayUpdater.getInterval()/1000, 0, 30, 1, F("Update Rate, sec"), true);
     interf->json_frame_flush();
 }
 
-
-
+/**
+ * @brief interactive handler for LED switchbox
+ * every change of a checkbox triggers this action
+ */
 void action_blink(Interface *interf, JsonObject *data){
-  if (!data) return;  // здесь обрабатывает только данные
+  if (!data) return;  // process only data
 
   SETPARAM(FPSTR(V_LED));  // save new LED state to the config
 
   // set LED state to the new checkbox state
-  digitalWrite(LED_BUILTIN, !(*data)[FPSTR(V_LED)]); // write inversed signal for build-in LED
+  digitalWrite(LED_BUILTIN, !(*data)[FPSTR(V_LED)]); // write inversed signal to the build-in LED's GPIO
   Serial.printf("LED: %u\n", (*data)[FPSTR(V_LED)].as<bool>());
+
+  // if we have an interface ws object, 
+  // than we can publish some changes to the web pages change comment text to reflect LED state
+  if (!interf)
+    return;
+
+  interf->json_frame_interface();   // make a new interface frame
+  interf->json_section_content();   // we only update existing elemtns, not pulishing new ones
+
+  String cmt = F("Onboard LED is ");
+
+  if ( (*data)[FPSTR(V_LED)] )      // find new LED's state from an incoming data
+    cmt += "ON!";
+  else
+    cmt += "Off!";
+
+  interf->comment(F("ledcmt"), cmt);        // update comment object with ID "ledcmt"
+  interf->json_frame_flush();
 }
 
 /**
@@ -180,7 +211,7 @@ void pubCallback(Interface *interf){
 }
 
 /**
- * Call-back for Periodic publisher 
+ * Call-back for Periodic publisher (truggered via Task Scheduler)
  * it reads (virtual) sensors and publishes values to the WebUI
  */
 void sensorPublisher() {
@@ -196,7 +227,7 @@ void sensorPublisher() {
 #endif
     interf->value(F("temp"), 24 + random(-30,30)/10, true);                // add some random spikes to the temperature :)
 
-    String clk; embui.timeProcessor.getDateTimeString(clk);
+    String clk; TimeProcessor::getInstance().getDateTimeString(clk);
     interf->value(F("clk"), clk, true); // Current date/time for Clock display
 
     interf->json_frame_flush();
