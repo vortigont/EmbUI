@@ -1,6 +1,5 @@
 #!/bin/sh
 
-echo "Preparing resources for EmbUI FS image" 
 
 # etag file
 tags=etags.txt
@@ -12,7 +11,7 @@ tzcsv=https://raw.githubusercontent.com/nayarsystems/posix_tz_db/master/zones.cs
 USAGE="Usage: `basename $0` [-h] [-f]"
 
 # parse cmd options
-while getopts hf: OPT; do
+while getopts hf OPT; do
     case "$OPT" in
         h)
             echo $USAGE
@@ -46,28 +45,29 @@ freshtag(){
     return 1
 }
 
+echo "Preparing resources for EmbUI FS image" 
 
 mkdir -p ./data/css ./data/js
-cat html/css/pure-min.css html/css/grids.css | gzip -9 > ./data/css/pure.css.gz
+cat html/css/pure*.css html/css/grids*.css | gzip -9 > ./data/css/pure.css.gz
 cat html/css/*_default.css | gzip -9 > ./data/css/style.css.gz
 cat html/css/*_light.css | gzip -9 > ./data/css/style_light.css.gz
 cat html/css/*_dark.css | gzip -9 > ./data/css/style_dark.css.gz
 
-cp html/css/*.jpg ./data/css/
-cp html/css/*.webp ./data/css/
+cp -u html/css/*.jpg ./data/css/
+cp -u html/css/*.webp ./data/css/
 
 cat html/js/*.js | gzip -9 > ./data/js/embui.js.gz
 cat html/index.html | gzip -9 > ./data/index.html.gz
 cat html/favicon.ico | gzip -9 > ./data/favicon.ico.gz
 
 # update TZ info
-if freshtag ${tzcsv} ; then
+if freshtag ${tzcsv} || [ $refresh_rq -eq 1 ] ; then
     echo "Updating TZ info"
-    echo '"label","value"' > ./data/zones.csv
-    curl -sL $tzcsv >> ./data/zones.csv
+    echo '"label","value"' > ./data/js/zones.csv
+    curl -sL $tzcsv >> ./data/js/zones.csv
     python tzgen.py
     gzip -9f ./data/js/tz.json
-    rm -f ./data/tz.json ./data/zones.csv
+    rm -f ./data/js/tz.json ./data/js/zones.csv
 else
     unzip -o -d ./data/ data.zip "js/tz.json.gz"
 fi
