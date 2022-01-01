@@ -220,8 +220,9 @@ void block_settings_time(Interface *interf, JsonObject *data){
     interf->json_section_line();
     interf->comment(F("NTP Servers"));
 
-// esp32 is not (yet) supported, see https://github.com/espressif/esp-idf/pull/7336
-#ifndef ESP32
+#if ARDUINO <= 10805
+    // ESP32's Arduino Core <=1.0.6 miss NTPoDHCP feature, see https://github.com/espressif/esp-idf/pull/7336
+#else
     interf->checkbox(FPSTR(P_noNTPoDHCP), F("Disable NTP over DHCP"));
 #endif
     interf->json_section_end(); // line
@@ -380,7 +381,9 @@ void set_settings_time(Interface *interf, JsonObject *data){
 
     SETPARAM_NONULL(FPSTR(P_userntp), embui.timeProcessor.setcustomntp((*data)[FPSTR(P_userntp)]));
 
-#ifndef ESP32
+#if ARDUINO <= 10805
+    // ESP32's Arduino Core <=1.0.6 miss NTPoDHCP feature
+#else
     SETPARAM_NONULL( FPSTR(P_noNTPoDHCP), embui.timeProcessor.ntpodhcp(!(*data)[FPSTR(P_noNTPoDHCP)]) )
 #endif
 

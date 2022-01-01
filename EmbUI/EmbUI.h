@@ -31,11 +31,11 @@
 #ifdef ESP32
  #include <AsyncTCP.h>
 
- #if ARDUINO <= 10805
+ #ifdef ESP_ARDUINO_VERSION
+  #include <LittleFS.h>
+ #else
   #include <LITTLEFS.h>
   #define LittleFS LITTLEFS
- #else
-  #include <LittleFS.h>
  #endif
 
  #ifndef FORMAT_LITTLEFS_IF_FAILED
