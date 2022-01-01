@@ -536,6 +536,15 @@ class EmbUI
     void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 #endif
 
+    // HTTP handlers
+
+    /**
+     * @brief Set HTTP-handlers for EmbUI related URL's
+     * called at framework initialization
+     */
+    void http_set_handlers();
+
+
     // MQTT Private Methods and vars
     String m_pref; // к сожалению они нужны, т.к. в клиент передаются указатели на уже имеющийся объект, значит на конфиг ссылку отдавать нельзя!!!
     String m_host;
