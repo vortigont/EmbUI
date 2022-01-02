@@ -10,15 +10,17 @@
 
 #define EMBUI_VERSION_MAJOR     2
 #define EMBUI_VERSION_MINOR     6
-#define EMBUI_VERSION_REVISION  0
+#define EMBUI_VERSION_REVISION  999  // '999' here is current dev version
 
-/* make version as integer*/
-#define EMBUI_VERSION ((EMBUI_VERSION_MAJOR) << 16 | (EMBUI_VERSION_MINOR) << 8 | (EMBUI_VERSION_REVISION))
+#define EMBUI_VERSION_VALUE     (MAJ, MIN, REV) ((MAJ) << 16 | (MIN) << 8 | (REV))
 
-/* make version as string*/
-#define EMBUI_VERSION_STRING   TOSTRING(EMBUI_VERSION_MAJOR) "." TOSTRING(EMBUI_VERSION_MINOR) "." TOSTRING(EMBUI_VERSION_REVISION)
+/* make version as integer for comparison */
+#define EMBUI_VERSION           EMBUI_VERSION_VALUE(EMBUI_VERSION_MAJOR, EMBUI_VERSION_MINOR, EMBUI_VERSION_REVISION)
+
+/* make version as string, i.e. "2.6.1" */
+#define EMBUI_VERSION_STRING    TOSTRING(EMBUI_VERSION_MAJOR) "." TOSTRING(EMBUI_VERSION_MINOR) "." TOSTRING(EMBUI_VERSION_REVISION)
 // compat definiton
-#define EMBUIVER    EMBUI_VERSION_STRING
+#define EMBUIVER                EMBUI_VERSION_STRING
 
 #include <FS.h>
 
