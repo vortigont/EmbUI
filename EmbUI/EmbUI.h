@@ -25,14 +25,14 @@
 #include <FS.h>
 
 #ifdef ESP8266
- #include <ESPAsyncTCP.h>
+// #include <ESPAsyncTCP.h>
  #include <LittleFS.h>
  #define FORMAT_LITTLEFS_IF_FAILED
+ #include <Updater.h>
 #endif
 
 #ifdef ESP32
- #include <AsyncTCP.h>
-
+// #include <AsyncTCP.h>
  #ifdef ESP_ARDUINO_VERSION
   #include <LittleFS.h>
  #else
@@ -44,27 +44,12 @@
   #define FORMAT_LITTLEFS_IF_FAILED true
  #endif
  #define U_FS   U_SPIFFS
+ #include <Update.h>
 #endif
 
 
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
-
-#ifdef ESP8266
- #include <Updater.h>
- #include <ESP8266mDNS.h>        // Include the mDNS library
- #ifdef USE_SSDP
-  #include <ESP8266SSDP.h>
- #endif
-#endif
-
-#ifdef ESP32
- #include <ESPmDNS.h>
- #include <Update.h>
- #ifdef USE_SSDP
-  #include <ESP32SSDP.h>
- #endif
-#endif
 
 #include <AsyncMqttClient.h>
 #include "LList.h"

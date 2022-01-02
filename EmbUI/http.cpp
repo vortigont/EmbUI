@@ -1,18 +1,17 @@
-// This framework originaly based on JeeUI2 lib used under MIT License Copyright (c) 2019 Marsel Akhkamov
-// then re-written and named by (c) 2020 Anton Zolotarev (obliterator) (https://github.com/anton-zolotarev)
-// also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
-// and others people
+/*
+  Jusr another EMBUI fork of a fork :) https://github.com/vortigont/EmbUI/
+
+  This framework originaly based on JeeUI2 lib used under MIT License Copyright (c) 2019 Marsel Akhkamov
+  then re-written and named by (c) 2020 Anton Zolotarev (obliterator) (https://github.com/anton-zolotarev)
+  also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
+  and others people
+*/
 
 #include "EmbUI.h"
 
 // Update defs
-#ifndef ESP_IMAGE_HEADER_MAGIC
- #define ESP_IMAGE_HEADER_MAGIC 0xE9
-#endif
-
-#ifndef GZ_HEADER
- #define GZ_HEADER 0x1F
-#endif
+#define ESP_IMAGE_HEADER_MAGIC 0xE9
+#define GZ_HEADER 0x1F
 
 /**
  * @brief OTA update handler
