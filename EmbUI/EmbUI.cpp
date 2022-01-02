@@ -106,6 +106,23 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     }
 }
 
+
+// EmbUI constructor
+EmbUI::EmbUI() : cfg(__CFGSIZE), section_handle(), server(80), ws(F(WEBSOCK_URI)){
+
+    // Enable persistent storage for ESP8266 Core >3.0.0 (https://github.com/esp8266/Arduino/pull/7902)
+    #ifdef WIFI_IS_OFF_AT_BOOT
+        enableWiFiAtBootTime(); // can be called from anywhere with the same effect
+    #endif
+
+        memset(mc,0,sizeof(mc));
+        getmacid();
+
+        ts.addTask(embuischedw);    // WiFi helper
+        tAutoSave.set(sysData.asave * AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
+        ts.addTask(tAutoSave);
+ }
+
 void EmbUI::begin(){
     uint8_t retry_cnt = 3;
 
@@ -151,7 +168,7 @@ void EmbUI::begin(){
     ws.onEvent(onWsEvent);      // WebSocket event handler
     server.addHandler(&ws);
 
-    http_set_handlers();
+    http_set_handlers();        // install various http handlers
     server.begin();
 
 #ifdef USE_SSDP
@@ -215,7 +232,7 @@ void EmbUI::section_handle_remove(const String &name)
 }
 
 
-void EmbUI::section_handle_add(const String &name, buttonCallback response)
+void EmbUI::section_handle_add(const String &name, actionCallback response)
 {
     section_handle_t *section = new section_handle_t;
     section->name = name;
