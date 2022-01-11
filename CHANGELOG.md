@@ -1,8 +1,17 @@
 ## Changelog
+<<<<<<< HEAD
+
+### user UI
++ 3D buttons with a better looking 'press' feedback
+* pure.css resources updated to 2.0.6
+* small corrections in ccs 
+* revert DHCP client hostname WA for esp32 Arduino core >2.x
+* corrected NTPoDHCP feature for esp32 in a recent 2.x core
 
 ### v2.6.1 - 2021.11.27
-* Use embeded LittleFS lib for ESP32 Arduino core 2.0.0
+* Use embeded LittleFS lib for ESP32 Arduino core >=2.0.0
 * building for ESP32 Arduino core v2.0.0
+* comment() html element could also be updated with json_section_content()
 
 ### v2.6.0 - 2021.10.28
 * BasicUI methods moved into namespace

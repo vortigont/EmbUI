@@ -12,79 +12,66 @@
 #define EMBUI_VERSION_MINOR     6
 #define EMBUI_VERSION_REVISION  1
 
-/* make version as integer*/
-#define EMBUI_VERSION ((EMBUI_VERSION_MAJOR) << 16 | (EMBUI_VERSION_MINOR) << 8 | (EMBUI_VERSION_REVISION))
+#define EMBUI_VERSION_VALUE     (MAJ, MIN, REV) ((MAJ) << 16 | (MIN) << 8 | (REV))
 
-/* make version as string*/
-#define EMBUI_VERSION_STRING   TOSTRING(EMBUI_VERSION_MAJOR) "." TOSTRING(EMBUI_VERSION_MINOR) "." TOSTRING(EMBUI_VERSION_REVISION)
+/* make version as integer for comparison */
+#define EMBUI_VERSION           EMBUI_VERSION_VALUE(EMBUI_VERSION_MAJOR, EMBUI_VERSION_MINOR, EMBUI_VERSION_REVISION)
+
+/* make version as string, i.e. "2.6.1" */
+#define EMBUI_VERSION_STRING    TOSTRING(EMBUI_VERSION_MAJOR) "." TOSTRING(EMBUI_VERSION_MINOR) "." TOSTRING(EMBUI_VERSION_REVISION)
 // compat definiton
-#define EMBUIVER    EMBUI_VERSION_STRING
+#define EMBUIVER                EMBUI_VERSION_STRING
 
 #include <FS.h>
 
 #ifdef ESP8266
- #include <ESPAsyncTCP.h>
+// #include <ESPAsyncTCP.h>
  #include <LittleFS.h>
  #define FORMAT_LITTLEFS_IF_FAILED
+ #include <Updater.h>
 #endif
 
 #ifdef ESP32
- #include <AsyncTCP.h>
-
- #if ARDUINO <= 10805
+// #include <AsyncTCP.h>
+ #ifdef ESP_ARDUINO_VERSION
+  #include <LittleFS.h>
+ #else
   #include <LITTLEFS.h>
   #define LittleFS LITTLEFS
- #else
-  #include <LittleFS.h>
  #endif
 
  #ifndef FORMAT_LITTLEFS_IF_FAILED
   #define FORMAT_LITTLEFS_IF_FAILED true
  #endif
  #define U_FS   U_SPIFFS
+ #include <Update.h>
 #endif
 
 
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
 
-#ifdef ESP8266
- #include <Updater.h>
- #include <ESP8266mDNS.h>        // Include the mDNS library
- #ifdef USE_SSDP
-  #include <ESP8266SSDP.h>
- #endif
-#endif
-
-#ifdef ESP32
- #include <ESPmDNS.h>
- #include <Update.h>
- #ifdef USE_SSDP
-  #include <ESP32SSDP.h>
- #endif
-#endif
-
 #include <AsyncMqttClient.h>
 #include "LList.h"
 #include "ts.h"
 #include "timeProcessor.h"
 
-#define UDP_PORT            4243    // UDP server port
+#define UDP_PORT                4243    // UDP server port
 
 #ifndef PUB_PERIOD
-#define PUB_PERIOD 10            // Values Publication period, s
+#define PUB_PERIOD              10      // Values Publication period, s
 #endif
 
-#define MQTT_PUB_PERIOD     30
+#define MQTT_PUB_PERIOD         30
 
 #ifndef DELAY_AFTER_FS_WRITING
-#define DELAY_AFTER_FS_WRITING       (50U)                        // 50мс, меньшие значения могут повлиять на стабильность
+#define DELAY_AFTER_FS_WRITING  (50U)   // 50мс, меньшие значения могут повлиять на стабильность
 #endif
 
-#define AUTOSAVE_TIMEOUT    2       // configuration autosave timer, sec    (4 bit value, multiplied by AUTOSAVE_MULTIPLIER)
+#define AUTOSAVE_TIMEOUT        2       // configuration autosave timer, sec    (4 bit value, multiplied by AUTOSAVE_MULTIPLIER)
 
 #ifndef AUTOSAVE_MULTIPLIER
-#define AUTOSAVE_MULTIPLIER       (10U)                           // множитель таймера автосохранения конфиг файла
+#define AUTOSAVE_MULTIPLIER     (10U)   // множитель таймера автосохранения конфиг файла
 #endif
 
 #ifndef __DISABLE_BUTTON0
@@ -102,8 +89,10 @@
 #endif
 
 #ifndef MAX_WS_CLIENTS
-#define MAX_WS_CLIENTS 4
+#define MAX_WS_CLIENTS          4
 #endif
+
+#define WEBSOCK_URI             "/ws"
 
 // TaskScheduler - Let the runner object be a global, single instance shared between object files.
 extern Scheduler ts;
@@ -155,26 +144,27 @@ class Interface;
     } \
 }
 
-void __attribute__((weak)) section_main_frame(Interface *interf, JsonObject *data);
-void __attribute__((weak)) pubCallback(Interface *interf);
-String __attribute__((weak)) httpCallback(const String &param, const String &value, bool isset);
+// Weak Callback functions (user code might override it)
+void    __attribute__((weak)) section_main_frame(Interface *interf, JsonObject *data);
+void    __attribute__((weak)) pubCallback(Interface *interf);
+String  __attribute__((weak)) httpCallback(const String &param, const String &value, bool isset);
 uint8_t __attribute__((weak)) uploadProgress(size_t len, size_t total);
-void __attribute__((weak)) create_parameters();
+void    __attribute__((weak)) create_parameters();
 
 //----------------------
 
 #ifdef USE_SSDP
   #ifndef EXTERNAL_SSDP
-    #define __SSDPNAME ("EmbUI (kDn)")
-    #define __SSDPURLMODEL ("https://github.com/DmytroKorniienko/")
-    #define __SSDPMODEL ("https://github.com/DmytroKorniienko/")
-    #define __SSDPURLMANUF ("https://github.com/anton-zolotarev")
-    #define __SSDPMANUF ("obliterator")
+    #define __SSDPNAME      ("EmbUI")
+    #define __SSDPURLMODEL  ("https://github.com/vortigont/")
+    #define __SSDPMODEL     EMBUI_VERSION_STRING
+    #define __SSDPURLMANUF  ("https://github.com/anton-zolotarev")
+    #define __SSDPMANUF     ("obliterator")
   #endif
 
   static const char PGnameModel[] PROGMEM = TOSTRING(__SSDPNAME);
   static const char PGurlModel[] PROGMEM = TOSTRING(__SSDPURLMODEL);
-  static const char PGversion[] PROGMEM = TOSTRING(EMBUIVER);
+  static const char PGversion[] PROGMEM = EMBUI_VERSION_STRING;
   static const char PGurlManuf[] PROGMEM = TOSTRING(__SSDPURLMANUF);
   static const char PGnameManuf[] PROGMEM = TOSTRING(__SSDPMANUF);
 #endif
@@ -189,11 +179,11 @@ enum CallBack : uint8_t {
     TimeSet
 };
 
-typedef void (*buttonCallback) (Interface *interf, JsonObject *data);
+typedef void (*actionCallback) (Interface *interf, JsonObject *data);
 
 typedef struct section_handle_t{
     String name;
-    buttonCallback callback;
+    actionCallback callback;
 } section_handle_t;
 
 
@@ -233,27 +223,14 @@ class EmbUI
     } BITFIELDS;
     //#pragma pack(pop)
 
-    bool fsDirty = false;   // флаг поврежденной FS (ошибка монтирования)
+    bool fsDirty = false;       // флаг поврежденной FS (ошибка монтирования)
 
-    DynamicJsonDocument cfg;
-    LList<section_handle_t*> section_handle;
+    DynamicJsonDocument cfg;    // system config
+    LList<section_handle_t*> section_handle;        // action handlers
     AsyncMqttClient mqttClient;
 
   public:
-    EmbUI() : cfg(__CFGSIZE), section_handle(), server(80), ws(F("/ws")){
-
-    // Enable persistent storage for ESP8266 Core >3.0.0 (https://github.com/esp8266/Arduino/pull/7902)
-    #ifdef WIFI_IS_OFF_AT_BOOT
-        enableWiFiAtBootTime(); // can be called from anywhere with the same effect
-    #endif
-
-        memset(mc,0,sizeof(mc));
-        getmacid();
-
-        ts.addTask(embuischedw);    // WiFi helper
-        tAutoSave.set(sysData.asave * AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
-        ts.addTask(tAutoSave);
-    }
+    EmbUI();
 
     ~EmbUI(){
         ts.deleteTask(tAutoSave);
@@ -270,7 +247,7 @@ class EmbUI
     std::unique_ptr<char[]> autohostname;   // pointer for autogenerated hostname
     char mc[4]; // last 3 LSB's of mac addr used as an ID
 
-    void section_handle_add(const String &btn, buttonCallback response);
+    void section_handle_add(const String &btn, actionCallback response);
     void section_handle_remove(const String &name);
 
 
@@ -293,9 +270,21 @@ class EmbUI
 
     bool isparamexists(const char* key){ return cfg.containsKey(key);}
     bool isparamexists(const String &key){ return cfg.containsKey(key);}
+
     void led(uint8_t pin, bool invert);
 
+    /**
+     * @brief EmbUI initialization
+     * load configuration from FS, setup WiFi, obtain system date/time, etc...
+     * 
+     */
     void begin();
+
+    /**
+     * @brief EmbUI process handler
+     * must be placed into loop()
+     * 
+     */
     void handle();
 
     // config operations
@@ -536,6 +525,15 @@ class EmbUI
     void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 #endif
 
+    // HTTP handlers
+
+    /**
+     * @brief Set HTTP-handlers for EmbUI related URL's
+     * called at framework initialization
+     */
+    void http_set_handlers();
+
+
     // MQTT Private Methods and vars
     String m_pref; // к сожалению они нужны, т.к. в клиент передаются указатели на уже имеющийся объект, значит на конфиг ссылку отдавать нельзя!!!
     String m_host;
@@ -574,9 +572,7 @@ class EmbUI
 
 #ifdef USE_SSDP
     void ssdp_begin() {
-          String hn = param(FPSTR(P_hostname));
-          if (!hn.length())
-              var(FPSTR(P_hostname), String(__IDPREFIX) + mc, true);
+          String hn = hostname();
 
           uint32_t chipId;
           #ifdef ESP32
@@ -587,7 +583,7 @@ class EmbUI
           SSDP.setDeviceType(F("upnp:rootdevice"));
           SSDP.setSchemaURL(F("description.xml"));
           SSDP.setHTTPPort(80);
-          SSDP.setName(param(FPSTR(P_hostname)));
+          SSDP.setName(hostname());
           SSDP.setSerialNumber(String(chipId));
           SSDP.setURL(F("/"));
           SSDP.setModelName(FPSTR(PGnameModel));

@@ -44,6 +44,9 @@ TimeProcessor::TimeProcessor()
    
 #ifdef ESP32
     sntp_set_time_sync_notification_cb( [](struct timeval *tv){ timeavailable(tv);} );
+#ifdef ESP_ARDUINO_VERSION
+    sntp_servermode_dhcp(1);
+#endif
 #endif
 
     configTzTime(TZONE, ntp1, ntp2, ntpCustom.get());
@@ -139,14 +142,16 @@ void TimeProcessor::onSTADisconnected(const WiFiEventStationModeDisconnected eve
 
 #ifdef ESP32
 void TimeProcessor::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info){
-    switch (event)
-    {
+    switch (event){
     case SYSTEM_EVENT_STA_GOT_IP:
+        sntp_setservername(1, (char*)ntp2);
+        if (ntpCustom.get())
+            sntp_setservername(CUSTOM_NTP_INDEX, ntpCustom.get());
         sntp_init();
         LOG(println, F("UI TIME: Starting sntp sync"));
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
-        sntp_stop();
+        //sntp_stop();
         break;
     default:
         break;
@@ -246,7 +251,8 @@ void TimeProcessor::ntpodhcp(bool enable){
         LOG(println, F("TIME: Disabling NTP over DHCP"));
         sntp_setservername(0, (char*)ntp1);
         sntp_setservername(1, (char*)ntp2);
-        sntp_setservername(CUSTOM_NTP_INDEX, ntpCustom.get());
+        if (ntpCustom.get())
+            sntp_setservername(CUSTOM_NTP_INDEX, ntpCustom.get());
     }
 };
 

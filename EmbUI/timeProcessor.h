@@ -24,10 +24,9 @@
 #endif
 #endif
 
-#ifdef ESP8266
+#if defined ESP8266 || defined ESP_ARDUINO_VERSION
     #define CUSTOM_NTP_INDEX    2
-#endif
-#ifdef ESP32
+#else
     #define CUSTOM_NTP_INDEX    0
 #endif
 

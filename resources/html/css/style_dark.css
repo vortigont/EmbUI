@@ -6,7 +6,7 @@ label {white-space: nowrap;}
 .switch-block {margin: 20px 0px 15px 0px;}
 .header-block {color: #ddd;}
 .nested {padding: 0px 10px 0px 10px; border: 1px solid #ddd;}
-.mr {margin: 15px 0px 15px 0px !important;}
+.mr {margin: 5px 0px 5px 0px !important;}
 .spacer {text-align: center; font-weight: 300; color: #ddd; padding-bottom: 10px; margin: 15px 0px 15px 0px; border-bottom: 1px solid #ddd;}
 .comment {margin: 1em 0;}
 .frame {width: 100%; height: 480px; min-height: 50px; resize: vertical;}
@@ -56,6 +56,43 @@ body {
   display : none;
 }
 
+/* Button shade style */
+button{
+	position:relative;
+	transition:500ms ease all;
+	outline:none;
+}
+button:hover{
+	background:#eee!important;
+	color:rgb(0, 120, 230)!important;
+	box-shadow: 3px 3px 5px 2px #97B1BF;
+}
+button:focus{
+	opacity: 0.7;
+	box-shadow: unset;
+	background: rgb(0, 140, 250);
+	color:rgb(50, 50, 50)!important;
+}
+button:before,button:after{
+	content:'';
+	position:absolute;
+	top:0;
+	right:0;
+	height:2px;
+	width:0;
+	background: rgb(0, 120, 230);
+}
+button:after{
+	right:inherit;
+	top:inherit;
+	left:0;
+	bottom:0;
+}
+button:hover:before,button:hover:after{
+  width:100%;
+  transition:1000ms ease all;
+}
+
 /* Sensor displays
  style inspired by https://github.com/viperet/esp8266-power-monitor */
  .display {
@@ -85,7 +122,7 @@ body {
 	background-clip: text;
 	-webkit-text-fill-color: transparent;
   }
-
+  
   .display > div::before {
 	font-family: sans-serif;
 	font-size: 0.5em;
@@ -100,3 +137,13 @@ body {
 	padding: 0 0 0 0.5em;
 	-webkit-text-fill-color: rgb(192, 178, 178);
   }
+  
+  /*
+  example of additional styles for display divs
+  #vcc:before {
+	content: 'Vcc:';
+  }
+  #vcc:after {
+	content: 'V';
+  }
+  */

@@ -451,7 +451,15 @@ class Interface {
 
 
         void spacer(const String &label = "");
-        void comment(const String &label = "");
+
+        /**
+         * @brief insert text comment (a simple <p>text</p> block)
+         * 
+         * @param id comment if (might be usefull when replaced with content() method)
+         * @param label - text label
+         */
+        void comment(const String &id, const String &label);
+        void comment(const String &label){ comment("", label); };
 
         /**
          * @brief - create generic html input element

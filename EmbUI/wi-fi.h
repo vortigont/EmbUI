@@ -9,10 +9,18 @@
 
 #ifdef ESP8266
  #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>        // Include the mDNS library
+#ifdef USE_SSDP
+ #include <ESP8266SSDP.h>
+#endif
 #endif
 
 #ifdef ESP32
  #include <WiFi.h>
+ #include <ESPmDNS.h>
+#ifdef USE_SSDP
+ #include <ESP32SSDP.h>
+#endif
 #endif
 
 #define WIFI_CONNECT_TIMEOUT    7       // timer for esp8266 STA connection attempt 
@@ -20,5 +28,3 @@
 #define WIFI_BEGIN_DELAY        3       // scheduled delay for STA begin() connection
 
 #define WIFI_PSK_MIN_LENGTH     8
-
-//#endif

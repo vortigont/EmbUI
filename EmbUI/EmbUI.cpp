@@ -6,15 +6,6 @@
 #include "EmbUI.h"
 #include "ui.h"
 
-// Update defs
-#ifndef ESP_IMAGE_HEADER_MAGIC
- #define ESP_IMAGE_HEADER_MAGIC 0xE9
-#endif
-
-#ifndef GZ_HEADER
- #define GZ_HEADER 0x1F
-#endif
-
 #define POST_ACTION_DELAY   50      // delay for large posts processing
 #define POST_LARGE_SIZE   256       // large post threshold
 
@@ -30,7 +21,6 @@ EmbUI embui;
  */
 void section_main_frame(Interface *interf, JsonObject *data) {}
 void pubCallback(Interface *interf){}
-String httpCallback(const String &param, const String &value, bool isSet) { return String(); }
 
 /**
  * WebSocket events handler
@@ -44,18 +34,9 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         section_main_frame(interf, nullptr);
         embui.send_pub();
         delete interf;
+        return;
+    }
 
-    } else
-    if(type == WS_EVT_DISCONNECT){
-        LOG(printf_P, PSTR("ws[%s][%u] disconnect\n"), server->url(), client->id());
-    } else
-    if(type == WS_EVT_ERROR){
-        LOG(printf_P, PSTR("ws[%s][%u] error(%u): %s\n"), server->url(), client->id(), *((uint16_t*)arg), (char*)data);
-        httpCallback(F("sys_WS_EVT_ERROR"), "", false); // сообщим об ошибке сокета
-    } else
-    if(type == WS_EVT_PONG){
-        LOG(printf_P, PSTR("ws[%s][%u] pong[%u]: %s\n"), server->url(), client->id(), len, (len)?(char*)data:"");
-    } else
     if(type == WS_EVT_DATA){
         AwsFrameInfo *info = (AwsFrameInfo*)arg;
         if(info->final && info->index == 0 && info->len == len){
@@ -105,12 +86,42 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
             embui.post(data);
             delete res;
         }
+        return;
+    }
+
+    if(type == WS_EVT_DISCONNECT){
+        LOG(printf_P, PSTR("ws[%s][%u] disconnect\n"), server->url(), client->id());
+        return;
+    }
+
+    if(type == WS_EVT_ERROR){
+        LOG(printf_P, PSTR("ws[%s][%u] error(%u): %s\n"), server->url(), client->id(), *((uint16_t*)arg), (char*)data);
+        httpCallback(F("sys_WS_EVT_ERROR"), "", false); // сообщим об ошибке сокета
+        return;
+    }
+
+    if(type == WS_EVT_PONG){
+        LOG(printf_P, PSTR("ws[%s][%u] pong[%u]: %s\n"), server->url(), client->id(), len, (len)?(char*)data:"");
+        return;
     }
 }
 
-void notFound(AsyncWebServerRequest *request) {
-    request->send(404, FPSTR(PGmimetxt), FPSTR(PG404));
-}
+
+// EmbUI constructor
+EmbUI::EmbUI() : cfg(__CFGSIZE), section_handle(), server(80), ws(F(WEBSOCK_URI)){
+
+    // Enable persistent storage for ESP8266 Core >3.0.0 (https://github.com/esp8266/Arduino/pull/7902)
+    #ifdef WIFI_IS_OFF_AT_BOOT
+        enableWiFiAtBootTime(); // can be called from anywhere with the same effect
+    #endif
+
+        memset(mc,0,sizeof(mc));
+        getmacid();
+
+        ts.addTask(embuischedw);    // WiFi helper
+        tAutoSave.set(sysData.asave * AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
+        ts.addTask(tAutoSave);
+ }
 
 void EmbUI::begin(){
     uint8_t retry_cnt = 3;
@@ -148,10 +159,8 @@ void EmbUI::begin(){
     // восстанавливаем настройки времени
     timeProcessor.setcustomntp(paramVariant(FPSTR(P_userntp)).as<const char*>());
     timeProcessor.tzsetup(param(FPSTR(P_TZSET)).substring(4).c_str());  // cut off 4 chars of html selector index
-#ifndef ESP32
     if (paramVariant(FPSTR(P_noNTPoDHCP)))
         timeProcessor.ntpodhcp(false);
-#endif
 
     // запускаем WiFi
     wifi_init();
@@ -159,157 +168,12 @@ void EmbUI::begin(){
     ws.onEvent(onWsEvent);      // WebSocket event handler
     server.addHandler(&ws);
 
+    http_set_handlers();        // install various http handlers
+    server.begin();
+
 #ifdef USE_SSDP
     ssdp_begin(); LOG(println, F("Start SSDP"));
 #endif
-
-    server.on(PSTR("/version"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        request->send(200, FPSTR(PGmimetxt), F("EmbUI ver: " TOSTRING(EMBUIVER)));
-    });
-
-    server.on(PSTR("/cmd"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        String result; 
-        int params = request->params();
-        for(int i=0;i<params;i++){
-            AsyncWebParameter* p = request->getParam(i);
-            if(p->isFile()){ //p->isPost() is also true
-                //Serial.printf("FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
-            } else if(p->isPost()){
-                //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-            } else {
-                //Serial.printf("GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
-                result = httpCallback(p->name(), p->value(), !p->value().isEmpty());
-            }
-        }
-        request->send(200, FPSTR(PGmimetxt), result);
-    });
-
-    server.on(PSTR("/config"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-
-        AsyncResponseStream *response = request->beginResponseStream(FPSTR(PGmimejson));
-        response->addHeader(FPSTR(PGhdrcachec), FPSTR(PGnocache));
-
-        serializeJson(cfg, *response);
-
-        request->send(response);
-    });
-
-/*
-    // может пригодится позже, файлы отдаются как статика
-
-    server.on(PSTR("/config.json"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        request->send(LittleFS, FPSTR(P_cfgfile), String(), true);
-    });
-
-    server.on(PSTR("/events_config.json"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        request->send(LittleFS, F("/events_config.json"), String(), true);
-    });
-*/
-    // postponed reboot
-    server.on(PSTR("/restart"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        Task *t = new Task(TASK_SECOND*5, TASK_ONCE, nullptr, &ts, false, nullptr, [](){ LOG(println, F("Rebooting...")); delay(100); ESP.restart(); });
-        t->enableDelayed();
-        request->redirect(F("/"));
-    });
-
-    server.on(PSTR("/heap"), HTTP_GET, [this](AsyncWebServerRequest *request){
-        String out = String(F("Heap: "))+String(ESP.getFreeHeap());
-#ifdef EMBUI_DEBUG
-    #ifdef ESP8266
-        out += String(F("\nFrac: ")) + String(ESP.getHeapFragmentation());
-    #endif
-        out += String(F("\nClient: ")) + String(ws.count());
-#endif
-        request->send(200, FPSTR(PGmimetxt), out);
-    });
-
-    // Simple Firmware Update Form
-    server.on(PSTR("/update"), HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(200, FPSTR(PGmimehtml), F("<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' accept='.bin, .gz' name='update'><input type='submit' value='Update'></form>"));
-    });
-
-    server.on(PSTR("/update"), HTTP_POST, [this](AsyncWebServerRequest *request){
-        if (Update.hasError()) {
-            AsyncWebServerResponse *response = request->beginResponse(500, FPSTR(PGmimetxt), F("UPDATE FAILED"));
-            response->addHeader(F("Connection"), F("close"));
-            request->send(response);
-        } else {
-            Task *t = new Task(TASK_SECOND, TASK_ONCE, [](){ LOG(println, F("Rebooting...")); delay(100); ESP.restart(); }, &ts, false);
-            t->enableDelayed();
-            request->redirect(F("/"));
-        }
-    },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
-        if (!index) {
-            #ifdef ESP8266
-        	int type = (data[0] == ESP_IMAGE_HEADER_MAGIC || data[0] == GZ_HEADER)? U_FLASH : U_FS;
-                Update.runAsync(true);
-                // TODO: разобраться почему под littlefs образ генерится чуть больше чем размер доступной памяти по константам
-                size_t size = (type == U_FLASH)? request->contentLength() : (uintptr_t)&_FS_end - (uintptr_t)&_FS_start;
-            #endif
-            #ifdef ESP32
-                int type = (data[0] == ESP_IMAGE_HEADER_MAGIC)? U_FLASH : U_FS;
-                size_t size = (type == U_FLASH)? request->contentLength() : UPDATE_SIZE_UNKNOWN;
-            #endif
-            LOG(printf_P, PSTR("Updating %s, file size:%u\n"), (type == U_FLASH)? "Firmware" : "Filesystem", request->contentLength());
-
-            if (!Update.begin(size, type)) {
-                Update.printError(Serial);
-            }
-        }
-        if (!Update.hasError()) {
-            if(Update.write(data, len) != len){
-                Update.printError(Serial);
-            }
-        }
-        if (final) {
-            if(Update.end(true)){
-                LOG(printf_P, PSTR("Update Success: %uB\n"), index+len);
-            } else {
-                Update.printError(Serial);
-            }
-        }
-        uploadProgress(index + len, request->contentLength());
-    });
-
-    //First request will return 0 results unless you start scan from somewhere else (loop/setup)
-    //Do not request more often than 3-5 seconds
-    server.on(PSTR("/scan"), HTTP_GET, [](AsyncWebServerRequest *request){
-        String json = F("[");
-        int n = WiFi.scanComplete();
-        if(n == -2){
-            WiFi.scanNetworks(true);
-        } else if(n){
-            for (int i = 0; i < n; ++i){
-            if(i) json += F(",");
-            json += F("{");
-            json += String(F("\"rssi\":"))+String(WiFi.RSSI(i));
-            json += String(F(",\"ssid\":\""))+WiFi.SSID(i)+F("\"");
-            json += String(F(",\"bssid\":\""))+WiFi.BSSIDstr(i)+F("\"");
-            json += String(F(",\"channel\":"))+String(WiFi.channel(i));
-            json += String(F(",\"secure\":"))+String(WiFi.encryptionType(i));
-#ifdef ESP8266
-            json += String(F(",\"hidden\":"))+String(WiFi.isHidden(i)?FPSTR(P_true):FPSTR(P_false)); // что-то сломали и в esp32 больше не работает...
-#endif
-            json += F("}");
-            }
-            WiFi.scanDelete();
-            if(WiFi.scanComplete() == -2){
-            WiFi.scanNetworks(true);
-            }
-        }
-        json += F("]");
-        request->send(200, FPSTR(PGmimejson), json);
-        json = String();
-    });
-
-    // server all files from LittleFS root
-    server.serveStatic("/", LittleFS, "/")
-        .setDefaultFile(PSTR("index.html"))
-        .setCacheControl(PSTR("max-age=14400"));
-
-    server.onNotFound(notFound);
-
-    server.begin();
 
     setPubInterval(PUB_PERIOD);
 
@@ -368,7 +232,7 @@ void EmbUI::section_handle_remove(const String &name)
 }
 
 
-void EmbUI::section_handle_add(const String &name, buttonCallback response)
+void EmbUI::section_handle_add(const String &name, actionCallback response)
 {
     section_handle_t *section = new section_handle_t;
     section->name = name;
@@ -461,21 +325,6 @@ void EmbUI::set_callback(CallBack set, CallBack action, callback_function_t call
             return;
     }
 };
-
-/*
- * OTA update progress
- */
-uint8_t uploadProgress(size_t len, size_t total){
-    static int prev = 0;
-    float part = total / 25.0;  // logger chunks
-    int curr = len / part;
-    uint8_t progress = 100*len/total;
-    if (curr != prev) {
-        prev = curr;
-        LOG(printf_P, PSTR("%u%%.."), progress );
-    }
-    return progress;
-}
 
 /**
  * call to create system-dependent variables,
