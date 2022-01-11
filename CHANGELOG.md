@@ -1,12 +1,12 @@
 ## Changelog
-<<<<<<< HEAD
 
-### user UI
-+ 3D buttons with a better looking 'press' feedback
-* pure.css resources updated to 2.0.6
-* small corrections in ccs 
+### v2.6.2 - 2022.01.11
 * revert DHCP client hostname WA for esp32 Arduino core >2.x
 * corrected NTPoDHCP feature for esp32 in a recent 2.x core
+#### user UI
++ 3D buttons with a better looking 'press' feedback
+* pure.css resources updated to 2.0.6
+* small corrections in css
 
 ### v2.6.1 - 2021.11.27
 * Use embeded LittleFS lib for ESP32 Arduino core >=2.0.0
