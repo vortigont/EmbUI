@@ -131,7 +131,7 @@
 		{{/if}}
 		{{#if type == "checkbox"}}
 			<div class="switch-block">
-				<input type="checkbox" id="{{id}}" name="{{id}}" class="checkbox" {{#if2 value == "1" || value == "true"}}checked{{/if2}} {{#if2 directly}}{{onevent "click", "on_change", id}}{{/if2}}>
+				<input type="checkbox" id="{{id}}" name="{{id}}" class="checkbox" {{#if2 value == true || value == 1 || value == "true" || value == "1"}}checked{{/if2}} {{#if2 directly}}{{onevent "click", "on_change", id}}{{/if2}}>
 					<label class="switch" for="{{id}}"><span class="checkbox-label">{{label}}</span></label>
 				</input>
 			</div>
@@ -157,7 +157,7 @@
 		{{#if html == "iframe2"}}
 			<div class="frame"><iframe id="{{id}}" name="{{id}}" src="{{value}}" class="iframe">iframe does not supported</iframe></div>
 		{{/if}}
-		{{#if html == "custom" && type == "div"}}
+		{{#if html == "custom" && type == "js"}}
 		<!-- Custom div element, on create 'div' calls user js-function with a name passed in {{value}} parameter
 			params: id - becomes div ID and name
 			param.class - becomes css class selector
@@ -165,7 +165,7 @@
 			label - becomes span "comment" element
 		-->
 			<span class="comment">{{label}}</span>
-			<div id="{{id}}" name="{{id}}" class="{{param.class}}"><img src onerror='{{value}}("{{id}}")'></div>
+			<div id="{{id}}" name="{{id}}" class="{{param.class}}"><img src onerror='{{value}}("{{id}}","{{param.arg1}}")'></div>
 		{{/if}}
 		{{#if html == "custom" && type == "txt"}}
 		<!-- Custom div with text content,
@@ -180,7 +180,8 @@
 	</script>
 
 	<script src="js/embui.js"></script>
-<!-- 	<script src="js/lib.js"></script>
+<!--
+	<script src="js/lib.js"></script>
 	<script src="js/maker.js"></script>
  -->
 </body>
