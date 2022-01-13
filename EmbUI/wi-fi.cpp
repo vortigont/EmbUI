@@ -16,6 +16,7 @@ void EmbUI::wifi_connect(const char *ssid, const char *pwd)
                     WiFi.disconnect();
                     WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
                 #endif
+
                 _ssid.length() ? WiFi.begin(_ssid.c_str(), _pwd.c_str()) : WiFi.begin();
                 ts.getCurrentTask()->disable();
         }
@@ -99,10 +100,10 @@ const char* EmbUI::hostname(){
     if (autohostname.get())
         return autohostname.get();
 
-    LOG(println, F("generate autohostname"));
-
-    autohostname = std::unique_ptr<char[]>(new char[sizeof(__IDPREFIX) + sizeof(mc) + 2]);
+    autohostname.reset(new char[sizeof(__IDPREFIX) + sizeof(mc) * 2]);
     sprintf_P(autohostname.get(), PSTR(__IDPREFIX "-%s"), mc);
+    LOG(printf_P, PSTR("generate autohostname: %s\n"), autohostname.get());
+
     return autohostname.get();
 }
 

@@ -23,7 +23,8 @@
 #endif
 #endif
 
-#define WIFI_CONNECT_TIMEOUT    7       // timer for esp8266 STA connection attempt 
+#define WIFI_CONNECT_TIMEOUT    10      // timer for esp8266 STA connection attempt 
+#define WIFI_SET_AP_AFTER_DISCONNECT_TIMEOUT    15      // time after WiFi client disconnects and before internal AP is brought up
 #define WIFI_RECONNECT_TIMER    30      // timer for esp8266, STA connect retry
 #define WIFI_BEGIN_DELAY        3       // scheduled delay for STA begin() connection
 

@@ -28,7 +28,6 @@ void EmbUI::onSTAGotIP(WiFiEventStationModeGotIP ipInfo)
     setup_mDns();
 
     // shutdown AP after timeout
-    embuischedw.disable();
     embuischedw.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [](){
         if(WiFi.getMode() == WIFI_STA)
             return;
@@ -41,13 +40,14 @@ void EmbUI::onSTAGotIP(WiFiEventStationModeGotIP ipInfo)
 
 void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
 {
+    //https://github.com/esp8266/Arduino/blob/master/libraries/ESP8266WiFi/src/ESP8266WiFiType.h
     LOG(printf_P, PSTR("UI WiFi: Disconnected from SSID: %s, reason: %d\n"), event_info.ssid.c_str(), event_info.reason);
     sysData.wifi_sta = false;       // to be removed and replaced with API-method
 
     if (embuischedw.isEnabled())
         return;
 
-    if(param(FPSTR(P_APonly)) == "1")
+    if(paramVariant(FPSTR(P_APonly)))
         return;
 
     /*
@@ -56,7 +56,7 @@ void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
       В качестве решения переключаем контроллер в режим AP-only после WIFI_CONNECT_TIMEOUT таймаута на попытку переподключения.
       Далее делаем периодические попытки переподключений каждые WIFI_RECONNECT_TIMER секунд
     */
-    embuischedw.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){
+    embuischedw.set(WIFI_SET_AP_AFTER_DISCONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){
         wifi_setAP();
         WiFi.enableSTA(false);
         Task *t = new Task(WIFI_RECONNECT_TIMER * TASK_SECOND, TASK_ONCE,
