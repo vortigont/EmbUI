@@ -323,11 +323,11 @@ void block_settings_sys(Interface *interf, JsonObject *data){
 void set_settings_wifi(Interface *interf, JsonObject *data){
     if (!data) return;
 
-    const char *ssid = (*data)[FPSTR(P_WCSSID)];    // переменные доступа в конфиге не храним
-    const char *pwd = (*data)[FPSTR(P_WCPASS)];     // фреймворк хранит последнюю доступную точку самостоятельно
+    String ssid = (*data)[FPSTR(P_WCSSID)];     // переменные доступа в конфиге не храним
+    String pwd = (*data)[FPSTR(P_WCPASS)];      // фреймворк хранит последнюю доступную точку самостоятельно
 
     embui.var_remove(FPSTR(P_APonly)); // сборосим режим принудительного AP, при попытке подключения к роутеру
-    embui.wifi_connect(ssid, pwd);
+    embui.wifi_connect(ssid.c_str(), pwd.c_str());
 
     section_settings_frame(interf, data);           // переходим в раздел "настройки"
 }
