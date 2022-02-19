@@ -141,7 +141,9 @@ void EmbUI::begin(){
     load();                 // try to load config from file
     create_sysvars();       // create system variables (if missing)
     create_parameters();    // weak function, creates user-defined variables
+#ifdef EMBUI_MQTT
     mqtt(param(FPSTR(P_m_pref)), param(FPSTR(P_m_host)), param(FPSTR(P_m_port)).toInt(), param(FPSTR(P_m_user)), param(FPSTR(P_m_pass)), mqtt_emptyFunction, false); // init mqtt
+#endif
 
     LOG(print, F("UI CONFIG: "));
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));

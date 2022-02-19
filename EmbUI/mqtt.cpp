@@ -3,6 +3,8 @@
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
 // and others people
 
+#ifdef EMBUI_MQTT
+
 #include "EmbUI.h"
 extern EmbUI embui;
 
@@ -249,3 +251,5 @@ void EmbUI::pub_mqtt(const String &key, const String &value){
 void EmbUI::subscribe(const String &topic){
     mqttClient.subscribe(id(topic).c_str(), 0);
 }
+
+#endif  // EMBUI_MQTT
