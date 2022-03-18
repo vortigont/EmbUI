@@ -1,4 +1,9 @@
 Import("env")
-print("Replace MKSPIFFSTOOL with mklittlefs")
-# replace with .exe file for windows if required
-env.Replace (MKSPIFFSTOOL = "./mklittlefs")
+import platform
+
+if platform.system()  == 'Windows':
+    print("Replace MKSPIFFSTOOL with mklittlefs.exe")
+    env.Replace (MKSPIFFSTOOL = "./mklittlefs.exe")
+else:
+    print("Replace MKSPIFFSTOOL with mklittlefs")
+    env.Replace (MKSPIFFSTOOL = "./mklittlefs")

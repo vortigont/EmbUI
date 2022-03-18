@@ -11,7 +11,6 @@
   - Дата/время
     - автоматическая синхронизация по ntp
     - установка часового пояса/правил перехода сезонного времени
-    - автоматическое определение даты/времени/смещения через web-сервис  
     - установка текущей даты/времени вручную  
   - Локализация интерфейса
     -  пример построения мультиязычного web-интерфейса
@@ -19,11 +18,13 @@
   - Базовые настройки MQTT
   - OTA обновление прошивки и образа файловой системы
 
+Установка:
 
-### ESP32 version
-В процессе адаптации
+ - в папку ./data развернуть файлы фреймворка из архива /resources/data.zip
+ - собрать проект в platformio
+ - залить FS в контроллер `pio run -t uploadfs`
+ - залить прошивку в контроллер `pio run -t upload`
 
-Известные проблемы:
-  - не работает callback по событию получения точного времени
-  - опция компиляции TZONE работет некорректно из-за отсутствия в arduino-ESP32 файла с константами правил зон TZ.h
-  - SSDP/mDNS не тестировался
+To upload LitlleFS image for ESP32 (until core v2 is out) it is required to use an uploader binary *mklittlefs*. Pls, download version for your OS from [here]
+(https://github.com/earlephilhower/mklittlefs/releases) and put the binary to the root dir of the project.
+
