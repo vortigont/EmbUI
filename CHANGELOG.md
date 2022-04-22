@@ -1,4 +1,6 @@
 ## Changelog
+
+* removed dependency on external LittleFS lib for esp32
 * revert DHCP client hostname WA for esp32 Arduino core >2.x
 * corrected NTPoDHCP feature for esp32 in a recent 2.x core
 * Use embeded LittleFS lib for ESP32 Arduino core >=2.0.0
