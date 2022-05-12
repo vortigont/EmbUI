@@ -12,6 +12,8 @@
 // Update defs
 #define ESP_IMAGE_HEADER_MAGIC 0xE9
 #define GZ_HEADER 0x1F
+#define ZLIB_HEADER 0x78
+
 
 /**
  * @brief OTA update handler
@@ -84,7 +86,7 @@ void EmbUI::http_set_handlers(){
 
     // Simple OTA-Update Form
     server.on(PSTR("/update"), HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(200, FPSTR(PGmimehtml), F("<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' accept='.bin, .gz' name='update'><input type='submit' value='Update'></form>"));
+        request->send(200, FPSTR(PGmimehtml), F("<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' accept='.bin, .gz, .zz' name='update'><input type='submit' value='Update'></form>"));
     });
 
     server.on(PSTR("/update"), HTTP_POST, [this](AsyncWebServerRequest *request){
@@ -176,7 +178,7 @@ void ota_handler(AsyncWebServerRequest *request, String filename, size_t index, 
             size_t size = (type == U_FLASH)? request->contentLength() : (uintptr_t)&_FS_end - (uintptr_t)&_FS_start;
         #endif
         #ifdef ESP32
-            int type = (data[0] == ESP_IMAGE_HEADER_MAGIC)? U_FLASH : U_FS;
+            int type = (data[0] == ESP_IMAGE_HEADER_MAGIC || data[0] == ZLIB_HEADER)? U_FLASH : U_SPIFFS;
             size_t size = (type == U_FLASH)? request->contentLength() : UPDATE_SIZE_UNKNOWN;
         #endif
         LOG(printf_P, PSTR("Updating %s, file size:%u\n"), (type == U_FLASH)? "Firmware" : "Filesystem", request->contentLength());
