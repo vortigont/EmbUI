@@ -1,6 +1,6 @@
 #include "basicui.h"
 
-uint8_t lang;            // default language for text resources
+uint8_t lang = 1;            // default language for text resources (english)
 
 namespace basicui {
 

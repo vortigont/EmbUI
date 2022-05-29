@@ -66,7 +66,7 @@ enum TD : uint8_t {
     D_SYSSET,
     D_Text,
     D_Time,
-    D_UPLOAD,
+    D_UPDATEFW,
     D_UPLOADFW,
     D_UPLOADFS,
     D_User,
@@ -140,7 +140,7 @@ static const char T_EN_SETTINGS[] PROGMEM = "Settings";
 static const char T_EN_SYSSET[] PROGMEM = "System setup";
 static const char T_EN_Text[] PROGMEM = "Text";
 static const char T_EN_Time[] PROGMEM = "Time";
-static const char T_EN_UPLOAD[] PROGMEM = "Upload";
+static const char T_EN_UPDATEFW[] PROGMEM = "Firmware Update";
 static const char T_EN_UPLOADFW[] PROGMEM = "Upload FW";
 static const char T_EN_UPLOADFS[] PROGMEM = "Upload FS";
 static const char T_EN_User[] PROGMEM = "User";
@@ -204,7 +204,7 @@ static const char T_RU_SETTINGS[] PROGMEM = "Настройки";
 static const char T_RU_SYSSET[] PROGMEM = "Системные настройки";
 static const char T_RU_Text[] PROGMEM = "Текст";
 static const char T_RU_Time[] PROGMEM = "Время";
-static const char T_RU_UPLOAD[] PROGMEM = "Загрузить";
+static const char T_RU_UPDATEFW[] PROGMEM = "Обновление ПО";
 static const char T_RU_UPLOADFW[] PROGMEM = "Загрузить ПО";
 static const char T_RU_UPLOADFS[] PROGMEM = "Загрузить ФС";
 static const char T_RU_User[] PROGMEM = "Пользователь";
@@ -280,7 +280,7 @@ static const char *const T_DICT[][DICT_SIZE] PROGMEM = {
     T_RU_SYSSET,
     T_RU_Text,
     T_RU_Time,
-    T_RU_UPLOAD,
+    T_RU_UPDATEFW,
     T_RU_UPLOADFW,
     T_RU_UPLOADFS,
     T_RU_User,
@@ -351,7 +351,7 @@ static const char *const T_DICT[][DICT_SIZE] PROGMEM = {
     T_EN_SYSSET,
     T_EN_Text,
     T_EN_Time,
-    T_EN_UPLOAD,
+    T_EN_UPDATEFW,
     T_EN_UPLOADFW,
     T_EN_UPLOADFS,
     T_EN_User,
