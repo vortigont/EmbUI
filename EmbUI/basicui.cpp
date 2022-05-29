@@ -300,7 +300,7 @@ void block_settings_sys(Interface *interf, JsonObject *data){
     interf->json_section_main("", FPSTR(T_DICT[lang][TD::D_SYSSET]));
 
     // FW update
-    interf->json_section_hidden(FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_Update]));
+    interf->json_section_hidden(FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPDATEFW]));
     interf->spacer(FPSTR(T_DICT[lang][TD::D_FWLOAD]));
     interf->file(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFW]), F("fw"));
     interf->file(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFW]), F("fs"));
