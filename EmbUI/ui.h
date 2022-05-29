@@ -431,7 +431,7 @@ class Interface {
         void textarea(const String &id, const T &value, const String &label){ html_input(id, F("textarea"), value, label); };
         inline void textarea(const String &id, const String &label){ textarea(id, embui->paramVariant(id), label); };
 
-        void file(const String &name, const String &action, const String &label);
+        void file(const String &name, const String &action, const String &label, const String &opt = "");
 
         /**
          * @brief - create html button

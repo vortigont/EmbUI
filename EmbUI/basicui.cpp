@@ -302,7 +302,8 @@ void block_settings_sys(Interface *interf, JsonObject *data){
     // FW update
     interf->json_section_hidden(FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_Update]));
     interf->spacer(FPSTR(T_DICT[lang][TD::D_FWLOAD]));
-    interf->file(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOAD]));
+    interf->file(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFW]), F("fw"));
+    interf->file(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFW]), F("fs"));
     interf->json_section_end();
 
     interf->button(FPSTR(T_SET_CFGCLEAR), F("Clear sys config"), FPSTR(P_RED));
