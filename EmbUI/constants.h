@@ -73,12 +73,16 @@ static const char PGgzip[] PROGMEM = "gzip";
 static const char PGhdrcachec[] PROGMEM = "Cache-Control";
 static const char PGhdrcontentenc[] PROGMEM = "Content-Encoding";
 static const char PGmimecss[] PROGMEM  = "text/css";
-static const char PGmimehtml[] PROGMEM = "text/html; charset=utf-8";
 static const char PGmimejson[] PROGMEM = "application/json";
-static const char PGmimetxt[] PROGMEM  = "text/plain";
 static const char PGmimexml[] PROGMEM  = "text/xml";
 static const char PGnocache[] PROGMEM = "no-cache, no-store, must-revalidate";
 static const char PG404[] PROGMEM  = "Not found";
+static const char PGimg[] PROGMEM = "img";
+
+#ifndef ESP32
+static const char PGmimetxt[] PROGMEM  = "text/plain";
+static const char PGmimehtml[] PROGMEM = "text/html; charset=utf-8";
+#endif
 
 // LOG Messages
 static const char P_ERR_obj2large[] PROGMEM  = "UI: ERORR - can't add object to frame, too large!";

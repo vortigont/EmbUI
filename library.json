@@ -42,10 +42,15 @@
          "version": "*"},
         {"owner": "vortigont",
          "name": "LinkedList",
-         "version": "https://github.com/vortigont/LinkedList"}
+         "version": "https://github.com/vortigont/LinkedList"},
+        {"owner": "vortigont",
+         "name": "esp32-flashz",
+         "version": "https://github.com/vortigont/esp32-flashz",
+         "platforms": ["espressif32"]}
     ],
     "build": {
-        "srcDir": "EmbUI"
+        "srcDir": "EmbUI",
+	"libLDFMode": "deep"
     },
     "examples": [
         {

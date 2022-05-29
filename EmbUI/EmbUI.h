@@ -32,7 +32,6 @@
 #endif
 
 #ifdef ESP32
-// #include <AsyncTCP.h>
  #ifdef ESP_ARDUINO_VERSION
   #include <LittleFS.h>
  #else
@@ -44,7 +43,6 @@
   #define FORMAT_LITTLEFS_IF_FAILED true
  #endif
  #define U_FS   U_SPIFFS
- #include <Update.h>
 #endif
 
 
