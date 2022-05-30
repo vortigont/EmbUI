@@ -25,12 +25,13 @@ void Interface::frame2(const String &id, const String &value){
     frame_add_safe(obj.as<JsonObject>());
 }
 
-void Interface::file(const String &name, const String &action, const String &label){
+void Interface::file(const String &name, const String &action, const String &label, const String &opt){
     StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
     obj[FPSTR(P_html)] = FPSTR(P_file);
     obj[F("name")] = name;
     obj[F("action")] = action;
     obj[FPSTR(P_label)] = label;
+    if (opt.length()) obj["opt"] = opt;
 
     frame_add_safe(obj.as<JsonObject>());
 }

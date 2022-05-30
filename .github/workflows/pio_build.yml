@@ -6,9 +6,9 @@ name: PlatformIO CI
 
 on:
   push:
-    branches: [ main, feat ]
+    branches: [ main, feat, stage ]
   pull_request:
-    branches: [ main, feat ]
+    branches: [ main ]
 
 jobs:
   build:
