@@ -19,4 +19,14 @@
  - залить FS в контроллер `pio run -t uploadfs`
  - залить прошивку в контроллер `pio run -t upload`
 
+### Compressed OTA firmware upload external hook script
+Uncomment the following lines in platformio.ini and do the upload as usual `pio run -t upload`.
+More details at [ESP32-FlashZ](https://github.com/vortigont/esp32-flashz/tree/main/examples) examples
 
+```
+; compressed OTA upload via platformio hook
+;OTA_url = http://espembui/update
+;OTA_compress = true
+;extra_scripts =
+;    post:post_flashz.py
+```
