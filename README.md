@@ -7,7 +7,7 @@ __[CHANGELOG](/CHANGELOG.md)__ | [![PlatformIO CI](https://github.com/vortigont/
 Фреймворк построения web-интерфейса и элементов управления для проектов под Arduino 
 ## Поддерживаемые платформы
  - ESP8266 Arduino Core
- - ESP32 Arduino Core
+ - ESP32, ESP32-S2, ESP32-C3 Arduino Core (ESP32-S3 not tested)
 
 ## Возможности
  - автопубликация контроллера в локальной сети через [mDNS](https://en.wikipedia.org/wiki/Multicast_DNS)/[ZeroConf](https://en.wikipedia.org/wiki/Zero-configuration_networking)

@@ -1,7 +1,7 @@
 ## Changelog
 
 * switch to own fork of [ESPAsyncServer](https://github.com/vortigont/ESPAsyncWebServer#hotfixes) with a bunch of fixes required to properly support ESP-s2/ESP-c3 platforms (ESP-S3 not tested yet)
-+ zlib-compressed OTA updates for EPS32-* via [esp32-flashz](https://github.com/vortigont/esp32-flashz)
++ zlib-compressed OTA updates for EPS32-* via [esp32-flashz](https://github.com/vortigont/esp32-flashz) lib
 * removed dependency on external LittleFS lib for esp32
 * revert DHCP client hostname WA for esp32 Arduino core >2.x
 * corrected NTPoDHCP feature for esp32 in a recent 2.x core
