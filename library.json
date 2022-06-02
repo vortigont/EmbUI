@@ -50,7 +50,7 @@
     ],
     "build": {
         "srcDir": "EmbUI",
-	"libLDFMode": "deep",
+	"libLDFMode": "chain",
 	"libCompatMode": "strict"
     },
     "examples": [
