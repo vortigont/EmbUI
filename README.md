@@ -1,7 +1,7 @@
 # EmbUI
 Embedded WebUI Interface framework
 
-__[CHANGELOG](/CHANGELOG.md)__ | [![PlatformIO CI](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml/badge.svg)](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml)
+__[EXAMPLES](/examples) | [CHANGELOG](/CHANGELOG.md)__ | [![PlatformIO CI](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml/badge.svg)](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml)
 
 
 Фреймворк построения web-интерфейса и элементов управления для проектов под Arduino 
@@ -24,15 +24,19 @@ __[CHANGELOG](/CHANGELOG.md)__ | [![PlatformIO CI](https://github.com/vortigont/
  - возможность подгружать данные/элементы интерфейса через AJAX
 
 ## Проекты на EmbUI
- - [FireLamp_JeeUI](https://github.com/DmytroKorniienko/FireLamp_JeeUI/tree/dev) - огненная лампа на светодиодной матрице ws2812
  - [ESPEM](https://github.com/vortigont/espem) - энергометр на основе измерителя PZEM-004
  - [InfoClock](https://github.com/vortigont/infoclock) - Часы-информер на матричных модулях Max72xx
+ - [FireLamp_JeeUI](https://github.com/DmytroKorniienko/FireLamp_JeeUI/tree/dev) - огненная лампа на светодиодной матрице ws2812 _(исходный проект, не совместим с данным форком)_
+
 
 
 ## Примеры построения интерфейсов
 
-<img src="https://raw.githubusercontent.com/vortigont/espem/master/examples/espemembui.png" alt="espem ui" width="30%"/>
-<img src="https://raw.githubusercontent.com/vortigont/espem/master/examples/espemembui_setup.png" alt="espem opts" width="30%"/>
+<img src="https://raw.githubusercontent.com/vortigont/espem/master/examples/espemembui.png" alt="embui UI" width="30%"/>
+<img src="https://raw.githubusercontent.com/vortigont/espem/master/examples/espemembui_setup.png" alt="embui options" width="30%"/>
+<img src="https://raw.githubusercontent.com/vortigont/espem/master/examples/ui_datetime.png" alt="embui dtime" width="30%"/>
+<img src="https://raw.githubusercontent.com/vortigont/infoclock/master/doc/infoclock_embui02.png" alt="InfoClock" width="30%"/>
+
 
 ## Использование
 Для работы WebUI необходимо залить в контроллер образ фаловой системы LittleFS с web-ресурсами.
