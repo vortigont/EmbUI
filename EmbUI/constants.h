@@ -4,18 +4,32 @@
 // and others people
 
 // Interface
+static const char P_action[] PROGMEM = "action";
 static const char P_block[] PROGMEM = "block";
 static const char P_button[] PROGMEM = "button";
 static const char P_color[] PROGMEM = "color";
+static const char P_chckbox[] PROGMEM = "checkbox";
+static const char P_class[] PROGMEM = "class";
+static const char P_comment[] PROGMEM = "comment";
+static const char P_const[] PROGMEM = "const";
 static const char P_date[] PROGMEM = "date";
+static const char P_datetime[] PROGMEM = "datetime-local";
+static const char P_display[] PROGMEM = "display";
+static const char P_div[] PROGMEM = "div";
 static const char P_directly[] PROGMEM = "directly";
+static const char P_email[] PROGMEM = "email";
 static const char P_false[] PROGMEM = "0";
 static const char P_file[] PROGMEM = "file";
 static const char P_final[] PROGMEM = "final";
+static const char P_form[] PROGMEM = "form";
+static const char P_frame[] PROGMEM = "frame";
 static const char P_hidden[] PROGMEM = "hidden";
 static const char P_html[] PROGMEM = "html";
 static const char P_id[] PROGMEM = "id";
+static const char P_iframe[] PROGMEM = "iframe";
+static const char P_js[] PROGMEM = "js";
 static const char P_input[] PROGMEM = "input";
+static const char P_interface[] PROGMEM = "interface";
 static const char P_label[] PROGMEM = "label";
 static const char P_max[] PROGMEM = "max";
 static const char P_menu[] PROGMEM = "menu";
@@ -23,16 +37,73 @@ static const char P_min[] PROGMEM = "min";
 static const char P_null[] PROGMEM = "null";
 static const char P_number[] PROGMEM = "number";
 static const char P_options[] PROGMEM = "options";
+static const char P_params[] PROGMEM = "params";
 static const char P_password[] PROGMEM = "password";
 static const char P_pkg[] PROGMEM = "pkg";
+static const char P_range[] PROGMEM = "range";
 static const char P_section[] PROGMEM = "section";
+static const char P_select[] PROGMEM = "select";
+static const char P_spacer[] PROGMEM = "spacer";
 static const char P_step[] PROGMEM = "step";
 static const char P_submit[] PROGMEM = "submit";
+static const char P_text[] PROGMEM = "text";
+static const char P_textarea[] PROGMEM = "textarea";
 static const char P_time[] PROGMEM = "time";
 static const char P_true[] PROGMEM = "1";
 static const char P_type[] PROGMEM = "type";
+static const char P_url[] PROGMEM = "url";
 static const char P_value[] PROGMEM = "value";
 static const char P_wifi[] PROGMEM = "wifi";
+
+
+
+
+
+
+
+
+
+// order of elements MUST match with 'enum class ui_element_t' in ui.h
+#define UI_T_DICT_SIZE  35      // increase index in case of new elements
+static const char *const UI_T_DICT[UI_T_DICT_SIZE] PROGMEM = {
+  NULL,         // custom
+  P_button,
+  P_chckbox,
+  P_color,
+  P_comment,
+  P_const,
+  P_date,
+  P_datetime,
+  P_display,
+  P_div,
+  P_email,
+  P_file,
+  P_form,
+  P_hidden,
+  P_iframe,
+  P_input,
+  NULL,     // 'option' (for selects)
+  P_password,
+  P_range,
+  P_select,
+  P_spacer,
+  P_text,
+  P_textarea,
+  P_time,
+  P_value
+};
+
+
+// order of elements MUST match with 'enum class ui_element_t' in ui.h
+#define UI_KEY_DICT_SIZE  35      // increase index in case of new elements
+static const char *const UI_KEY_DICT[UI_KEY_DICT_SIZE] PROGMEM = {
+  P_html,
+  P_id,
+  P_hidden,
+  P_type,
+  P_value,
+
+};
 
 // UI colors
 static const char P_RED[] PROGMEM = "red";

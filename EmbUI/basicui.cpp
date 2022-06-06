@@ -156,14 +156,14 @@ void block_settings_netw(Interface *interf, JsonObject *data){
     interf->comment(FPSTR(T_DICT[lang][TD::D_Hostname]));
     interf->constant(FPSTR(T_EN_OTHER), "", embui.hostname());
     interf->json_section_end(); // Line
-    interf->text(FPSTR(P_hostname), "", F("Redefine hostname, or clear to reset to default"), false);
+    interf->text(FPSTR(P_hostname), "", F("Redefine hostname, or clear to reset to default"));
     interf->button_submit(FPSTR(T_SET_HOSTNAME), FPSTR(T_DICT[lang][TD::D_SAVE]), FPSTR(P_GREEN));
     interf->json_section_end(); // Hostname setup
 
     // форма настроек Wi-Fi Client
     interf->json_section_hidden(FPSTR(T_SET_WIFI), FPSTR(T_DICT[lang][TD::D_WiFiClient]));
     interf->spacer(FPSTR(T_DICT[lang][TD::D_WiFiClientOpts]));
-    interf->text(FPSTR(P_WCSSID), WiFi.SSID(), FPSTR(T_DICT[lang][TD::D_WiFiSSID]), false);
+    interf->text(FPSTR(P_WCSSID), WiFi.SSID(), FPSTR(T_DICT[lang][TD::D_WiFiSSID]));
     interf->password(FPSTR(P_WCPASS), "", FPSTR(T_DICT[lang][TD::D_Password]));
     interf->button_submit(FPSTR(T_SET_WIFI), FPSTR(T_DICT[lang][TD::D_CONNECT]), FPSTR(P_GRAY));
     interf->json_section_end();
@@ -239,7 +239,7 @@ void block_settings_time(Interface *interf, JsonObject *data){
     // manual date and time setup
     interf->comment(FPSTR(T_DICT[lang][TD::D_MSG_DATETIME]));
     interf->json_section_line();
-    interf->datetime(FPSTR(P_time), nullptr, "");   // placeholder for ISO date/time string
+    interf->datetime(FPSTR(P_time), "", "");   // placeholder for ISO date/time string
     interf->button_js_value(FPSTR(P_DTIME), FPSTR(P_time), F("Paste local time"));  // js function that paste browser's date into FPSTR(P_time) field
     interf->json_section_end(); // line
 
@@ -255,10 +255,10 @@ void block_settings_time(Interface *interf, JsonObject *data){
 
     // формируем и отправляем кадр с запросом подгрузки внешнего ресурса со списком правил временных зон
     // полученные данные заместят предыдущее поле выпадающим списком с данными о всех временных зонах
-    interf->json_frame_custom(F("xload"));
+    interf->json_frame(F("xload"));
     interf->json_section_content();
-                    //id           val                                 label direct  skipl URL for external data
-    interf->select(FPSTR(P_TZSET), embui.paramVariant(FPSTR(P_TZSET)),   "", false,  true, F("/js/tz.json"));
+                    //id           val                                 label    direct  URL for external data
+    interf->select(FPSTR(P_TZSET), embui.paramVariant(FPSTR(P_TZSET)), (char*)0, false,  F("/js/tz.json"));
     interf->json_section_end(); // select
     interf->json_frame_flush(); // xload
 
@@ -302,8 +302,8 @@ void block_settings_sys(Interface *interf, JsonObject *data){
     // FW update
     interf->json_section_hidden(FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPDATEFW]));
     interf->spacer(FPSTR(T_DICT[lang][TD::D_FWLOAD]));
-    interf->file(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFW]), F("fw"));
-    interf->file(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFS]), F("fs"));
+    interf->file_form(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFW]), F("fw"));
+    interf->file_form(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFS]), F("fs"));
     interf->json_section_end();
 
     interf->button(FPSTR(T_SET_CFGCLEAR), F("Clear sys config"), FPSTR(P_RED));
