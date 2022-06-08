@@ -1,3 +1,9 @@
+#vcc:before {
+  content: 'Vcc:';
+}
+#vcc:after {
+  content: 'v';
+}
 #temp:before {
     content: 'Temp.:';
   }

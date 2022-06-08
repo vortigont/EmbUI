@@ -68,7 +68,8 @@ void create_parameters(){
 void section_main_frame(Interface *interf, JsonObject *data){
   if (!interf) return;
 
-  interf->json_frame_interface(FPSTR(T_HEADLINE));  // HEADLINE for EmbUI project page
+  //interf->json_frame_interface(FPSTR(T_HEADLINE));  // HEADLINE for EmbUI project page
+  interf->json_frame_interface("EmbUI - demo");  // HEADLINE for EmbUI project page
 
   block_menu(interf, data);                         // Строим UI блок с меню выбора других секций
   interf->json_frame_flush();
@@ -127,7 +128,7 @@ void block_demopage(Interface *interf, JsonObject *data){
     // переключатель, связанный со светодиодом. Изменяется синхронно
     interf->checkbox(FPSTR(V_LED), F("Onboard LED"), true);
 
-    interf->comment(F("Комментарий: набор демонстрационных сенсоров"));     // комментарий-описание секции
+    interf->comment(F("A comment: simple live-displays"));     // комментарий-описание секции
 
     interf->json_section_line();            // Open line section - next elements will be placed in a line
 
@@ -147,7 +148,7 @@ void block_demopage(Interface *interf, JsonObject *data){
 #endif
 
 #ifdef ESP32
-    interf->display(F("vcc"), 220); // supercharged esp :)
+    interf->display(F("vcc"), 3.3); // set static voltage
 #endif
 
     /*
@@ -167,7 +168,7 @@ void block_demopage(Interface *interf, JsonObject *data){
 
 
     // Update rate slider
-    interf->range(FPSTR(V_UPDRATE), tDisplayUpdater.getInterval()/1000, 0, 30, 1, F("Update Rate, sec"), true);
+    interf->range(FPSTR(V_UPDRATE), (int)tDisplayUpdater.getInterval()/1000, 0, 30, 1, F("Update Rate, sec"), true);
     interf->json_frame_flush();
 }
 
@@ -220,12 +221,20 @@ void sensorPublisher() {
 
     Interface *interf = new Interface(&embui, &embui.ws, SMALL_JSON_SIZE);
     interf->json_frame_value();
-    // Voltage sensor
-    //  id, value, html=true
+    // Update voltage sensor
 #ifdef ESP8266
-    interf->value(F("vcc"), (ESP.getVcc() + random(-100,100))/1000.0, true); // html must be set 'true' so this value could be handeled properly for div elements
+    float v = ESP.getVcc();
+#else
+    float v = 3.3;
 #endif
-    interf->value(F("temp"), 24 + random(-30,30)/10, true);                // add some random spikes to the temperature :)
+
+    //  id, value, html=true
+    // html must be set 'true' so this value could be handeled properly for div elements
+    // add some random voltage spikes to make display change it's value
+    interf->value(F("vcc"), (100*v + random(-15,15))/100.0, true);
+
+    // add some random spikes to the temperature :)
+    interf->value(F("temp"), 24 + random(-30,30)/10.0, true);
 
     String clk; TimeProcessor::getInstance().getDateTimeString(clk);
     interf->value(F("clk"), clk, true); // Current date/time for Clock display
