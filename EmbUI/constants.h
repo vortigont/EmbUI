@@ -40,6 +40,7 @@ static const char P_options[] PROGMEM = "options";
 static const char P_params[] PROGMEM = "params";
 static const char P_password[] PROGMEM = "password";
 static const char P_pkg[] PROGMEM = "pkg";
+static const char P_progressbar[] PROGMEM = "pbar";
 static const char P_range[] PROGMEM = "range";
 static const char P_section[] PROGMEM = "section";
 static const char P_select[] PROGMEM = "select";

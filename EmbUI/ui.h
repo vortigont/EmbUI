@@ -483,6 +483,16 @@ class Interface {
         inline void password(const String &id, const String &label){ html_input(id, FPSTR(P_password), embui->paramVariant(id), label); };
 
         /**
+         * @brief create live progressbar based on div+css
+         * progress value should be sent via 'value' frame (json_frame_value)
+         * with (id, value) pair
+         * 
+         * @param id 
+         * @param label 
+         */
+        inline void progressbar(const String &id, const String &label){ div(id, P_progressbar, 0, label); };
+
+        /**
          * @brief - create "range" html field with step, min, max constraints
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
@@ -549,7 +559,7 @@ class Interface {
         /**
          * @brief - Add embui's config param id as a 'value' to the Interface frame
          */
-        inline void value(const String &id, bool html = false){ value(id, embui->paramVariant(id), html); };
+        //inline void value(const String &id, bool html = false){ value(id, embui->paramVariant(id), html); };
 
         /**
          * @brief - Add the whole JsonObject to the Interface frame
@@ -574,6 +584,7 @@ UIelement<desiredCapacity>::UIelement(ui_element_t t, const String &id) : _t(t) 
         switch(t){
             case ui_element_t::custom :     // some elements does not need html_type
             case ui_element_t::option :
+            case ui_element_t::value :
                 return;
             default :                       // default is to set elent type from dict
                 obj[FPSTR(P_html)] = FPSTR(UI_T_DICT[(uint8_t)t]);
