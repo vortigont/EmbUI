@@ -9,7 +9,7 @@
 
 #include "EmbUI.h"
 #if defined ESP32
-#include "flashz-async.hpp"
+#include "flashz-http.hpp"
 #endif
 
 // Update defs
