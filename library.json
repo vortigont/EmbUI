@@ -45,7 +45,7 @@
          "version": "https://github.com/vortigont/LinkedList"},
         {"owner": "vortigont",
          "name": "esp32-flashz",
-         "version": "https://github.com/vortigont/esp32-flashz",
+         "version": "https://github.com/vortigont/esp32-flashz#v1.1.0",
          "platforms": ["espressif32"]}
     ],
     "build": {

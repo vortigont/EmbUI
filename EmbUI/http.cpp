@@ -29,6 +29,11 @@
 #define COMPRESSED_FW_HEADER ZLIB_HEADER
 #endif
 
+#if defined ESP32
+static const char* UPDATE_URI = "/update";
+FlashZhttp fz;
+#endif
+
 // fwd declaration
 #ifdef ESP8266
 void ota_register(AsyncWebServer &server, const char* url);
@@ -105,7 +110,8 @@ void EmbUI::http_set_handlers(){
 
 // esp32 handles updates via external lib
 #ifdef ESP32
-    fz_async_register_ota(server, "/update");
+    fz.provide_ota_form(&server, UPDATE_URI);
+    fz.handle_ota_form(&server, UPDATE_URI);
 #endif
 
 #ifdef ESP8266
