@@ -9,7 +9,7 @@
 
 #include "EmbUI.h"
 #if defined ESP32
-#include "flashz-async.hpp"
+#include "flashz-http.hpp"
 #endif
 
 // Update defs
@@ -27,6 +27,11 @@
 #define COMPRESSED_FW_HEADER GZ_HEADER
 #elif defined ESP32
 #define COMPRESSED_FW_HEADER ZLIB_HEADER
+#endif
+
+#if defined ESP32
+static const char* UPDATE_URI = "/update";
+FlashZhttp fz;
 #endif
 
 // fwd declaration
@@ -105,7 +110,8 @@ void EmbUI::http_set_handlers(){
 
 // esp32 handles updates via external lib
 #ifdef ESP32
-    fz_async_register_ota(server, "/update");
+    fz.provide_ota_form(&server, UPDATE_URI);
+    fz.handle_ota_form(&server, UPDATE_URI);
 #endif
 
 #ifdef ESP8266
