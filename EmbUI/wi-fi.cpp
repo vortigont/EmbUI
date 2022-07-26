@@ -47,7 +47,7 @@ void EmbUI::setup_mDns(){
 
     MDNS.addService(F("http"), F("tcp"), 80);
     //MDNS.addService(F("ftp"), F("tcp"), 21);
-    MDNS.addService(F("txt"), F("udp"), 4243);
+    //MDNS.addService(F("txt"), F("udp"), 4243);
     LOG(printf_P, PSTR("UI mDNS: responder started: %s.local\n"), hostname());
 }
 

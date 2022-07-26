@@ -56,8 +56,6 @@
 #include <AsyncMqttClient.h>
 #endif
 
-#define UDP_PORT                    4243     // UDP server port
-
 #ifndef EMBUI_PUB_PERIOD
 #define EMBUI_PUB_PERIOD              10      // Values Publication period, s
 #endif
@@ -186,19 +184,14 @@ typedef struct section_handle_t{
 
 class EmbUI
 {
-    // оптимизация расхода памяти, все битовые флаги и другие потенциально "сжимаемые" переменные скидываем сюда
-    //#pragma pack(push,1)
     typedef union _BITFIELDS {
     struct {
         bool wifi_sta:1;    // флаг успешного подключения к внешней WiFi-AP, (TODO: переделать на события с коллбеками)
         bool mqtt_connected:1;
         bool mqtt_connect:1;
         bool mqtt_remotecontrol:1;
-
         bool mqtt_enable:1;
         bool cfgCorrupt:1;
-        bool LED_INVERT:1;
-        uint8_t LED_PIN:5;   // [0...30]
         uint8_t asave:4;     // 4 бита значения таймера автосохранения конфига (домножается на AUTOSAVE_MULTIPLIER)
     };
     uint32_t flags; // набор битов для конфига
@@ -208,13 +201,10 @@ class EmbUI
         mqtt_connect = false;
         mqtt_remotecontrol = false;
         mqtt_enable = false;
-        LED_INVERT = false;
         cfgCorrupt = false;     // todo: убрать из конфига
-        LED_PIN = 31; // [0...30]
         asave = EMBUI_AUTOSAVE_TIMEOUT; // defaul timeout 2*10 sec
     }
     } BITFIELDS;
-    //#pragma pack(pop)
 
     bool fsDirty = false;       // флаг поврежденной FS (ошибка монтирования)
 
@@ -271,8 +261,6 @@ class EmbUI
     bool isparamexists(const char* key){ return cfg.containsKey(key);}
     bool isparamexists(const String &key){ return cfg.containsKey(key);}
 
-    void led(uint8_t pin, bool invert);
-
     /**
      * @brief EmbUI initialization
      * load configuration from FS, setup WiFi, obtain system date/time, etc...
@@ -294,11 +282,6 @@ class EmbUI
 
     //  * tries to load json file from FS and deserialize it into provided DynamicJsonDocument, returns false on error
     bool loadjson(const char *filepath, DynamicJsonDocument &obj);
-
-#ifdef EMBUI_UDP
-    void udp(const String &message);
-    void udp();
-#endif // EMBUI_UDP
 
 
 #ifdef EMBUI_MQTT
@@ -486,11 +469,6 @@ class EmbUI
      * both run-time and persistent
      */ 
     void create_sysvars();
-    void led_on();
-    void led_off();
-    void led_inv();
-
-    void btn();
     void getmacid();
 
     // Scheduler tasks
@@ -512,7 +490,6 @@ class EmbUI
      * bool force - reapply credentials even if AP is already started, exit otherwise
      */
     void wifi_setAP(bool force=false);
-
 
 
 #ifdef ESP8266
@@ -554,13 +531,6 @@ class EmbUI
     static void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total);
     static void onMqttPublish(uint16_t packetId);
 #endif
-
-#ifdef EMBUI_UDP
-    unsigned int localUdpPort = UDP_PORT;
-    String udpMessage; // буфер для сообщений Обмена по UDP
-    void udpBegin();
-    void udpLoop();
-#endif // EMBUI_UDP
 
     // callback pointers
     callback_function_t _cb_STAConnected = nullptr;

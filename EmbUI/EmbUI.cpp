@@ -282,25 +282,11 @@ String EmbUI::param(const String &key)
     return v;
 }
 
-
-void EmbUI::led(uint8_t pin, bool invert){
-    if (pin == 31) return;
-    sysData.LED_PIN = pin;
-    sysData.LED_INVERT = invert;
-    pinMode(sysData.LED_PIN, OUTPUT);
-}
-
 void EmbUI::handle(){
     ts.execute();           // run task scheduler
 #ifdef EMBUI_MQTT
     mqtt_handle();
 #endif // EMBUI_MQTT
-    //btn();
-    //led_handle();
-
-#ifdef EMBUI_UDP
-    void udpLoop();
-#endif // EMBUI_UDP
 }
 
 /**
