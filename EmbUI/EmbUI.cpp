@@ -108,7 +108,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
 
 // EmbUI constructor
-EmbUI::EmbUI() : cfg(__CFGSIZE), section_handle(), server(80), ws(F(WEBSOCK_URI)){
+EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), section_handle(), server(80), ws(F(EMBUI_WEBSOCK_URI)){
 
     // Enable persistent storage for ESP8266 Core >3.0.0 (https://github.com/esp8266/Arduino/pull/7902)
     #ifdef WIFI_IS_OFF_AT_BOOT
@@ -119,7 +119,7 @@ EmbUI::EmbUI() : cfg(__CFGSIZE), section_handle(), server(80), ws(F(WEBSOCK_URI)
         getmacid();
 
         ts.addTask(embuischedw);    // WiFi helper
-        tAutoSave.set(sysData.asave * AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
+        tAutoSave.set(sysData.asave * EMBUI_AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
         ts.addTask(tAutoSave);
  }
 
@@ -177,10 +177,10 @@ void EmbUI::begin(){
     ssdp_begin(); LOG(println, F("Start SSDP"));
 #endif
 
-    setPubInterval(PUB_PERIOD);
+    setPubInterval(EMBUI_PUB_PERIOD);
 
     tHouseKeeper.set(TASK_SECOND, TASK_FOREVER, [this](){
-            ws.cleanupClients(MAX_WS_CLIENTS);
+            ws.cleanupClients(EMBUI_MAX_WS_CLIENTS);
             #ifdef ESP8266
                 MDNS.update();
             #endif

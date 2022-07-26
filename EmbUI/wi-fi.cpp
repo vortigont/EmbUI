@@ -100,8 +100,8 @@ const char* EmbUI::hostname(){
     if (autohostname.get())
         return autohostname.get();
 
-    autohostname.reset(new char[sizeof(__IDPREFIX) + sizeof(mc) * 2]);
-    sprintf_P(autohostname.get(), PSTR(__IDPREFIX "-%s"), mc);
+    autohostname.reset(new char[sizeof(EMBUI_IDPREFIX) + sizeof(mc) * 2]);
+    sprintf_P(autohostname.get(), PSTR(EMBUI_IDPREFIX "-%s"), mc);
     LOG(printf_P, PSTR("generate autohostname: %s\n"), autohostname.get());
 
     return autohostname.get();

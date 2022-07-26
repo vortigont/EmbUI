@@ -3,8 +3,7 @@
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
 // and others people
 
-#ifndef EmbUI_h
-#define EmbUI_h
+#pragma once
 
 #include "globals.h"
 
@@ -25,7 +24,6 @@
 #include <FS.h>
 
 #ifdef ESP8266
-// #include <ESPAsyncTCP.h>
  #include <LittleFS.h>
  #define FORMAT_LITTLEFS_IF_FAILED
  #include <Updater.h>
@@ -43,6 +41,8 @@
   #define FORMAT_LITTLEFS_IF_FAILED true
  #endif
  #define U_FS   U_SPIFFS
+
+ #include <functional>
 #endif
 
 
@@ -56,22 +56,18 @@
 #include <AsyncMqttClient.h>
 #endif
 
-#define UDP_PORT                4243    // UDP server port
+#define UDP_PORT                    4243     // UDP server port
 
-#ifndef PUB_PERIOD
-#define PUB_PERIOD              10      // Values Publication period, s
+#ifndef EMBUI_PUB_PERIOD
+#define EMBUI_PUB_PERIOD              10      // Values Publication period, s
 #endif
 
-#define MQTT_PUB_PERIOD         30
+#define EMBUI_MQTT_PUB_PERIOD         30
 
-#ifndef DELAY_AFTER_FS_WRITING
-#define DELAY_AFTER_FS_WRITING  (50U)   // 50мс, меньшие значения могут повлиять на стабильность
-#endif
+#define EMBUI_AUTOSAVE_TIMEOUT        2       // configuration autosave timer, sec    (4 bit value, multiplied by AUTOSAVE_MULTIPLIER)
 
-#define AUTOSAVE_TIMEOUT        2       // configuration autosave timer, sec    (4 bit value, multiplied by AUTOSAVE_MULTIPLIER)
-
-#ifndef AUTOSAVE_MULTIPLIER
-#define AUTOSAVE_MULTIPLIER     (10U)   // множитель таймера автосохранения конфиг файла
+#ifndef EMBUI_AUTOSAVE_MULTIPLIER
+#define EMBUI_AUTOSAVE_MULTIPLIER     (10U)   // множитель таймера автосохранения конфиг файла
 #endif
 
 #ifndef __DISABLE_BUTTON0
@@ -79,20 +75,21 @@
 #endif
 
 // Default Hostname/AP prefix
-#ifndef __IDPREFIX
-#define __IDPREFIX "EmbUI"
+#ifndef EMBUI_IDPREFIX
+#define EMBUI_IDPREFIX "EmbUI"
 #endif
 
 // size of a JsonDocument to hold EmbUI config 
-#ifndef __CFGSIZE
-#define __CFGSIZE (2048)
+#ifndef EMBUI_CFGSIZE
+#define EMBUI_CFGSIZE (2048)
 #endif
 
-#ifndef MAX_WS_CLIENTS
-#define MAX_WS_CLIENTS          4
+// maximum number of websocket client connections
+#ifndef EMBUI_MAX_WS_CLIENTS
+#define EMBUI_MAX_WS_CLIENTS          4
 #endif
 
-#define WEBSOCK_URI             "/ws"
+#define EMBUI_WEBSOCK_URI             "/ws"
 
 // TaskScheduler - Let the runner object be a global, single instance shared between object files.
 extern Scheduler ts;
@@ -189,10 +186,6 @@ typedef struct section_handle_t{
 
 class EmbUI
 {
-    friend void mqtt_dummy_connect();
-
-    typedef void (*mqttCallback) ();
-
     // оптимизация расхода памяти, все битовые флаги и другие потенциально "сжимаемые" переменные скидываем сюда
     //#pragma pack(push,1)
     typedef union _BITFIELDS {
@@ -218,7 +211,7 @@ class EmbUI
         LED_INVERT = false;
         cfgCorrupt = false;     // todo: убрать из конфига
         LED_PIN = 31; // [0...30]
-        asave = AUTOSAVE_TIMEOUT; // defaul timeout 2*10 sec
+        asave = EMBUI_AUTOSAVE_TIMEOUT; // defaul timeout 2*10 sec
     }
     } BITFIELDS;
     //#pragma pack(pop)
@@ -227,7 +220,10 @@ class EmbUI
 
     DynamicJsonDocument cfg;    // system config
     LList<section_handle_t*> section_handle;        // action handlers
+
 #ifdef EMBUI_MQTT
+    friend void mqtt_dummy_connect();
+    typedef void (*mqttCallback) ();
     AsyncMqttClient mqttClient;
 #endif
 
@@ -664,4 +660,3 @@ class EmbUI
 // Глобальный объект фреймворка
 extern EmbUI embui;
 #include "ui.h"
-#endif
