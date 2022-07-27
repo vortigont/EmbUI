@@ -110,12 +110,6 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
 // EmbUI constructor
 EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), section_handle(), server(80), ws(F(EMBUI_WEBSOCK_URI)){
-
-    // Enable persistent storage for ESP8266 Core >3.0.0 (https://github.com/esp8266/Arduino/pull/7902)
-    #ifdef WIFI_IS_OFF_AT_BOOT
-        enableWiFiAtBootTime(); // can be called from anywhere with the same effect
-    #endif
-
         _getmacid();
 
         ts.addTask(tWiFi);    // WiFi helper
@@ -149,14 +143,7 @@ void EmbUI::begin(){
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
 
     // Set WiFi event handlers
-    #ifdef ESP8266
-        e1 = WiFi.onStationModeGotIP(std::bind(&EmbUI::onSTAGotIP, this, std::placeholders::_1));
-        e2 = WiFi.onStationModeDisconnected(std::bind(&EmbUI::onSTADisconnected, this, std::placeholders::_1));
-        e3 = WiFi.onStationModeConnected(std::bind(&EmbUI::onSTAConnected, this, std::placeholders::_1));
-        e4 = WiFi.onWiFiModeChange(std::bind(&EmbUI::onWiFiMode, this, std::placeholders::_1));
-    #elif defined ESP32
-        WiFi.onEvent(std::bind(&EmbUI::WiFiEvent, this, std::placeholders::_1, std::placeholders::_2));
-    #endif
+    WiFi.onEvent(std::bind(&EmbUI::WiFiEvent, this, std::placeholders::_1, std::placeholders::_2));
 
     // восстанавливаем настройки времени
     timeProcessor.setcustomntp(paramVariant(FPSTR(P_userntp)).as<const char*>());
@@ -181,9 +168,6 @@ void EmbUI::begin(){
 
     tHouseKeeper.set(TASK_SECOND, TASK_FOREVER, [this](){
             ws.cleanupClients(EMBUI_MAX_WS_CLIENTS);
-            #ifdef ESP8266
-                MDNS.update();
-            #endif
             taskGC();
         } );
     ts.addTask(tHouseKeeper);

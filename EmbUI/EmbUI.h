@@ -5,6 +5,12 @@
 
 #pragma once
 
+#ifdef ESP8266
+#error "Sorry, esp8266 is no longer supported"
+#error "use v2.6 branch for 8266 https://github.com/vortigont/EmbUI/tree/v2.6"
+#include "no_esp8266"
+#endif
+
 #include "globals.h"
 
 #define EMBUI_VERSION_MAJOR     2
@@ -23,28 +29,17 @@
 
 #include <FS.h>
 
-#ifdef ESP8266
- #include <LittleFS.h>
- #define FORMAT_LITTLEFS_IF_FAILED
- #include <Updater.h>
-#endif
-
-#ifdef ESP32
- #ifdef ESP_ARDUINO_VERSION
+#ifdef ESP_ARDUINO_VERSION
   #include <LittleFS.h>
- #else
+#else       // for older Arduino core <2.0
   #include <LITTLEFS.h>
   #define LittleFS LITTLEFS
- #endif
-
- #ifndef FORMAT_LITTLEFS_IF_FAILED
-  #define FORMAT_LITTLEFS_IF_FAILED true
- #endif
- #define U_FS   U_SPIFFS
-
- #include <functional>
 #endif
 
+#ifndef FORMAT_LITTLEFS_IF_FAILED
+  #define FORMAT_LITTLEFS_IF_FAILED true
+#endif
+#define U_FS   U_SPIFFS
 
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
@@ -52,6 +47,8 @@
 #include "LList.h"
 #include "ts.h"
 #include "timeProcessor.h"
+#include <functional>
+
 #ifdef EMBUI_MQTT
 #include <AsyncMqttClient.h>
 #endif
@@ -66,10 +63,6 @@
 
 #ifndef EMBUI_AUTOSAVE_MULTIPLIER
 #define EMBUI_AUTOSAVE_MULTIPLIER     (10U)   // множитель таймера автосохранения конфиг файла
-#endif
-
-#ifndef __DISABLE_BUTTON0
-#define __BUTTON 0 // Кнопка "FLASH" на NODE_MCU
 #endif
 
 // Default Hostname/AP prefix
@@ -535,15 +528,6 @@ class EmbUI
      * 
      */
     void setup_mDns();
-
-#ifdef ESP8266
-    WiFiEventHandler e1, e2, e3, e4;
-    WiFiMode wifi_mode;           // используется в gpio led_handle (to be removed)
-    void onSTAConnected(WiFiEventStationModeConnected ipInfo);
-    void onSTAGotIP(WiFiEventStationModeGotIP ipInfo);
-    void onSTADisconnected(WiFiEventStationModeDisconnected event_info);
-    void onWiFiMode(WiFiEventModeChange event_info);
-#endif
 
 #ifdef ESP32
     void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);

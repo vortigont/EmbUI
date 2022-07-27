@@ -24,9 +24,9 @@
 #endif
 #endif
 
-#if defined ESP8266 || defined ESP_ARDUINO_VERSION
+#if defined ESP_ARDUINO_VERSION
     #define CUSTOM_NTP_INDEX    2
-#else
+#else       // older Arduino core <2.0
     #define CUSTOM_NTP_INDEX    0
 #endif
 
@@ -51,12 +51,7 @@ protected:
     /**
      * Timesync callback
      */
-#ifdef ESP8266
-    static void timeavailable();
-#endif
-#ifdef ESP32
     static void timeavailable(struct timeval *t);
-#endif
 
 
 public:
@@ -69,14 +64,7 @@ public:
      * обратный вызов при подключении к WiFi точке доступа
      * запускает синхронизацию времени
      */
-#ifdef ESP8266
-    void onSTAGotIP(WiFiEventStationModeGotIP ipInfo);
-    void onSTADisconnected(WiFiEventStationModeDisconnected event_info);
-#endif
-
-#ifdef ESP32
     void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
-#endif
 
     /**
      * obtain a pointer to singleton instance

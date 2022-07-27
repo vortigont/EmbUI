@@ -5,25 +5,9 @@
 
 #include "timeProcessor.h"
 
-#ifdef ESP8266
- #include <coredecls.h>                 // settimeofday_cb()
- #include <TZ.h>                        // TZ declarations https://github.com/esp8266/Arduino/blob/master/cores/esp8266/TZ.h
- #include <sntp.h>
-
- #ifdef __NEWLIB__ 
-  #if __NEWLIB__ >= 4
-    extern "C" {
-        #include <sys/_tz_structs.h>
-    };
-  #endif
- #endif
-#endif
-
-#ifdef ESP32
- #include <time.h>
- #include <esp_sntp.h>
- #include <HTTPClient.h>
-#endif
+#include <time.h>
+#include <esp_sntp.h>
+#include <HTTPClient.h>
 
 #ifndef TZONE
 #define TZONE PSTR("GMT0")         // default Time-Zone
@@ -37,16 +21,9 @@ callback_function_t TimeProcessor::timecb = nullptr;
 
 TimeProcessor::TimeProcessor()
 {
-// time set event handler
-#ifdef ESP8266
-    settimeofday_cb( [this]{ timeavailable();} );
-#endif
-   
-#ifdef ESP32
     sntp_set_time_sync_notification_cb( [](struct timeval *tv){ timeavailable(tv);} );
 #ifdef ESP_ARDUINO_VERSION
-    sntp_servermode_dhcp(1);
-#endif
+    sntp_servermode_dhcp(1);    // enable NTPoDHCP
 #endif
 
     configTzTime(TZONE, ntp1, ntp2, ntpCustom.get());
@@ -94,7 +71,6 @@ void TimeProcessor::setTime(const String &timestr){
  * https://github.com/esp8266/Arduino/blob/master/cores/esp8266/TZ.h
  */
 void TimeProcessor::tzsetup(const char* tz){
-    // https://stackoverflow.com/questions/56412864/esp8266-timezone-issues
     if (!tz || !*tz)
         return;
 
@@ -125,22 +101,8 @@ void TimeProcessor::tzsetup(const char* tz){
 
 
 /**
- * обратный вызов при подключении к WiFi точке доступа
- * запускает синхронизацию времени
+ *  WiFi events callback to start/stop ntp sync
  */
-#ifdef ESP8266
-void TimeProcessor::onSTAGotIP(const WiFiEventStationModeGotIP ipInfo)
-{
-    sntp_init();
-}
-
-void TimeProcessor::onSTADisconnected(const WiFiEventStationModeDisconnected event_info)
-{
-  sntp_stop();
-}
-#endif  //ESP8266
-
-#ifdef ESP32
 void TimeProcessor::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info){
     switch (event){
     case SYSTEM_EVENT_STA_GOT_IP:
@@ -157,16 +119,9 @@ void TimeProcessor::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info){
         break;
     }
 }
-#endif  //ESP32
 
-
-#ifdef ESP8266
-void TimeProcessor::timeavailable()
-#endif
-#ifdef ESP32
-void TimeProcessor::timeavailable(struct timeval *t)
-#endif
-{    LOG(println, F("UI TIME: Event - Time adjusted"));
+void TimeProcessor::timeavailable(struct timeval *t){
+    LOG(println, F("UI TIME: Event - Time adjusted"));
     if(timecb)
         timecb();
 }
@@ -188,12 +143,8 @@ void TimeProcessor::getDateTimeString(String &buf, const time_t _tstamp){
 void TimeProcessor::setOffset(const int val){
     LOG(printf_P, PSTR("UI Time: Set time zone offset to: %d\n"), val);
 
-    #ifdef ESP8266
-        sntp_set_timezone_in_seconds(val);
-    #elif defined ESP32
-        //setTimeZone((long)val, 0);    // this breaks linker in some weird way
-        configTime((long)val, 0, ntp1, ntp2);
-    #endif
+    //setTimeZone((long)val, 0);    // this breaks linker in some weird way
+    configTime((long)val, 0, ntp1, ntp2);
 }
 
 /**
@@ -224,13 +175,8 @@ String TimeProcessor::getserver(uint8_t idx){
     if (sntp_getservername(idx)){
         return String(sntp_getservername(idx));
     } else {
-#ifdef ESP8266
-        IPAddress addr(sntp_getserver(idx));
-#endif
-#ifdef ESP32
         const ip_addr_t * _ip = sntp_getserver(idx);
         IPAddress addr(_ip->u_addr.ip4.addr);
-#endif
         return addr.toString();
     }
 };
@@ -260,9 +206,6 @@ void TimeProcessor::ntpodhcp(bool enable){
 #ifdef USE_WORLDTIMEAPI
 
 #include <ArduinoJson.h>
-#ifdef ESP8266
-#include <ESP8266HTTPClient.h>
-#endif
 #ifdef ESP32
 #include <HTTPClient.h>
 #endif

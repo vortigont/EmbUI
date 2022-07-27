@@ -19,11 +19,7 @@
 
 // dynamic json for creating websocket frames to be sent to UI
 #ifndef IFACE_DYN_JSON_SIZE
-#ifdef ESP8266
-  #define IFACE_DYN_JSON_SIZE 2048
-#elif defined ESP32
-  #define IFACE_DYN_JSON_SIZE 8192
-#endif
+#define IFACE_DYN_JSON_SIZE 8192
 #endif
 
 // static json doc size

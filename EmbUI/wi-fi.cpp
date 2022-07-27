@@ -33,10 +33,6 @@ void EmbUI::wifi_setmode(WiFiMode_t mode){
 
 /*use mdns for host name resolution*/
 void EmbUI::setup_mDns(){
-
-#ifdef ESP8266
-    if (MDNS.isRunning())
-#endif
         MDNS.end();
 
     if (!MDNS.begin(hostname())){
