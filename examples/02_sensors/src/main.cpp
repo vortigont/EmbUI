@@ -13,10 +13,6 @@
  #include "ftpSrv.h"
 #endif
 
-#ifdef ESP8266
-  ADC_MODE(ADC_VCC);  // read internal Vcc
-#endif
-
 // MAIN Setup
 void setup() {
   Serial.begin(BAUD_RATE);
