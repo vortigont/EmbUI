@@ -7,7 +7,7 @@
 
 void EmbUI::save(const char *_cfg, bool force){
 
-    if ( fsDirty && !force ){
+    if ( sysData.fsDirty && !force ){
         LOG(println, F("UI: FS corrupt flag is set, won't write, u may try to reboot/reflash"));
         return;
     }
@@ -17,10 +17,10 @@ void EmbUI::save(const char *_cfg, bool force){
     if (_cfg == nullptr) {
         LOG(println, F("UI: Save default main config file"));
         LittleFS.rename(FPSTR(P_cfgfile),FPSTR(P_cfgfile_bkp));
-        configFile = LittleFS.open(FPSTR(P_cfgfile), "w"); // PSTR("w") использовать нельзя, будет исключение!
+        configFile = LittleFS.open(FPSTR(P_cfgfile), "w");
     } else {
         LOG(printf_P, PSTR("UI: Save %s main config file\n"), _cfg);
-        configFile = LittleFS.open(_cfg, "w"); // PSTR("w") использовать нельзя, будет исключение!
+        configFile = LittleFS.open(_cfg, "w");
     }
 
     serializeJson(cfg, configFile);
@@ -56,7 +56,7 @@ void EmbUI::load(const char *cfgfile){
  * tries to load json file from FS and deserialize it into provided DynamicJsonDocument
  */
 bool EmbUI::loadjson(const char *filepath, DynamicJsonDocument &obj){
-    if ( fsDirty ){
+    if ( sysData.fsDirty ){
         LOG(println, F("UI: FS corrupt flag is set, won't load"));
         return false;
     }

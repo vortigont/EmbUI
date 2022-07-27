@@ -1,6 +1,6 @@
 #include "basicui.h"
 
-uint8_t lang = 1;            // default language for text resources (english)
+uint8_t lang = 0;            // default language for text resources (english)
 
 namespace basicui {
 
@@ -21,7 +21,7 @@ void add_sections(){
     lang = embui.paramVariant(FPSTR(P_LANGUAGE)).as<uint8_t>();
 
     /**
-     * обработчики действий
+     * UI action handlers
      */ 
     // вывод BasicUI секций
     embui.section_handle_add(FPSTR(T_SETTINGS), section_settings_frame);    // generate "settings" UI section
@@ -31,7 +31,9 @@ void add_sections(){
     embui.section_handle_add(FPSTR(T_SET_HOSTNAME), set_hostname);          // hostname setup
     embui.section_handle_add(FPSTR(T_SET_WIFI), set_settings_wifi);         // обработка настроек WiFi Client
     embui.section_handle_add(FPSTR(T_SET_WIFIAP), set_settings_wifiAP);     // обработка настроек WiFi AP
+#ifdef EMBUI_MQTT
     embui.section_handle_add(FPSTR(T_SET_MQTT), set_settings_mqtt);         // обработка настроек MQTT
+#endif  // #ifdef EMBUI_MQTT
     embui.section_handle_add(FPSTR(T_SET_TIME), set_settings_time);         // установки даты/времени
     embui.section_handle_add(FPSTR(P_LANGUAGE), set_language);              // смена языка интерфейса
     embui.section_handle_add(FPSTR(T_REBOOT), set_reboot);                  // ESP reboot action
@@ -101,9 +103,11 @@ void show_section(Interface *interf, JsonObject *data){
         case 2 :    // time setup section
             block_settings_time(interf, nullptr);
             break;
+    #ifdef EMBUI_MQTT
         case 3 :    // MQTT setup section
             block_settings_mqtt(interf, nullptr);
             break;
+    #endif  // #ifdef EMBUI_MQTT
         case 4 :    // System setup section
             block_settings_sys(interf, nullptr);
             break;
@@ -264,6 +268,7 @@ void block_settings_time(Interface *interf, JsonObject *data){
 
 }
 
+#ifdef EMBUI_MQTT
 /**
  *  BasicUI блок интерфейса настроек MQTT
  */
@@ -288,6 +293,7 @@ void block_settings_mqtt(Interface *interf, JsonObject *data){
 
     interf->json_frame_flush();
 }
+#endif  // #ifdef EMBUI_MQTT
 
 /**
  *  BasicUI блок настройки system
@@ -347,6 +353,7 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
     if (interf) section_settings_frame(interf, data);   // переходим в раздел "настройки"
 }
 
+#ifdef EMBUI_MQTT
 /**
  * Обработчик настроек MQTT
  */
@@ -365,6 +372,7 @@ void set_settings_mqtt(Interface *interf, JsonObject *data){
 
     section_settings_frame(interf, data);
 }
+#endif  // #ifdef EMBUI_MQTT
 
 /**
  * Обработчик настроек даты/времени

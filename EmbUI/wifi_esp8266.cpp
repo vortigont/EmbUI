@@ -19,7 +19,7 @@ void EmbUI::onSTAConnected(WiFiEventStationModeConnected ipInfo)
 void EmbUI::onSTAGotIP(WiFiEventStationModeGotIP ipInfo)
 {
     sysData.wifi_sta = true;
-    embuischedw.disable();
+    tWiFi.disable();
     LOG(printf_P, PSTR(", IP: %s\n"), ipInfo.ip.toString().c_str());
     timeProcessor.onSTAGotIP(ipInfo);
     if(_cb_STAGotIP)
@@ -28,14 +28,14 @@ void EmbUI::onSTAGotIP(WiFiEventStationModeGotIP ipInfo)
     setup_mDns();
 
     // shutdown AP after timeout
-    embuischedw.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [](){
+    tWiFi.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [](){
         if(WiFi.getMode() == WIFI_STA)
             return;
 
         WiFi.enableAP(false);
         LOG(println, F("UI WiFi: AP mode disabled"));
     });
-    embuischedw.restartDelayed();
+    tWiFi.restartDelayed();
 }
 
 void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
@@ -44,7 +44,7 @@ void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
     LOG(printf_P, PSTR("UI WiFi: Disconnected from SSID: %s, reason: %d\n"), event_info.ssid.c_str(), event_info.reason);
     sysData.wifi_sta = false;       // to be removed and replaced with API-method
 
-    if (embuischedw.isEnabled())
+    if (tWiFi.isEnabled())
         return;
 
     if(paramVariant(FPSTR(P_APonly)))
@@ -56,11 +56,11 @@ void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
       В качестве решения переключаем контроллер в режим AP-only после WIFI_CONNECT_TIMEOUT таймаута на попытку переподключения.
       Далее делаем периодические попытки переподключений каждые WIFI_RECONNECT_TIMER секунд
     */
-    embuischedw.set(WIFI_SET_AP_AFTER_DISCONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){
+    tWiFi.set(WIFI_SET_AP_AFTER_DISCONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){
         wifi_setAP();
         WiFi.enableSTA(false);
         Task *t = new Task(WIFI_RECONNECT_TIMER * TASK_SECOND, TASK_ONCE,
-                [this](){ embuischedw.disable();
+                [this](){ tWiFi.disable();
                 WiFi.enableSTA(true);
                 WiFi.begin();
                 TASK_RECYCLE; },
@@ -69,7 +69,7 @@ void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
         t->enableDelayed();
     } );
 
-    embuischedw.restartDelayed();
+    tWiFi.restartDelayed();
 
     timeProcessor.onSTADisconnected(event_info);
     if(_cb_STADisconnected)
@@ -103,7 +103,7 @@ void EmbUI::wifi_init(){
 /**
  * формирует chipid из MAC-адреса вида 'ddeeff'
  */
-void EmbUI::getmacid(){
+void EmbUI::_getmacid(){
     uint8_t _mac[6];
     WiFi.softAPmacAddress(_mac);
 

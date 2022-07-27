@@ -37,12 +37,12 @@ void EmbUI::wifi_init(){
 #endif
     // use internaly stored last known credentials for connection
     if ( WiFi.begin() == WL_CONNECT_FAILED ){
-        embuischedw.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE, [this](){
+        tWiFi.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE, [this](){
                         wifi_setAP();
                         WiFi.enableSTA(true);
                         LOG(println, F("UI WiFi: Switch to AP/STA mode"));}
         );
-        embuischedw.restartDelayed();
+        tWiFi.restartDelayed();
     }
 
 #ifdef ESP_ARDUINO_VERSION
@@ -85,15 +85,15 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
         LOG(printf_P, PSTR("SSID:'%s', IP: "), WiFi.SSID().c_str());  // IPAddress(info.got_ip.ip_info.ip.addr)
         LOG(println, IPAddress(iface.ip.addr));
 
-        embuischedw.disable();
-        embuischedw.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [](){
+        tWiFi.disable();
+        tWiFi.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [](){
             if(WiFi.getMode() == WIFI_MODE_STA)
                 return;
 
             WiFi.enableAP(false);
             LOG(println, F("UI WiFi: AP mode disabled"));
         });
-        embuischedw.restartDelayed();
+        tWiFi.restartDelayed();
 
         sysData.wifi_sta = true;
         setup_mDns();
@@ -109,14 +109,14 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
         #endif
         
         // https://github.com/espressif/arduino-esp32/blob/master/tools/sdk/include/esp32/esp_wifi_types.h
-        if(WiFi.getMode() != WIFI_MODE_APSTA && !embuischedw.isEnabled()){
+        if(WiFi.getMode() != WIFI_MODE_APSTA && !tWiFi.isEnabled()){
             LOG(println, PSTR("UI WiFi: Reconnect attempt"));
-            embuischedw.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){
+            tWiFi.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){
                         LOG(println, F("UI WiFi: Switch to AP/STA mode"));
                         WiFi.enableAP(true);
                         WiFi.begin();
                         } );
-            embuischedw.restartDelayed();
+            tWiFi.restartDelayed();
         }
 
         sysData.wifi_sta = false;
@@ -133,7 +133,7 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 /**
  * формирует chipid из MAC-адреса вида 'ddeeff'
  */
-void EmbUI::getmacid(){
+void EmbUI::_getmacid(){
     MacID _mac;
     _mac.u64 = ESP.getEfuseMac();
 

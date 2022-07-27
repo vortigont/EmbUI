@@ -10,8 +10,9 @@
 #define POST_LARGE_SIZE   256       // large post threshold
 
 
-
+#ifdef EMBUI_MQTT
 void mqtt_emptyFunction(const String &, const String &);
+#endif // EMBUI_MQTT
 
 EmbUI embui;
 
@@ -115,10 +116,9 @@ EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), section_handle(), server(80), ws(F(EMBUI_WE
         enableWiFiAtBootTime(); // can be called from anywhere with the same effect
     #endif
 
-        memset(mc,0,sizeof(mc));
-        getmacid();
+        _getmacid();
 
-        ts.addTask(embuischedw);    // WiFi helper
+        ts.addTask(tWiFi);    // WiFi helper
         tAutoSave.set(sysData.asave * EMBUI_AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
         ts.addTask(tAutoSave);
  }
@@ -133,7 +133,7 @@ void EmbUI::begin(){
         delay(100);
         if (!retry_cnt){
             LOG(println, F("FS dirty, I Give up!"));
-            fsDirty = true;
+            sysData.fsDirty = true;
             return;
         }
     }
@@ -233,7 +233,6 @@ void EmbUI::section_handle_remove(const String &name)
     }
 }
 
-
 void EmbUI::section_handle_add(const String &name, actionCallback response)
 {
     section_handle_t *section = new section_handle_t;
@@ -320,14 +319,15 @@ void EmbUI::set_callback(CallBack set, CallBack action, callback_function_t call
  */
 void EmbUI::create_sysvars(){
     LOG(println, F("UI: Creating system vars"));
+#ifdef EMBUI_MQTT
     // параметры подключения к MQTT
     var_create(FPSTR(P_m_host), "");                   // MQTT server hostname
     var_create(FPSTR(P_m_port), "");                   // MQTT port
     var_create(FPSTR(P_m_user), "");                   // MQTT login
     var_create(FPSTR(P_m_pass), "");                   // MQTT pass
-    var_create(FPSTR(P_m_pref), embui.mc);             // MQTT topic == use ESP MAC address
+    var_create(FPSTR(P_m_pref), mc);                   // MQTT topic == use ESP MAC address
     var_create(FPSTR(P_m_tupd), TOSTRING(MQTT_PUB_PERIOD));              // интервал отправки данных по MQTT в секундах
-    // date/time related vars
+#endif // EMBUI_MQTT
 }
 
 /**

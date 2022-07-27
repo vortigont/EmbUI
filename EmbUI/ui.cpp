@@ -75,7 +75,7 @@ void Interface::json_frame(const String &type){
  */
 void Interface::json_frame_interface(const String &name){
     json[F("app")] = name;
-    json[F("mc")] = embui->mc;
+    json[F("mc")] = embui->macid();
     json[F("ver")] = F(EMBUI_VERSION_STRING);
 
     json_frame_interface();

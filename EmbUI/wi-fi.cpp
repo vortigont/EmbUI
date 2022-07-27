@@ -9,7 +9,7 @@
 void EmbUI::wifi_connect(const char *ssid, const char *pwd)
 {
     String _ssid(ssid); String _pwd(pwd);   // I need objects to pass it to lambda
-    embuischedw.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE,
+    tWiFi.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE,
         [_ssid, _pwd](){
                 LOG(printf_P, PSTR("UI WiFi: client connecting to SSID:%s, pwd:%s\n"), _ssid.c_str(), _pwd.c_str());
                 #ifdef ESP32
@@ -22,7 +22,7 @@ void EmbUI::wifi_connect(const char *ssid, const char *pwd)
         }
     );
 
-    embuischedw.restartDelayed();
+    tWiFi.restartDelayed();
 }
 
 
