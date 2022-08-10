@@ -4,10 +4,9 @@
 // and others people
 
 #pragma once
-#define __TIMEPROCESSOR_H
 
 #include "globals.h"
-#include "wi-fi.h"
+#include <WiFi.h>
 
 /*
  * COUNTRY macro allows to select a specific country pool for ntp requests, like ru.pool.ntp.org, eu.pool.ntp.org, etc...
@@ -45,6 +44,12 @@ private:
     const char* ntp2 = NTP2ADDRESS;
     std::unique_ptr<char[]> ntpCustom;   // pointer for custom ntp hostname
 
+    /**
+     * обратный вызов при подключении к WiFi точке доступа
+     * запускает синхронизацию времени
+     */
+    void _onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
+
 protected:
     static callback_function_t timecb;
 
@@ -59,12 +64,6 @@ public:
     TimeProcessor(TimeProcessor const&) = delete;
     void operator=(TimeProcessor const&) = delete;
 
-
-    /**
-     * обратный вызов при подключении к WiFi точке доступа
-     * запускает синхронизацию времени
-     */
-    void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 
     /**
      * obtain a pointer to singleton instance

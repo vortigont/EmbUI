@@ -28,6 +28,9 @@ TimeProcessor::TimeProcessor()
 
     configTzTime(TZONE, ntp1, ntp2, ntpCustom.get());
     sntp_stop();    // отключаем ntp пока нет подключения к AP
+
+    // hook up WiFi events handler
+    WiFi.onEvent(std::bind(&TimeProcessor::_onWiFiEvent, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 String TimeProcessor::getFormattedShortTime()
@@ -103,7 +106,7 @@ void TimeProcessor::tzsetup(const char* tz){
 /**
  *  WiFi events callback to start/stop ntp sync
  */
-void TimeProcessor::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info){
+void TimeProcessor::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info){
     switch (event){
     case SYSTEM_EVENT_STA_GOT_IP:
         sntp_setservername(1, (char*)ntp2);
@@ -113,7 +116,7 @@ void TimeProcessor::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info){
         LOG(println, F("UI TIME: Starting sntp sync"));
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
-        //sntp_stop();
+        sntp_stop();
         break;
     default:
         break;
