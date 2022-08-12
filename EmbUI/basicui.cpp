@@ -334,7 +334,7 @@ void set_settings_wifi(Interface *interf, JsonObject *data){
     String pwd = (*data)[FPSTR(P_WCPASS)];      // фреймворк хранит последнюю доступную точку самостоятельно
 
     embui.var_remove(FPSTR(P_APonly)); // сборосим режим принудительного AP, при попытке подключения к роутеру
-    embui.wifi_connect(ssid.c_str(), pwd.c_str());
+    embui.wifi->connect(ssid.c_str(), pwd.c_str());
 
     section_settings_frame(interf, data);           // переходим в раздел "настройки"
 }
@@ -348,7 +348,7 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
     embui.var_dropnulls(FPSTR(P_APonly), (*data)[FPSTR(P_APonly)]);
     embui.var_dropnulls(FPSTR(P_APpwd), (*data)[FPSTR(P_APpwd)]);
 
-    embui.wifi_updateAP();
+    embui.wifi->setupAP();
 
     if (interf) section_settings_frame(interf, data);   // переходим в раздел "настройки"
 }
@@ -385,15 +385,15 @@ void set_settings_time(Interface *interf, JsonObject *data){
 
     String tzrule = (*data)[FPSTR(P_TZSET)];
     if (!tzrule.isEmpty()){
-        embui.timeProcessor.tzsetup(tzrule.substring(4).c_str());   // cutoff '000_' prefix key
+        TimeProcessor::getInstance().tzsetup(tzrule.substring(4).c_str());   // cutoff '000_' prefix key
     }
 
-    SETPARAM_NONULL(FPSTR(P_userntp), embui.timeProcessor.setcustomntp((*data)[FPSTR(P_userntp)]));
+    SETPARAM_NONULL(FPSTR(P_userntp), TimeProcessor::getInstance().setcustomntp((*data)[FPSTR(P_userntp)]));
 
 #if ARDUINO <= 10805
     // ESP32's Arduino Core <=1.0.6 miss NTPoDHCP feature
 #else
-    SETPARAM_NONULL( FPSTR(P_noNTPoDHCP), embui.timeProcessor.ntpodhcp(!(*data)[FPSTR(P_noNTPoDHCP)]) )
+    SETPARAM_NONULL( FPSTR(P_noNTPoDHCP), TimeProcessor::getInstance().ntpodhcp(!(*data)[FPSTR(P_noNTPoDHCP)]) )
 #endif
 
     // if there is a field with custom ISO date/time, call time setter
@@ -425,7 +425,7 @@ void set_language(Interface *interf, JsonObject *data){
 void embuistatus(Interface *interf){
     if (!interf) return;
     interf->json_frame_value();
-    interf->value(F("pTime"), embui.timeProcessor.getFormattedShortTime(), true);
+    interf->value(F("pTime"), TimeProcessor::getInstance().getFormattedShortTime(), true);
     interf->value(F("pMem"), ESP.getFreeHeap(), true);
     interf->value(F("pUptime"), millis()/1000, true);
     interf->json_frame_flush();

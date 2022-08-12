@@ -3,29 +3,95 @@
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
 // and others people
 
-#ifdef ESP32
+#include "embui_wifi.hpp"
 
-#include "EmbUI.h"
-#include "wi-fi.h"
-
-union MacID
+void WiFiController::connect(const char *ssid, const char *pwd)
 {
-    uint64_t u64;
-    uint8_t mc[8];
-};
+    String _ssid(ssid); String _pwd(pwd);   // I need objects to pass it to lambda
+    tWiFi.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE,
+        [_ssid, _pwd](){
+                LOG(printf_P, PSTR("UI WiFi: client connecting to SSID:%s, pwd:%s\n"), _ssid.c_str(), _pwd.c_str());
+                #ifdef ESP32
+                    WiFi.disconnect();
+                    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+                #endif
 
-void EmbUI::wifi_init(){
-    LOG(print, F("UI WiFi: start in "));
+                _ssid.length() ? WiFi.begin(_ssid.c_str(), _pwd.c_str()) : WiFi.begin();
+                ts.getCurrentTask()->disable();
+        }
+    );
+
+    tWiFi.restartDelayed();
+}
+
+
+void WiFiController::setmode(WiFiMode_t mode){
+    LOG(printf_P, PSTR("UI WiFi: set mode: %d\n"), mode);
+    WiFi.mode(mode);
+}
+
+/*use mdns for host name resolution*/
+void WiFiController::setup_mDns(){
+        MDNS.end();
+
+    if (!MDNS.begin(emb->hostname())){
+        LOG(println, F("UI mDNS: Error setting up responder!"));
+        MDNS.end();
+        return;
+    }
+
+    MDNS.addService(F("http"), F("tcp"), 80);
+    //MDNS.addService(F("ftp"), F("tcp"), 21);
+    //MDNS.addService(F("txt"), F("udp"), 4243);
+    LOG(printf_P, PSTR("UI mDNS: responder started: %s.local\n"), emb->hostname());
+}
+
+/**
+ * Configure esp's internal AP
+ * default is to configure credentials from the config
+ * bool force - reapply credentials even if AP is already started, exit otherwise
+ */
+void WiFiController::setupAP(bool force){
+    // check if AP is already started
+    if ((bool)(WiFi.getMode() & WIFI_AP) & !force)
+        return;
+
+    // clear password if invalid 
+    if (emb->param(P_APpwd) && strlen(emb->param(P_APpwd)) < WIFI_PSK_MIN_LENGTH)
+        emb->var_remove(P_APpwd);
+
+    LOG(printf_P, PSTR("UI WiFi: set AP params to SSID:%s, pwd:%s\n"), emb->hostname(), emb->paramVariant(P_APpwd).as<const char*>());
+
+    WiFi.softAP(emb->hostname(), emb->paramVariant(P_APpwd).as<const char*>());
+
+    // run mDNS in WiFi-AP mode
+    setup_mDns();
+}
+
+/*
+void WiFiController::wifi_updateAP() {
+    setupAP(true);
+
     if (paramVariant(FPSTR(P_APonly))){
+        LOG(println, F("UI WiFi: Force AP mode"));
+        WiFi.enableAP(true);
+        WiFi.enableSTA(false);
+    }
+}
+*/
+
+void WiFiController::init(){
+    LOG(print, F("UI WiFi: start in "));
+    if (emb->paramVariant(FPSTR(P_APonly))){
         LOG(println, F("AP-only mode"));
-        wifi_setAP(true);
+        setupAP(true);
         return;
     }
 
     LOG(println, F("STA mode"));
 
 #ifdef ESP_ARDUINO_VERSION
-    WiFi.setHostname(hostname());
+    WiFi.setHostname(emb->hostname());
     WiFi.enableSTA(true);
 #else
     /* this is a weird hack to mitigate DHCP hostname issue
@@ -38,22 +104,21 @@ void EmbUI::wifi_init(){
     // use internaly stored last known credentials for connection
     if ( WiFi.begin() == WL_CONNECT_FAILED ){
         tWiFi.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE, [this](){
-                        wifi_setAP();
+                        setupAP();
                         WiFi.enableSTA(true);
                         LOG(println, F("UI WiFi: Switch to AP/STA mode"));}
         );
         tWiFi.restartDelayed();
     }
 
-#ifdef ESP_ARDUINO_VERSION
-    // 2.x core does not have this issue
-#else
+// 2.x core does not have this issue
+#ifndef ESP_ARDUINO_VERSION
     if (!WiFi.setHostname(hostname())){ LOG(println, F("UI WiFi: Failed to set hostname :(")); }
 #endif
     LOG(println, F("UI WiFi: STA reconecting..."));
 }
 
-void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
+void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 {
     switch (event){
 /*
@@ -64,9 +129,6 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 */
     case SYSTEM_EVENT_STA_CONNECTED:
         LOG(println, F("UI WiFi: STA connected"));
-
-        if(_cb_STAConnected)
-            _cb_STAConnected();        // execule callback
         break;
 
     case SYSTEM_EVENT_STA_GOT_IP:
@@ -95,10 +157,7 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
         });
         tWiFi.restartDelayed();
 
-        sysData.wifi_sta = true;
         setup_mDns();
-        if(_cb_STAGotIP)
-            _cb_STAGotIP();        // execule callback
         break;
 
     case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -118,29 +177,9 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
                         } );
             tWiFi.restartDelayed();
         }
-
-        sysData.wifi_sta = false;
-        if(_cb_STADisconnected)
-            _cb_STADisconnected();        // execule callback
         break;
 
     default:
         break;
     }
-    timeProcessor.WiFiEvent(event, info);    // handle network events for timelib
 }
-
-/**
- * формирует chipid из MAC-адреса вида 'ddeeff'
- */
-void EmbUI::_getmacid(){
-    MacID _mac;
-    _mac.u64 = ESP.getEfuseMac();
-
-    //LOG(printf_P,PSTR("UI MAC ID:%06llX\n"), _mac.id);
-    // EfuseMac LSB comes first, so need to transpose bytes
-    sprintf_P(mc, PSTR("%02X%02X%02X"), _mac.mc[3], _mac.mc[4], _mac.mc[5]);
-    LOG(printf_P,PSTR("UI ID:%02X%02X%02X\n"), _mac.mc[3], _mac.mc[4], _mac.mc[5]);
-}
-
-#endif  // ESP32
