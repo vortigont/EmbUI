@@ -66,7 +66,7 @@ void section_main_frame(Interface *interf, JsonObject *data){
   block_menu(interf, data);                         // Строим UI блок с меню выбора других секций
   interf->json_frame_flush();
 
-  if(!embui.sysData.wifi_sta){                      // если контроллер не подключен к внешней AP, сразу открываем вкладку с настройками WiFi
+  if(!(WiFi.getMode() & WIFI_MODE_STA)){            // if WiFI is no connected to external AP, than show page with WiFi setup
     LOG(println, F("UI: Opening network setup section"));
     basicui::block_settings_netw(interf, data);
   } else {
