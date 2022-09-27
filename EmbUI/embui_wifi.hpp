@@ -4,7 +4,6 @@
 // and others people
 
 #pragma once
-#include "EmbUI.h"
 
 #ifdef ESP32
  #include <WiFi.h>
@@ -14,6 +13,8 @@
 #endif
 #endif
 
+#include "ts.h"
+
 #define WIFI_CONNECT_TIMEOUT    10                      // timer for WiFi STA connection attempt 
 #define WIFI_SET_AP_AFTER_DISCONNECT_TIMEOUT    15      // time after WiFi client disconnects and before internal AP is brought up
 #define WIFI_RECONNECT_TIMER    30                      // timer for STA connect retry
@@ -21,10 +22,12 @@
 
 #define WIFI_PSK_MIN_LENGTH     8
 
+class EmbUI;
 
 class WiFiController {
     EmbUI *emb;
     Task tWiFi;       // WiFi reconnection helper
+    wifi_event_id_t eid;
 
     // WiFi events callback handler
     void _onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
@@ -44,8 +47,10 @@ public:
     WiFiController(EmbUI *ui) : emb(ui){
       ts.addTask(tWiFi);
           // Set WiFi event handlers
-      WiFi.onEvent(std::bind(&WiFiController::_onWiFiEvent, this, std::placeholders::_1, std::placeholders::_2));
+      eid = WiFi.onEvent(std::bind(&WiFiController::_onWiFiEvent, this, std::placeholders::_1, std::placeholders::_2));
     };
+
+    ~WiFiController(){ WiFi.removeEvent(eid); };
 
     /**
      * Initialize WiFi using stored configuration
@@ -69,3 +74,5 @@ public:
       */
     void setmode(WiFiMode_t mode);
 };
+
+#include "EmbUI.h"

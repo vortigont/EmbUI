@@ -166,15 +166,36 @@ void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
         #else
                 LOG(printf_P, PSTR("UI WiFi: Disconnected, reason: %d\n"), info.disconnected.reason);           // PIO's ARDUINO=10805    Core <=1.0.6
         #endif
-        
+
+        if (tWiFi.isEnabled())      // task activity is pending
+            return;
+
+        if(emb->paramVariant(FPSTR(P_APonly)))       // ignore STA events in AP-only mode
+            return;
+
         // https://github.com/espressif/arduino-esp32/blob/master/tools/sdk/include/esp32/esp_wifi_types.h
         if(WiFi.getMode() != WIFI_MODE_APSTA && !tWiFi.isEnabled()){
             LOG(println, PSTR("UI WiFi: Reconnect attempt"));
-            tWiFi.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){
-                        LOG(println, F("UI WiFi: Switch to AP/STA mode"));
-                        WiFi.enableAP(true);
-                        WiFi.begin();
-                        } );
+            tWiFi.set(WIFI_CONNECT_TIMEOUT * TASK_SECOND, TASK_ONCE,
+                [this](){
+                    LOG(println, F("UI WiFi: Switch to STA mode"));
+                    WiFi.enableSTA(true);
+                    WiFi.enableAP(true);
+                    //WiFi.begin();
+
+                    // create postponed task to reenable client connection attempt
+                    Task *t = new Task(WIFI_RECONNECT_TIMER * TASK_SECOND, TASK_ONCE,
+                            [this](){
+                                tWiFi.disable();
+                                WiFi.enableSTA(true);
+                                WiFi.begin();
+                            },
+                            &ts, false, nullptr,
+                            task_delete
+                        );
+                    t->enableDelayed();
+                } );
+
             tWiFi.restartDelayed();
         }
         break;
