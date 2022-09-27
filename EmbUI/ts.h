@@ -10,4 +10,10 @@
 #define _TASK_SCHEDULING_OPTIONS
 #include <TaskSchedulerDeclarations.h>
 
-#define TASK_RECYCLE embui.taskRecycle(ts.getCurrentTask())
+// TaskScheduler - Let the runner object be a global, single instance shared between object files.
+extern Scheduler ts;
+
+inline void task_delete(){
+    Task *t = ts.getCurrentTask();
+    delete t;
+}

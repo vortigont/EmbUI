@@ -78,12 +78,15 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                 delete interf;
 
                 if (len > POST_LARGE_SIZE){     // если прилетел большой пост, то откладываем обработку и даем возможность освободить часть памяти
-                    new Task(POST_ACTION_DELAY, TASK_ONCE, nullptr, &ts, true, nullptr, [res](){
-                        JsonObject data = (*res)[F("data")];
-                        embui.post(data);
-                        delete res;
-                        TASK_RECYCLE;
-                    });
+                    Task *t = new Task(POST_ACTION_DELAY, TASK_ONCE,
+                        [res](){
+                            JsonObject data = (*res)[F("data")];
+                            embui.post(data);
+                            delete res; },
+                        &ts, false, nullptr,
+                        task_delete
+                    );
+                    t->enableDelayed();
                     return;
                 }
             }
@@ -119,7 +122,16 @@ EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), section_handle(), server(80), ws(F(EMBUI_WE
 
         tAutoSave.set(sysData.asave * EMBUI_AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
         ts.addTask(tAutoSave);
- }
+}
+
+EmbUI::~EmbUI(){
+    ts.deleteTask(tAutoSave);
+    ts.deleteTask(*tValPublisher);
+    ts.deleteTask(tHouseKeeper);
+    delete wifi;
+}
+
+
 
 void EmbUI::begin(){
     uint8_t retry_cnt = 3;
@@ -172,7 +184,6 @@ void EmbUI::begin(){
 
     tHouseKeeper.set(TASK_SECOND, TASK_FOREVER, [this](){
             ws.cleanupClients(EMBUI_MAX_WS_CLIENTS);
-            taskGC();
         } );
     ts.addTask(tHouseKeeper);
     tHouseKeeper.enableDelayed();
@@ -323,26 +334,6 @@ void EmbUI::autosave(bool force){
         tAutoSave.restartDelayed();
     }
 };
-
-void EmbUI::taskRecycle(Task *t){
-    if (!taskTrash)
-        taskTrash = new std::vector<Task*>(8);
-
-    taskTrash->emplace_back(t);
-}
-
-// Dyn tasks garbage collector
-void EmbUI::taskGC(){
-    if (!taskTrash || taskTrash->empty())
-        return;
-
-    size_t heapbefore = ESP.getFreeHeap();
-    for(auto& _t : *taskTrash) { delete _t; }
-
-    delete taskTrash;
-    taskTrash = nullptr;
-    LOG(printf_P, PSTR("UI: task garbage collect: released %d bytes\n"), ESP.getFreeHeap() - heapbefore);
-}
 
 // find callback section matching specified name
 section_handle_t*  EmbUI::sectionlookup(const char *id){
