@@ -26,7 +26,7 @@
         "url": "https://github.com/vortigont/EmbUI.git"
     },
     "platforms": ["espressif8266", "espressif32"],
-    "version": "2.6.2",
+    "version": "2.6.3",
     "dependencies":
     [
         {"owner": "bblanchon",
@@ -45,7 +45,7 @@
          "version": "https://github.com/vortigont/LinkedList"},
         {"owner": "vortigont",
          "name": "esp32-flashz",
-         "version": "https://github.com/vortigont/esp32-flashz#v1.1.0",
+         "version": "https://github.com/vortigont/esp32-flashz#v1.1.1",
          "platforms": ["espressif32"]}
     ],
     "build": {
