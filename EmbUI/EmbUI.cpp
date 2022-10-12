@@ -47,7 +47,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         AwsFrameInfo *info = (AwsFrameInfo*)arg;
         if(info->final && info->index == 0 && info->len == len){
             LOG(printf_P, PSTR("UI: =POST= LEN: %u\n"), len);
-            // ignore all packets without 'post'
+            // ignore packets without 'post' marker
             if (strncmp_P((const char *)data+1, PSTR("\"pkg\":\"post\""), 12))
                 return;
 
@@ -91,8 +91,8 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                 }
             }
 
-            JsonObject data = (*res)[F("data")];
-            embui.post(data);
+            JsonObject o = res->as<JsonObject>();
+            embui.post(o);
             delete res;
         }
         return;
@@ -196,19 +196,22 @@ void EmbUI::begin(){
 void EmbUI::post(JsonObject &data){
     section_handle_t *section = nullptr;
 
-    const char *submit = data[FPSTR(P_submit)];
+    const char *submit = data[P_action];
 
-    if ( submit ){  // if it was a form post, than only 'submit' key is checked for matching section, not all data keys
+    if ( submit ){  // if it was a form post, than only 'action' key is checked for matching section, not all data keys
         section = sectionlookup(submit);
-    } else {        // otherwise scan all possible keys
-        for (JsonPair kv : data)
+    } else {        // otherwise scan all possible keys in data object (deprecated, kept for compatibility only)
+        JsonObject odata = data[P_data].as<JsonObject>();
+        for (JsonPair kv : odata)
             section = sectionlookup(kv.key().c_str());
     }
 
     if (section) {
-        LOG(printf_P, PSTR("UI: POST SECTION: %s\n"), section->name.c_str());
+        LOG(printf_P, PSTR("UI: POST Action: %s\n"), section->name.c_str());
         Interface *interf = new Interface(this, &ws);
-        section->callback(interf, &data);
+        if (!interf) return;
+        JsonObject odata = data[P_data].as<JsonObject>();
+        section->callback(interf, &odata);
         delete interf;
     }
 }

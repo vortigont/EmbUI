@@ -20,7 +20,7 @@ var customFuncs = {
 		if (typeof v == 'undefined' || typeof v == 'object'){
 			// if there was no 'value' given, than simply post the date string to MCU that triggers time/date setup
 			data["time"] = isodate;
-			ws.send_post(data);
+			ws.send_post("time", data);
 		} else {
 			// if there was a param 'value', then paste the date string into doc element with id='value'
 			// let's do this via simulating MCU value frame
@@ -63,6 +63,7 @@ function colorGradient(colors, fadeFraction) {
 return 'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
 }
 
+// template renderer
 var render = function(){
 	var tmpl_menu = new mustache(go("#tmpl_menu")[0],{
 		on_page: function(d,id) {
@@ -79,6 +80,7 @@ var render = function(){
 				custom_hook(this.id, d, id);
 			}
 		},
+		// hanlde elements change on a page
 		on_change: function(d, id, val) {
 
 			chkNumeric = function(v){
@@ -100,8 +102,7 @@ var render = function(){
 				switch (type){
 					case 'checkbox':
 						var chbox=document.getElementById(id);
-						if (chbox.checked) value = true;		// send 'checked' state as boolean true/false
-						else value = false;
+						value = chbox.checked ? true : false;		// send 'checked' state as boolean true/false
 						break;
 					case 'input':
 					case 'select-one':
@@ -123,7 +124,7 @@ var render = function(){
 			}
 
 			var data = {}; data[id] = (value !== undefined)? value : null;
-			ws.send_post(data);
+			ws.send_post(id, data);
 		},
 		on_showhide: function(d, id) {
 			go("#"+id).showhide();
@@ -134,9 +135,9 @@ var render = function(){
 		 */
 		on_submit: function(d, id, val) {
 			var form = go("#"+id), data = go.formdata(go("input, textarea, select", form));
-			data['submit'] = id;
-			if (val !== undefined && typeof val !== 'object') { data[id] = val; }	// submit button _might_ have it's own additional value
-			ws.send_post(data);
+			//data['submit'] = id;
+			if (val !== undefined && typeof val !== 'object') { data[id] = val; }	// submit button _might_ have it's own value
+			ws.send_post(id, data);
 		},
 		// run custom user-js function
 		on_js: function(d, id, val) {
@@ -159,8 +160,8 @@ var render = function(){
 			this.menu();
 			go("#main > div").display("none");
 			// go("#main #"+menu_id).display("block");
-			var data = {}; data[menu_id] = null
-			ws.send_post(data);
+			//var data = {}; data[menu_id] = null
+			ws.send_post(menu_id, {});
 		},
 		menu: function(){
 			go("#menu").clear().append(tmpl_menu.parse(global));
@@ -174,9 +175,10 @@ var render = function(){
 				go("#"+obj.section).replace(tmpl_section.parse(obj));
 			}
 		},
+		// process "pkg":"interface" messages and render template
 		make: function(obj){
-			var frame = obj.block;
 			if (!obj.block) return;
+			var frame = obj.block;
 			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
 				if (frame[i].section == "menu") {
 					global.menu =  frame[i].block;
@@ -424,7 +426,7 @@ window.addEventListener("load", function(ev){
 window.addEventListener("popstate", function(e){
 	if (e = e.state && e.state.hist) {
 		rdr.lockhist = true;
-		var data = {}; data[e] = null;
-		ws.send_post(data);
+		//var data = {}; data[e] = null;
+		ws.send_post(e, {});
 	}
 });

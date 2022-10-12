@@ -12,6 +12,7 @@ static const char P_chckbox[] PROGMEM = "checkbox";
 static const char P_class[] PROGMEM = "class";
 static const char P_comment[] PROGMEM = "comment";
 static const char P_const[] PROGMEM = "const";
+static const char P_data[] PROGMEM = "data";
 static const char P_date[] PROGMEM = "date";
 static const char P_datetime[] PROGMEM = "datetime-local";
 static const char P_display[] PROGMEM = "display";
