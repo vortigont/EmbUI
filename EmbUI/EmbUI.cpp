@@ -83,11 +83,12 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                             JsonObject data = (*res)[F("data")];
                             embui.post(data);
                             delete res; },
-                        &ts, false, nullptr,
-                        task_delete
+                        &ts, false, nullptr, nullptr, true
                     );
-                    t->enableDelayed();
-                    return;
+                    if (t){
+                        t->enableDelayed();
+                        return;
+                    }
                 }
             }
 
