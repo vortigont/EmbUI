@@ -63,8 +63,8 @@ void section_settings_frame(Interface *interf, JsonObject *data){
     interf->json_section_main(FPSTR(T_SETTINGS), FPSTR(T_DICT[lang][TD::D_SETTINGS]));
 
     interf->select(FPSTR(P_LANGUAGE), String(lang), String(FPSTR(T_DICT[lang][TD::D_LANG])), true);
-    interf->option(0, F("Rus"));
-    interf->option(1, F("Eng"));
+    interf->option(0, F("Eng"));
+    interf->option(1, F("Rus"));
     interf->json_section_end();
 
     interf->spacer();
