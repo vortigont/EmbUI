@@ -72,7 +72,9 @@ void section_settings_frame(Interface *interf, JsonObject *data){
     //interf->button_value(FPSTR(T_SH_SECT), 0, FPSTR(T_GNRL_SETUP));                 // кнопка перехода в общие настройки
     interf->button_value(FPSTR(T_SH_SECT), 1, FPSTR(T_DICT[lang][TD::D_WiFi]));     // кнопка перехода в настройки сети
     interf->button_value(FPSTR(T_SH_SECT), 2, FPSTR(T_DICT[lang][TD::D_DATETIME]));     // кнопка перехода в настройки времени
+#ifdef EMBUI_MQTT
     interf->button_value(FPSTR(T_SH_SECT), 3, FPSTR(T_EN_MQTT));     // кнопка перехода в настройки MQTT
+#endif
     interf->button_value(FPSTR(T_SH_SECT), 4, FPSTR(T_DICT[lang][TD::D_SYSSET]));      // кнопка перехода в настройки System
 
     interf->spacer();
@@ -336,7 +338,7 @@ void set_settings_wifi(Interface *interf, JsonObject *data){
     embui.var_remove(FPSTR(P_APonly)); // сборосим режим принудительного AP, при попытке подключения к роутеру
     embui.wifi->connect(ssid.c_str(), pwd.c_str());
 
-    section_settings_frame(interf, data);           // переходим в раздел "настройки"
+    section_settings_frame(interf, nullptr);           // display "settings" page
 }
 
 /**
@@ -348,7 +350,8 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
     embui.var_dropnulls(FPSTR(P_APonly), (*data)[FPSTR(P_APonly)]);
     embui.var_dropnulls(FPSTR(P_APpwd), (*data)[FPSTR(P_APpwd)]);
 
-    embui.wifi->setupAP();
+    embui.wifi->aponly((*data)[P_APonly]);
+    //embui.wifi->setupAP(true);        // no need to apply settings now?
 
     if (interf) section_settings_frame(interf, data);   // переходим в раздел "настройки"
 }

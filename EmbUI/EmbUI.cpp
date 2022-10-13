@@ -152,10 +152,6 @@ void EmbUI::begin(){
     load();                 // try to load config from file
     create_sysvars();       // create system variables (if missing)
     create_parameters();    // weak function, creates user-defined variables
-#ifdef EMBUI_MQTT
-    mqtt(param(FPSTR(P_m_pref)), param(FPSTR(P_m_host)), param(FPSTR(P_m_port)).toInt(), param(FPSTR(P_m_user)), param(FPSTR(P_m_pass)), mqtt_emptyFunction, false); // init mqtt
-#endif
-
     LOG(print, F("UI CONFIG: "));
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
 
@@ -166,7 +162,7 @@ void EmbUI::begin(){
         TimeProcessor::getInstance().ntpodhcp(false);
 
     // start-up WiFi
-    wifi = new WiFiController(this);
+    wifi = new WiFiController(this, paramVariant(P_APonly));
     wifi->init();
     
     // set WebSocket event handler
@@ -177,10 +173,6 @@ void EmbUI::begin(){
     http_set_handlers();
     server.begin();
 
-#ifdef USE_SSDP
-    ssdp_begin(); LOG(println, F("Start SSDP"));
-#endif
-
     setPubInterval(EMBUI_PUB_PERIOD);
 
     tHouseKeeper.set(TASK_SECOND, TASK_FOREVER, [this](){
@@ -188,6 +180,13 @@ void EmbUI::begin(){
         } );
     ts.addTask(tHouseKeeper);
     tHouseKeeper.enableDelayed();
+
+#ifdef EMBUI_MQTT
+    mqtt(param(FPSTR(P_m_pref)), param(FPSTR(P_m_host)), param(FPSTR(P_m_port)).toInt(), param(FPSTR(P_m_user)), param(FPSTR(P_m_pass)), mqtt_emptyFunction, false); // init mqtt
+#endif
+#ifdef USE_SSDP
+    ssdp_begin(); LOG(println, F("Start SSDP"));
+#endif
 }
 
 /**

@@ -1,3 +1,10 @@
+/*
+This file is a part of EmbUI project https://github.com/vortigont/EmbUI - a forked
+version of EmbUI project https://github.com/DmytroKorniienko/EmbUI
+
+(c) Emil Muratov, 2022
+*/
+
 // This framework originaly based on JeeUI2 lib used under MIT License Copyright (c) 2019 Marsel Akhkamov
 // then re-written and named by (c) 2020 Anton Zolotarev (obliterator) (https://github.com/anton-zolotarev)
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
@@ -15,19 +22,30 @@
 
 #include "ts.h"
 
-#define WIFI_CONNECT_TIMEOUT    10                      // timer for WiFi STA connection attempt 
-#define WIFI_SET_AP_AFTER_DISCONNECT_TIMEOUT    15      // time after WiFi client disconnects and before internal AP is brought up
-#define WIFI_RECONNECT_TIMER    30                      // timer for STA connect retry
-#define WIFI_BEGIN_DELAY        3                       // scheduled delay for STA begin() connection
-
-#define WIFI_PSK_MIN_LENGTH     8
-
 class EmbUI;
 
 class WiFiController {
+
+    enum class wifi_recon_t:uint8_t {
+        none,
+        sta_noip,           // station connected, but no IP obtained
+        sta_good,           // station connected and got IP
+        sta_reconnecting,   // station is attempting to reconnect
+        sta_cooldown,       // station intentionally disabled for a grace period to allow proper AP operation
+        ap_grace_disable,   // Access Point is waiting to be disabled
+        ap_grace_enable,     // Access Point is waiting to be enabled
+        ap_only
+    };
+
+
     EmbUI *emb;
-    Task tWiFi;       // WiFi reconnection helper
+    Task _tWiFi;      // WiFi connection event handler task
     wifi_event_id_t eid;
+    wifi_recon_t  wconn = {wifi_recon_t::none};    // WiFi (re)connection state
+
+    // timer counters
+    uint8_t ap_ctr={0};   // AccessPoint status counter
+    uint8_t sta_ctr={0};  // Station status counter
 
     // WiFi events callback handler
     void _onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
@@ -38,19 +56,21 @@ class WiFiController {
      */
     void setup_mDns();
 
+
+    /**
+     * @brief periodicaly running task to handle and switch WiFi state
+     * 
+     */
+    void _state_switcher();
+
     /**
       * update WiFi AP params and state
       */
     //void wifi_updateAP();
 
 public:
-    WiFiController(EmbUI *ui) : emb(ui){
-      ts.addTask(tWiFi);
-          // Set WiFi event handlers
-      eid = WiFi.onEvent(std::bind(&WiFiController::_onWiFiEvent, this, std::placeholders::_1, std::placeholders::_2));
-    };
-
-    ~WiFiController(){ WiFi.removeEvent(eid); };
+    WiFiController(EmbUI *ui, bool aponly = false);
+    ~WiFiController();
 
     /**
      * Initialize WiFi using stored configuration
@@ -73,6 +93,19 @@ public:
       * switch WiFi modes
       */
     void setmode(WiFiMode_t mode);
+
+    /**
+     * @brief set AP only mode
+     * 
+     */
+    void aponly(bool ap);
+
+    /**
+     * @brief get ap-only status
+     * 
+     */
+    inline bool aponly(){ return (wconn == wifi_recon_t::ap_only); };
+
 };
 
 #include "EmbUI.h"
