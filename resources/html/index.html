@@ -96,6 +96,12 @@
 			{{#if2 type == 2}}{{onevent "click", "on_js", id, value}}{{/if2}}
 			>{{label}}</button>
 		{{/if}}
+		{{#if type == "checkbox"}}
+		    <div class="switch-block">
+			<input type="checkbox" id="{{id}}" name="{{id}}" class="checkbox" {{#if2 value == true || value == 1 || value == "true" || value == "1"}}checked{{/if2}} {{#if2 directly}}{{onevent "click", "on_change", id}}{{/if2}}>
+			<label class="switch" for="{{id}}"><span class="checkbox-label">{{label}}</span></label></input>
+		    </div>
+		{{/if}}
 		{{#if html == "const"}}
 			<div class="pure-u-1 pure-button mr">{{label}}</div>
 			<input type="hidden" id="{{id}}" name="{{id}}" value="{{value}}">
