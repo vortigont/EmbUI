@@ -181,10 +181,17 @@ enum CallBack : uint8_t {
 
 typedef void (*actionCallback) (Interface *interf, JsonObject *data);
 
-typedef struct section_handle_t{
+/**
+ * @brief a struct that keeps action handlers and thier name+id
+ * used to run callbacks on actions from UI
+ * 
+ */
+struct section_handle_t{
     String name;
     actionCallback callback;
-} section_handle_t;
+    section_handle_t();
+    section_handle_t(const String& n, actionCallback& cb) : name(n), callback(cb){};
+};
 
 
 class EmbUI
@@ -225,11 +232,12 @@ class EmbUI
 
     bool fsDirty = false;       // флаг поврежденной FS (ошибка монтирования)
 
-    DynamicJsonDocument cfg;    // system config
-    LList<section_handle_t*> section_handle;        // action handlers
+    DynamicJsonDocument cfg;                        // system config
+    LList<std::shared_ptr<section_handle_t>> section_handle;        // action handlers
 #ifdef EMBUI_MQTT
     AsyncMqttClient mqttClient;
 #endif
+
 
   public:
     EmbUI();
