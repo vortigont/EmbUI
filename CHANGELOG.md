@@ -1,18 +1,44 @@
 ## Changelog
 
-* switch to own fork of [ESPAsyncServer](https://github.com/vortigont/ESPAsyncWebServer#hotfixes) with a bunch of fixes required to properly support ESP-s2/ESP-c3 platforms (ESP-S3 not tested yet)
-+ zlib-compressed OTA updates for EPS32-* via [esp32-flashz](https://github.com/vortigont/esp32-flashz) lib
+### core
+* code clenup and optimization
+- Obsolete Task Garbage collector, use task destructor instead
++ abstracted WiFi control into it's own class
+  - WiFi conection manager turned into state machine
+  - removed user callbacks for WiFi events. Duplicate fuctionality
+  - hostname-related funcs now are members of EmbUI class
+* detached TimeProcessor() from EmbUI class, let it handle WiFi event on it's own
++ pick ws action depending on post pkgs carry 'action' key (*API change*)
+- removed support for esp8266, will backport most critical features to v2.6 branch
+- removed legacy led/button/udp features, better to rewrite from scratch
+
+### user UI/FrontEnd
++ WebUI post pkgs carry 'action' key (*API change*)
+  -  EmbUI posted packages now includes id of the callee action is held in "action":"val" key/value,
+  -  other form data follows within an "data": array as before
+  -  simplify action lookups and helps to avoid key clashing on complex forms
+* update [pure-css](https://github.com/pure-css/pure/releases/) to v2.1.0
+
+### v2.6.3 - 2022.10.02
+=======
+* switch to own fork of [ESPAsyncServer](https://github.com/vortigont/ESPAsyncWebServer#hotfixes) with a bunch of  fixes required to properly support ESP-s2/ESP-c3 platforms (ESP-S3 not tested yet)
++ zlib-compressed OTA updates for EPS32-* via [esp32-flashz](https://github.com/vortigont/esp32-flashz)
 * removed dependency on external LittleFS lib for esp32
+* issues fixed in wifi, basic_ui, html and other...
+
+### v2.6.2 - 2022.01.11
+=======
 * revert DHCP client hostname WA for esp32 Arduino core >2.x
 * corrected NTPoDHCP feature for esp32 in a recent 2.x core
+#### user UI
++ 3D buttons with a better looking 'press' feedback
+* pure.css resources updated to 2.0.6
+* small corrections in css
+
+### v2.6.1 - 2021.11.27
 * Use embeded LittleFS lib for ESP32 Arduino core >=2.0.0
 * building for ESP32 Arduino core v2.0.0
 * comment() html element could also be updated with json_section_content()
-
-### user UI
-+ 3D buttons with a better looking 'press' feedback
-* pure.css resources updated to 2.0.6
-* small corrections in ccs 
 
 ### v2.6.0 - 2021.10.28
 * BasicUI methods moved into namespace
