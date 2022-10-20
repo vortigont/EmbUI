@@ -5,54 +5,55 @@
 
 #include "ui.h"
 
-void Interface::frame(const String &id, const String &value){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
-    obj[FPSTR(P_html)] = F("iframe");
-    obj[FPSTR(P_type)] = F("frame");
-    obj[FPSTR(P_id)] = id;
-    obj[FPSTR(P_value)] = value;
+#define FRAME_ADD_RETRY 3
 
-    frame_add_safe(obj.as<JsonObject>());
+
+void Interface::comment(const String &id, const String &label){
+    UIelement<UI_DEFAULT_JSON_SIZE * 2> ui(ui_element_t::comment, id);     // use a bit larger buffer for long texts
+    ui.obj[FPSTR(P_label)] = label;
+
+    json_frame_add(ui);
 }
 
+void Interface::file_form(const String &id, const String &action, const String &label, const String &opt){
+    UIelement<TINY_JSON_SIZE> ui(ui_element_t::file, id);
+    ui.obj[FPSTR(P_type)] = FPSTR(P_file);
+    ui.obj[FPSTR(P_action)] = action;
+    ui.obj[FPSTR(P_label)] = label;
+    if (opt.length()) ui.obj["opt"] = opt;
+    json_frame_add(ui);
+}
+
+void Interface::iframe(const String &id, const String &value){
+    UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::iframe, id);
+    ui.obj[FPSTR(P_type)] = FPSTR(P_frame);
+    ui.obj[FPSTR(P_value)] = value;
+    json_frame_add(ui);
+}
+
+/*
 void Interface::frame2(const String &id, const String &value){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
+    StaticJsonDocument<UI_DEFAULT_JSON_SIZE> obj;
     obj[FPSTR(P_html)] = F("iframe2");;
     obj[FPSTR(P_type)] = F("frame");
     obj[FPSTR(P_id)] = id;
     obj[FPSTR(P_value)] = value;
 
-    frame_add_safe(obj.as<JsonObject>());
+    json_frame_add(obj.as<JsonObject>());
 }
+*/
 
-void Interface::file(const String &name, const String &action, const String &label, const String &opt){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
-    obj[FPSTR(P_html)] = FPSTR(P_file);
-    obj[F("name")] = name;
-    obj[F("action")] = action;
-    obj[FPSTR(P_label)] = label;
-    if (opt.length()) obj["opt"] = opt;
-
-    frame_add_safe(obj.as<JsonObject>());
-}
 
 void Interface::spacer(const String &label){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
-    obj[FPSTR(P_html)] = F("spacer");
-    if (label.length()) obj[FPSTR(P_label)] = label;
-
-    frame_add_safe(obj.as<JsonObject>());
+    UIelement<TINY_JSON_SIZE> ui(ui_element_t::spacer);
+    if (label.length()) ui.obj[FPSTR(P_label)] = label;
+    json_frame_add(ui);
 }
 
-void Interface::comment(const String &id, const String &label){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE * 2> obj;    // use a bit larger buffer for long texts
-    obj[FPSTR(P_html)] = F("comment");
-    if (id.length()) obj[FPSTR(P_id)] = id;
-    obj[FPSTR(P_label)] = label;
-
-    frame_add_safe(obj.as<JsonObject>());
-}
-
+void Interface::textarea(const String &id, const String &value, const String &label){
+    UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::textarea, id, value, label);
+    json_frame_add(ui);
+};
 
 ///////////////////////////////////////
 
@@ -74,14 +75,14 @@ void Interface::json_frame(const String &type){
  */
 void Interface::json_frame_interface(const String &name){
     json[F("app")] = name;
-    json[F("mc")] = embui->mc;
+    json[F("mc")] = embui->macid();
     json[F("ver")] = F(EMBUI_VERSION_STRING);
 
     json_frame_interface();
 }
 
 
-bool Interface::json_frame_add(const JsonObject &obj) {
+bool Interface::json_frame_enqueue(const JsonObject &obj) {
     if (!obj.memoryUsage()) // пустышки не передаем
         return false;
 
@@ -98,6 +99,21 @@ bool Interface::json_frame_add(const JsonObject &obj) {
     json_frame_next();
     return false;
 }
+
+/**
+ * @brief - add object to frame with mem overflow protection 
+ */
+void Interface::json_frame_add(const JsonObject &jobj){
+    size_t _cnt = FRAME_ADD_RETRY;
+
+    do {
+        --_cnt;
+        #ifdef EMBUI_DEBUG
+            if (!_cnt)
+                LOG(println, FPSTR(P_ERR_obj2large));
+        #endif
+    } while (!json_frame_enqueue(jobj) && _cnt );
+};
 
 void Interface::json_frame_next(){
     json.clear();
@@ -169,6 +185,12 @@ void Interface::json_section_end(){
     delete section;
 }
 
+void Interface::json_section_extend(const String &name){
+    section_stack.tail()->idx--;
+    // open new nested section
+    json_section_begin(name, (char*)0, false, false, false, section_stack.tail()->block.getElement(section_stack.tail()->block.size()-1));    // find last array element
+};
+
 /**
  * @brief - serialize and send json obj directly to the ws buffer
  */
@@ -193,20 +215,4 @@ void frameSendClient::send(const JsonObject& data){
 
     serializeJson(data, (char*)buffer->get(), ++length);
     cl->text(buffer);
-};
-
-
-/**
- * @brief - add object to frame with mem overflow protection 
- */
-void Interface::frame_add_safe(const JsonObject &jobj){
-    size_t _cnt = FRAME_ADD_RETRY;
-
-    do {
-        --_cnt;
-        #ifdef EMBUI_DEBUG
-            if (!_cnt)
-                LOG(println, FPSTR(P_ERR_obj2large));
-        #endif
-    } while (!json_frame_add(jobj) && _cnt );
 };

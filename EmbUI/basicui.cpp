@@ -1,6 +1,6 @@
 #include "basicui.h"
 
-uint8_t lang = 1;            // default language for text resources (english)
+uint8_t lang = 0;            // default language for text resources (english)
 
 namespace basicui {
 
@@ -21,7 +21,7 @@ void add_sections(){
     lang = embui.paramVariant(FPSTR(P_LANGUAGE)).as<uint8_t>();
 
     /**
-     * обработчики действий
+     * UI action handlers
      */ 
     // вывод BasicUI секций
     embui.section_handle_add(FPSTR(T_SETTINGS), section_settings_frame);    // generate "settings" UI section
@@ -31,7 +31,9 @@ void add_sections(){
     embui.section_handle_add(FPSTR(T_SET_HOSTNAME), set_hostname);          // hostname setup
     embui.section_handle_add(FPSTR(T_SET_WIFI), set_settings_wifi);         // обработка настроек WiFi Client
     embui.section_handle_add(FPSTR(T_SET_WIFIAP), set_settings_wifiAP);     // обработка настроек WiFi AP
+#ifdef EMBUI_MQTT
     embui.section_handle_add(FPSTR(T_SET_MQTT), set_settings_mqtt);         // обработка настроек MQTT
+#endif  // #ifdef EMBUI_MQTT
     embui.section_handle_add(FPSTR(T_SET_TIME), set_settings_time);         // установки даты/времени
     embui.section_handle_add(FPSTR(P_LANGUAGE), set_language);              // смена языка интерфейса
     embui.section_handle_add(FPSTR(T_REBOOT), set_reboot);                  // ESP reboot action
@@ -61,8 +63,8 @@ void section_settings_frame(Interface *interf, JsonObject *data){
     interf->json_section_main(FPSTR(T_SETTINGS), FPSTR(T_DICT[lang][TD::D_SETTINGS]));
 
     interf->select(FPSTR(P_LANGUAGE), String(lang), String(FPSTR(T_DICT[lang][TD::D_LANG])), true);
-    interf->option(0, F("Rus"));
-    interf->option(1, F("Eng"));
+    interf->option(0, F("Eng"));
+    interf->option(1, F("Rus"));
     interf->json_section_end();
 
     interf->spacer();
@@ -70,7 +72,9 @@ void section_settings_frame(Interface *interf, JsonObject *data){
     //interf->button_value(FPSTR(T_SH_SECT), 0, FPSTR(T_GNRL_SETUP));                 // кнопка перехода в общие настройки
     interf->button_value(FPSTR(T_SH_SECT), 1, FPSTR(T_DICT[lang][TD::D_WiFi]));     // кнопка перехода в настройки сети
     interf->button_value(FPSTR(T_SH_SECT), 2, FPSTR(T_DICT[lang][TD::D_DATETIME]));     // кнопка перехода в настройки времени
+#ifdef EMBUI_MQTT
     interf->button_value(FPSTR(T_SH_SECT), 3, FPSTR(T_EN_MQTT));     // кнопка перехода в настройки MQTT
+#endif
     interf->button_value(FPSTR(T_SH_SECT), 4, FPSTR(T_DICT[lang][TD::D_SYSSET]));      // кнопка перехода в настройки System
 
     interf->spacer();
@@ -101,9 +105,11 @@ void show_section(Interface *interf, JsonObject *data){
         case 2 :    // time setup section
             block_settings_time(interf, nullptr);
             break;
+    #ifdef EMBUI_MQTT
         case 3 :    // MQTT setup section
             block_settings_mqtt(interf, nullptr);
             break;
+    #endif  // #ifdef EMBUI_MQTT
         case 4 :    // System setup section
             block_settings_sys(interf, nullptr);
             break;
@@ -156,14 +162,14 @@ void block_settings_netw(Interface *interf, JsonObject *data){
     interf->comment(FPSTR(T_DICT[lang][TD::D_Hostname]));
     interf->constant(FPSTR(T_EN_OTHER), "", embui.hostname());
     interf->json_section_end(); // Line
-    interf->text(FPSTR(P_hostname), "", F("Redefine hostname, or clear to reset to default"), false);
+    interf->text(FPSTR(P_hostname), "", F("Redefine hostname, or clear to reset to default"));
     interf->button_submit(FPSTR(T_SET_HOSTNAME), FPSTR(T_DICT[lang][TD::D_SAVE]), FPSTR(P_GREEN));
     interf->json_section_end(); // Hostname setup
 
     // форма настроек Wi-Fi Client
     interf->json_section_hidden(FPSTR(T_SET_WIFI), FPSTR(T_DICT[lang][TD::D_WiFiClient]));
     interf->spacer(FPSTR(T_DICT[lang][TD::D_WiFiClientOpts]));
-    interf->text(FPSTR(P_WCSSID), WiFi.SSID(), FPSTR(T_DICT[lang][TD::D_WiFiSSID]), false);
+    interf->text(FPSTR(P_WCSSID), WiFi.SSID(), FPSTR(T_DICT[lang][TD::D_WiFiSSID]));
     interf->password(FPSTR(P_WCPASS), "", FPSTR(T_DICT[lang][TD::D_Password]));
     interf->button_submit(FPSTR(T_SET_WIFI), FPSTR(T_DICT[lang][TD::D_CONNECT]), FPSTR(P_GRAY));
     interf->json_section_end();
@@ -239,7 +245,7 @@ void block_settings_time(Interface *interf, JsonObject *data){
     // manual date and time setup
     interf->comment(FPSTR(T_DICT[lang][TD::D_MSG_DATETIME]));
     interf->json_section_line();
-    interf->datetime(FPSTR(P_time), nullptr, "");   // placeholder for ISO date/time string
+    interf->datetime(FPSTR(P_time), "", "");   // placeholder for ISO date/time string
     interf->button_js_value(FPSTR(P_DTIME), FPSTR(P_time), F("Paste local time"));  // js function that paste browser's date into FPSTR(P_time) field
     interf->json_section_end(); // line
 
@@ -255,15 +261,16 @@ void block_settings_time(Interface *interf, JsonObject *data){
 
     // формируем и отправляем кадр с запросом подгрузки внешнего ресурса со списком правил временных зон
     // полученные данные заместят предыдущее поле выпадающим списком с данными о всех временных зонах
-    interf->json_frame_custom(F("xload"));
+    interf->json_frame(F("xload"));
     interf->json_section_content();
-                    //id           val                                 label direct  skipl URL for external data
-    interf->select(FPSTR(P_TZSET), embui.paramVariant(FPSTR(P_TZSET)),   "", false,  true, F("/js/tz.json"));
+                    //id           val                                 label    direct  URL for external data
+    interf->select(FPSTR(P_TZSET), embui.paramVariant(FPSTR(P_TZSET)), (char*)0, false,  F("/js/tz.json"));
     interf->json_section_end(); // select
     interf->json_frame_flush(); // xload
 
 }
 
+#ifdef EMBUI_MQTT
 /**
  *  BasicUI блок интерфейса настроек MQTT
  */
@@ -288,6 +295,7 @@ void block_settings_mqtt(Interface *interf, JsonObject *data){
 
     interf->json_frame_flush();
 }
+#endif  // #ifdef EMBUI_MQTT
 
 /**
  *  BasicUI блок настройки system
@@ -302,8 +310,8 @@ void block_settings_sys(Interface *interf, JsonObject *data){
     // FW update
     interf->json_section_hidden(FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPDATEFW]));
     interf->spacer(FPSTR(T_DICT[lang][TD::D_FWLOAD]));
-    interf->file(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFW]), F("fw"));
-    interf->file(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFS]), F("fs"));
+    interf->file_form(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFW]), F("fw"));
+    interf->file_form(FPSTR(T_DO_OTAUPD), FPSTR(T_DO_OTAUPD), FPSTR(T_DICT[lang][TD::D_UPLOADFS]), F("fs"));
     interf->json_section_end();
 
     interf->button(FPSTR(T_SET_CFGCLEAR), F("Clear sys config"), FPSTR(P_RED));
@@ -328,9 +336,9 @@ void set_settings_wifi(Interface *interf, JsonObject *data){
     String pwd = (*data)[FPSTR(P_WCPASS)];      // фреймворк хранит последнюю доступную точку самостоятельно
 
     embui.var_remove(FPSTR(P_APonly)); // сборосим режим принудительного AP, при попытке подключения к роутеру
-    embui.wifi_connect(ssid.c_str(), pwd.c_str());
+    embui.wifi->connect(ssid.c_str(), pwd.c_str());
 
-    section_settings_frame(interf, data);           // переходим в раздел "настройки"
+    section_settings_frame(interf, nullptr);           // display "settings" page
 }
 
 /**
@@ -342,11 +350,13 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
     embui.var_dropnulls(FPSTR(P_APonly), (*data)[FPSTR(P_APonly)]);
     embui.var_dropnulls(FPSTR(P_APpwd), (*data)[FPSTR(P_APpwd)]);
 
-    embui.wifi_updateAP();
+    embui.wifi->aponly((*data)[P_APonly]);
+    //embui.wifi->setupAP(true);        // no need to apply settings now?
 
     if (interf) section_settings_frame(interf, data);   // переходим в раздел "настройки"
 }
 
+#ifdef EMBUI_MQTT
 /**
  * Обработчик настроек MQTT
  */
@@ -365,6 +375,7 @@ void set_settings_mqtt(Interface *interf, JsonObject *data){
 
     section_settings_frame(interf, data);
 }
+#endif  // #ifdef EMBUI_MQTT
 
 /**
  * Обработчик настроек даты/времени
@@ -377,15 +388,15 @@ void set_settings_time(Interface *interf, JsonObject *data){
 
     String tzrule = (*data)[FPSTR(P_TZSET)];
     if (!tzrule.isEmpty()){
-        embui.timeProcessor.tzsetup(tzrule.substring(4).c_str());   // cutoff '000_' prefix key
+        TimeProcessor::getInstance().tzsetup(tzrule.substring(4).c_str());   // cutoff '000_' prefix key
     }
 
-    SETPARAM_NONULL(FPSTR(P_userntp), embui.timeProcessor.setcustomntp((*data)[FPSTR(P_userntp)]));
+    SETPARAM_NONULL(FPSTR(P_userntp), TimeProcessor::getInstance().setcustomntp((*data)[FPSTR(P_userntp)]));
 
 #if ARDUINO <= 10805
     // ESP32's Arduino Core <=1.0.6 miss NTPoDHCP feature
 #else
-    SETPARAM_NONULL( FPSTR(P_noNTPoDHCP), embui.timeProcessor.ntpodhcp(!(*data)[FPSTR(P_noNTPoDHCP)]) )
+    SETPARAM_NONULL( FPSTR(P_noNTPoDHCP), TimeProcessor::getInstance().ntpodhcp(!(*data)[FPSTR(P_noNTPoDHCP)]) )
 #endif
 
     // if there is a field with custom ISO date/time, call time setter
@@ -417,7 +428,7 @@ void set_language(Interface *interf, JsonObject *data){
 void embuistatus(Interface *interf){
     if (!interf) return;
     interf->json_frame_value();
-    interf->value(F("pTime"), embui.timeProcessor.getFormattedShortTime(), true);
+    interf->value(F("pTime"), TimeProcessor::getInstance().getFormattedShortTime(), true);
     interf->value(F("pMem"), ESP.getFreeHeap(), true);
     interf->value(F("pUptime"), millis()/1000, true);
     interf->json_frame_flush();

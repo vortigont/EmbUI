@@ -3,8 +3,13 @@
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
 // and others people
 
-#ifndef EmbUI_h
-#define EmbUI_h
+#pragma once
+
+#ifdef ESP8266
+#error "Sorry, esp8266 is no longer supported"
+#error "use v2.6 branch for 8266 https://github.com/vortigont/EmbUI/tree/v2.6"
+#include "no_esp8266"
+#endif
 
 #include "globals.h"
 
@@ -24,27 +29,17 @@
 
 #include <FS.h>
 
-#ifdef ESP8266
-// #include <ESPAsyncTCP.h>
- #include <LittleFS.h>
- #define FORMAT_LITTLEFS_IF_FAILED
- #include <Updater.h>
-#endif
-
-#ifdef ESP32
- #ifdef ESP_ARDUINO_VERSION
+#ifdef ESP_ARDUINO_VERSION
   #include <LittleFS.h>
- #else
+#else       // for older Arduino core <2.0
   #include <LITTLEFS.h>
   #define LittleFS LITTLEFS
- #endif
-
- #ifndef FORMAT_LITTLEFS_IF_FAILED
-  #define FORMAT_LITTLEFS_IF_FAILED true
- #endif
- #define U_FS   U_SPIFFS
 #endif
 
+#ifndef FORMAT_LITTLEFS_IF_FAILED
+  #define FORMAT_LITTLEFS_IF_FAILED true
+#endif
+#define U_FS   U_SPIFFS
 
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
@@ -52,51 +47,46 @@
 #include "LList.h"
 #include "ts.h"
 #include "timeProcessor.h"
+#include <functional>
+
 #ifdef EMBUI_MQTT
 #include <AsyncMqttClient.h>
 #endif
 
-#define UDP_PORT                4243    // UDP server port
+#include "embui_wifi.hpp"
 
-#ifndef PUB_PERIOD
-#define PUB_PERIOD              10      // Values Publication period, s
+#ifndef EMBUI_PUB_PERIOD
+#define EMBUI_PUB_PERIOD              10      // Values Publication period, s
 #endif
 
-#define MQTT_PUB_PERIOD         30
+#define EMBUI_MQTT_PUB_PERIOD         30
 
-#ifndef DELAY_AFTER_FS_WRITING
-#define DELAY_AFTER_FS_WRITING  (50U)   // 50мс, меньшие значения могут повлиять на стабильность
-#endif
+#define EMBUI_AUTOSAVE_TIMEOUT        2       // configuration autosave timer, sec    (4 bit value, multiplied by AUTOSAVE_MULTIPLIER)
 
-#define AUTOSAVE_TIMEOUT        2       // configuration autosave timer, sec    (4 bit value, multiplied by AUTOSAVE_MULTIPLIER)
-
-#ifndef AUTOSAVE_MULTIPLIER
-#define AUTOSAVE_MULTIPLIER     (10U)   // множитель таймера автосохранения конфиг файла
-#endif
-
-#ifndef __DISABLE_BUTTON0
-#define __BUTTON 0 // Кнопка "FLASH" на NODE_MCU
+#ifndef EMBUI_AUTOSAVE_MULTIPLIER
+#define EMBUI_AUTOSAVE_MULTIPLIER     (10U)   // множитель таймера автосохранения конфиг файла
 #endif
 
 // Default Hostname/AP prefix
-#ifndef __IDPREFIX
-#define __IDPREFIX "EmbUI"
+#ifndef EMBUI_IDPREFIX
+#define EMBUI_IDPREFIX "EmbUI"
 #endif
 
 // size of a JsonDocument to hold EmbUI config 
-#ifndef __CFGSIZE
-#define __CFGSIZE (2048)
+#ifndef EMBUI_CFGSIZE
+#define EMBUI_CFGSIZE (2048)
 #endif
 
-#ifndef MAX_WS_CLIENTS
-#define MAX_WS_CLIENTS          4
+#define EMBUI_CFGSIZE_MIN_FREE        50        // capacity threshold before compaction
+
+// maximum number of websocket client connections
+#ifndef EMBUI_MAX_WS_CLIENTS
+#define EMBUI_MAX_WS_CLIENTS          4
 #endif
 
-#define WEBSOCK_URI             "/ws"
+#define EMBUI_WEBSOCK_URI             "/ws"
 
-// TaskScheduler - Let the runner object be a global, single instance shared between object files.
-extern Scheduler ts;
-
+// forward declarations
 class Interface;
 
 //-----------------------
@@ -169,89 +159,93 @@ void    __attribute__((weak)) create_parameters();
   static const char PGnameManuf[] PROGMEM = TOSTRING(__SSDPMANUF);
 #endif
 
-// Callback enums
-enum CallBack : uint8_t {
-    detach = (0U),
-    attach = (1U),
-    STAConnected,
-    STADisconnected,
-    STAGotIP,
-    TimeSet
-};
+typedef std::function<void(Interface *interf, JsonObject *data)> actionCallback;
 
-typedef void (*actionCallback) (Interface *interf, JsonObject *data);
-
-typedef struct section_handle_t{
+/**
+ * @brief a struct that keeps action handlers and thier name+id
+ * used to run callbacks on actions from UI
+ * 
+ */
+struct section_handle_t{
     String name;
     actionCallback callback;
-} section_handle_t;
+    section_handle_t();
+    section_handle_t(const String& n, actionCallback& cb) : name(n), callback(cb){};
+};
 
 
 class EmbUI
 {
-    friend void mqtt_dummy_connect();
-
-    typedef void (*mqttCallback) ();
-
-    // оптимизация расхода памяти, все битовые флаги и другие потенциально "сжимаемые" переменные скидываем сюда
-    //#pragma pack(push,1)
     typedef union _BITFIELDS {
-    struct {
-        bool wifi_sta:1;    // флаг успешного подключения к внешней WiFi-AP, (TODO: переделать на события с коллбеками)
-        bool mqtt_connected:1;
-        bool mqtt_connect:1;
-        bool mqtt_remotecontrol:1;
-
-        bool mqtt_enable:1;
-        bool cfgCorrupt:1;
-        bool LED_INVERT:1;
-        uint8_t LED_PIN:5;   // [0...30]
-        uint8_t asave:4;     // 4 бита значения таймера автосохранения конфига (домножается на AUTOSAVE_MULTIPLIER)
-    };
-    uint32_t flags; // набор битов для конфига
-    _BITFIELDS() {
-        wifi_sta = false;    // флаг успешного подключения к внешней WiFi-AP, (TODO: переделать на события с коллбеками)
-        mqtt_connected = false;
-        mqtt_connect = false;
-        mqtt_remotecontrol = false;
-        mqtt_enable = false;
-        LED_INVERT = false;
-        cfgCorrupt = false;     // todo: убрать из конфига
-        LED_PIN = 31; // [0...30]
-        asave = AUTOSAVE_TIMEOUT; // defaul timeout 2*10 sec
-    }
+        struct {
+            bool cfgCorrupt:1;      // todo: no use? remove it!
+            bool fsDirty:1;         // FS is dirty/unmountable
+            uint8_t asave:4;        // 4-bit autosave timer (with AUTOSAVE_MULTIPLIER applied)
+        #ifdef EMBUI_MQTT
+            bool mqtt_connected:1;
+            bool mqtt_connect:1;
+            bool mqtt_remotecontrol:1;
+            bool mqtt_enable:1;
+        #endif  // #ifdef EMBUI_MQTT
+        };
+        uint32_t flags; // набор битов для конфига
+        _BITFIELDS() {
+            cfgCorrupt = false;
+            fsDirty = false;
+            asave = EMBUI_AUTOSAVE_TIMEOUT; // defaul timeout 2*10 sec
+        #ifdef EMBUI_MQTT
+            mqtt_connected = false;
+            mqtt_connect = false;
+            mqtt_remotecontrol = false;
+            mqtt_enable = false;
+        #endif  // #ifdef EMBUI_MQTT
+        }
     } BITFIELDS;
-    //#pragma pack(pop)
 
-    bool fsDirty = false;       // флаг поврежденной FS (ошибка монтирования)
+    DynamicJsonDocument cfg;                        // system config
+    LList<std::shared_ptr<section_handle_t>> section_handle;        // action handlers
 
-    DynamicJsonDocument cfg;    // system config
-    LList<section_handle_t*> section_handle;        // action handlers
-#ifdef EMBUI_MQTT
-    AsyncMqttClient mqttClient;
-#endif
 
   public:
     EmbUI();
-
-    ~EmbUI(){
-        ts.deleteTask(tAutoSave);
-        ts.deleteTask(*tValPublisher);
-        ts.deleteTask(tHouseKeeper);
-    }
+    ~EmbUI();
 
     BITFIELDS sysData;
     AsyncWebServer server;
     AsyncWebSocket ws;
-    TimeProcessor& timeProcessor = TimeProcessor::getInstance();
+    WiFiController *wifi;
 #ifdef EMBUI_MQTT
+    typedef void (*mqttCallback) ();
     mqttCallback onConnect;
 #endif
 
-    std::unique_ptr<char[]> autohostname;   // pointer for autogenerated hostname
-    char mc[7]; // last 3 LSB's of mac addr used as an ID
+    /**
+     * @brief EmbUI initialization
+     * load configuration from FS, setup WiFi, obtain system date/time, etc...
+     * 
+     */
+    void begin();
 
-    void section_handle_add(const String &btn, actionCallback response);
+    /**
+     * @brief EmbUI process handler
+     * must be placed into loop()
+     * 
+     */
+    void handle();
+
+    /**
+     * @brief add ui section handler
+     * 
+     * @param name section name
+     * @param response callback function
+     */
+    void section_handle_add(const String &name, actionCallback response);
+
+    /**
+     * @brief remove section handler
+     * 
+     * @param name section name
+     */
     void section_handle_remove(const String &name);
 
 
@@ -275,63 +269,19 @@ class EmbUI
     bool isparamexists(const char* key){ return cfg.containsKey(key);}
     bool isparamexists(const String &key){ return cfg.containsKey(key);}
 
-    void led(uint8_t pin, bool invert);
-
-    /**
-     * @brief EmbUI initialization
-     * load configuration from FS, setup WiFi, obtain system date/time, etc...
-     * 
-     */
-    void begin();
-
-    /**
-     * @brief EmbUI process handler
-     * must be placed into loop()
-     * 
-     */
-    void handle();
-
-    // config operations
+    /***  config operations ***/
     void save(const char *_cfg = nullptr, bool force = false);
     void load(const char *cfgfile = nullptr);   // if null, than default cfg file is used
     void cfgclear();                            // clear current config, both in RAM and file
 
-    //  * tries to load json file from FS and deserialize it into provided DynamicJsonDocument, returns false on error
+    // tries to load json file from FS and deserialize it into provided DynamicJsonDocument, returns false on error
     bool loadjson(const char *filepath, DynamicJsonDocument &obj);
 
-#ifdef EMBUI_UDP
-    void udp(const String &message);
-    void udp();
-#endif // EMBUI_UDP
-
-
-#ifdef EMBUI_MQTT
-    // MQTT
-    bool isMQTTconected() { return sysData.mqtt_connected; }
-    void pub_mqtt(const String &key, const String &value);
-    void mqtt_handle();
-    void subscribeAll(bool isOnlyGetSet=true);
-    void mqtt_reconnect();
-    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol);
-    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload));
-    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload));
-    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol);
-    void mqtt(const String &host, int port, const String &user, const String &pass, bool remotecontrol);
-    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, bool remotecontrol);
-    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol);
-    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) ());
-    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) ());
-    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol);
-    void mqtt(void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol);
-    void mqtt(void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol);
-    void mqttReconnect();
-    void subscribe(const String &topic);
-    void publish(const String &topic, const String &payload);
-    void publish(const String &topic, const String &payload, bool retained);
-    void publishto(const String &topic, const String &payload, bool retained);
-    void remControl();
-    String id(const String &tpoic);
-#endif
+    /**
+     * @brief - initialize/restart config autosave timer
+     * each call postpones cfg write to flash
+     */
+    void autosave(bool force = false);
 
     /**
      * @brief - process posted data for the registered action
@@ -341,21 +291,11 @@ class EmbUI
      */
     void post(JsonObject &data);
 
-    // WiFi-related
-    /**
-     * Initialize WiFi using stored configuration
-     */
-    void wifi_init();
 
-    /**
-     * Подключение к WiFi AP в клиентском режиме
-     */
-    void wifi_connect(const char *ssid=nullptr, const char *pwd=nullptr);
 
-    /**
-      * update WiFi AP params and state
-      */
-    void wifi_updateAP();
+    /*** WiFi/Network related methods***/
+
+
 
     /**
      * @brief get/set device hosname
@@ -368,11 +308,10 @@ class EmbUI
     const char* hostname(const char* name);
 
     /**
-     * метод для установки коллбеков на системные события, типа:
-     * - WiFi подключиля/отключился
-     * - получено время от NTP
+     * @brief get system MAC ID
+     * returns a string with last bytes of MAC address (null terminated)
      */
-    void set_callback(CallBack set, CallBack action, callback_function_t callback=nullptr);
+    const char* macid() const { return mc; };
 
     /**
      * @brief - set interval period for send_pub() task in seconds
@@ -405,7 +344,7 @@ class EmbUI
             return;
         }
 
-        if ((cfg.capacity() - cfg.memoryUsage()) < 42){ // you know that 42 is THE answer, right?
+        if ((cfg.capacity() - cfg.memoryUsage()) < EMBUI_CFGSIZE_MIN_FREE){
             // cfg is out of mem, try to compact it
             cfg.garbageCollect();
             LOG(printf_P, PSTR("UI: cfg garbage cleanup: %u free out of %u\n"), cfg.capacity() - cfg.memoryUsage(), cfg.capacity());
@@ -473,64 +412,62 @@ class EmbUI
     void var_dropnulls(const String &key, const char* value);
     void var_dropnulls(const String &key, JsonVariant value);
 
-    /**
-     * @brief - initialize/restart config autosave timer
-     * each call postpones cfg write to flash
-     */
-    void autosave(bool force = false);
 
-    /**
-     * Recycler for dynamic tasks
-     */
-    void taskRecycle(Task *t);
+#ifdef EMBUI_MQTT
+    // MQTT
+    bool isMQTTconected() { return sysData.mqtt_connected; }
+    void pub_mqtt(const String &key, const String &value);
+    void mqtt_handle();
+    void subscribeAll(bool isOnlyGetSet=true);
+    void mqtt_reconnect();
+    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol);
+    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload));
+    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload));
+    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol);
+    void mqtt(const String &host, int port, const String &user, const String &pass, bool remotecontrol);
+    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, bool remotecontrol);
+    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol);
+    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) ());
+    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) ());
+    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol);
+    void mqtt(void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol);
+    void mqtt(void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol);
+    void mqttReconnect();
+    void subscribe(const String &topic);
+    void publish(const String &topic, const String &payload);
+    void publish(const String &topic, const String &payload, bool retained);
+    void publishto(const String &topic, const String &payload, bool retained);
+    void remControl();
+    String id(const String &tpoic);
+#endif
+
 
   private:
+    char mc[7]; // last 3 LSB's of mac addr used as an ID
+    std::unique_ptr<char[]> autohostname;   // pointer for autogenerated hostname
+
+    // Scheduler tasks
+    Task *tValPublisher;    // Status data publisher
+    Task tHouseKeeper;      // Maintenance task, runs every second
+    Task tAutoSave;         // config autosave timer
+
     /**
      * call to create system-dependent variables,
      * both run-time and persistent
      */ 
     void create_sysvars();
-    void led_on();
-    void led_off();
-    void led_inv();
 
-    void btn();
-    void getmacid();
+    // Dyn tasks garbage collector
+    void taskGC();
 
-    // Scheduler tasks
-    Task embuischedw;       // WiFi reconnection helper
-    Task *tValPublisher;     // Status data publisher
-    Task tHouseKeeper;     // Maintenance task, runs every second
-    Task tAutoSave;          // config autosave timer
-    std::vector<Task*> *taskTrash = nullptr;    // ptr to a vector container with obsolete tasks
-
-    // WiFi-related
-    /**
-      * устанавлием режим WiFi
-      */
-    void wifi_setmode(WiFiMode_t mode);
-
-    /**
-     * Configure and bring up esp's internal AP
-     * defualt is to configure credentials from the config
-     * bool force - reapply credentials even if AP is already started, exit otherwise
-     */
-    void wifi_setAP(bool force=false);
+    // find callback section matching specified name
+    section_handle_t* sectionlookup(const char *id);
 
 
+    /*** WiFi-related methods ***/
 
-#ifdef ESP8266
-    WiFiEventHandler e1, e2, e3, e4;
-    WiFiMode wifi_mode;           // используется в gpio led_handle (to be removed)
-    void onSTAConnected(WiFiEventStationModeConnected ipInfo);
-    void onSTAGotIP(WiFiEventStationModeGotIP ipInfo);
-    void onSTADisconnected(WiFiEventStationModeDisconnected event_info);
-    void onWiFiMode(WiFiEventModeChange event_info);
-#endif
+    void _getmacid();
 
-#ifdef ESP32
-    void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
-#endif
 
     // HTTP handlers
 
@@ -543,6 +480,9 @@ class EmbUI
 
 #ifdef EMBUI_MQTT
     // MQTT Private Methods and vars
+    friend void mqtt_dummy_connect();
+    AsyncMqttClient mqttClient;
+
     String m_pref; // к сожалению они нужны, т.к. в клиент передаются указатели на уже имеющийся объект, значит на конфиг ссылку отдавать нельзя!!!
     String m_host;
     String m_port;
@@ -558,26 +498,6 @@ class EmbUI
     static void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total);
     static void onMqttPublish(uint16_t packetId);
 #endif
-
-#ifdef EMBUI_UDP
-    unsigned int localUdpPort = UDP_PORT;
-    String udpMessage; // буфер для сообщений Обмена по UDP
-    void udpBegin();
-    void udpLoop();
-#endif // EMBUI_UDP
-
-    // callback pointers
-    callback_function_t _cb_STAConnected = nullptr;
-    callback_function_t _cb_STADisconnected = nullptr;
-    callback_function_t _cb_STAGotIP = nullptr;
-
-    void setup_mDns();
-
-    // Dyn tasks garbage collector
-    void taskGC();
-
-    // find callback section matching specified name
-    section_handle_t* sectionlookup(const char *id);
 
 #ifdef USE_SSDP
     void ssdp_begin() {
@@ -664,4 +584,3 @@ class EmbUI
 // Глобальный объект фреймворка
 extern EmbUI embui;
 #include "ui.h"
-#endif

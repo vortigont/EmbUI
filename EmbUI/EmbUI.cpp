@@ -9,9 +9,15 @@
 #define POST_ACTION_DELAY   50      // delay for large posts processing
 #define POST_LARGE_SIZE   256       // large post threshold
 
+union MacID
+{
+    uint64_t u64;
+    uint8_t mc[8];
+};
 
-
+#ifdef EMBUI_MQTT
 void mqtt_emptyFunction(const String &, const String &);
+#endif // EMBUI_MQTT
 
 EmbUI embui;
 
@@ -41,7 +47,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         AwsFrameInfo *info = (AwsFrameInfo*)arg;
         if(info->final && info->index == 0 && info->len == len){
             LOG(printf_P, PSTR("UI: =POST= LEN: %u\n"), len);
-            // ignore all packets without 'post'
+            // ignore packets without 'post' marker
             if (strncmp_P((const char *)data+1, PSTR("\"pkg\":\"post\""), 12))
                 return;
 
@@ -72,18 +78,22 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                 delete interf;
 
                 if (len > POST_LARGE_SIZE){     // если прилетел большой пост, то откладываем обработку и даем возможность освободить часть памяти
-                    new Task(POST_ACTION_DELAY, TASK_ONCE, nullptr, &ts, true, nullptr, [res](){
-                        JsonObject data = (*res)[F("data")];
-                        embui.post(data);
-                        delete res;
-                        TASK_RECYCLE;
-                    });
-                    return;
+                    Task *t = new Task(POST_ACTION_DELAY, TASK_ONCE,
+                        [res](){
+                            JsonObject data = (*res)[F("data")];
+                            embui.post(data);
+                            delete res; },
+                        &ts, false, nullptr, nullptr, true
+                    );
+                    if (t){
+                        t->enableDelayed();
+                        return;
+                    }
                 }
             }
 
-            JsonObject data = (*res)[F("data")];
-            embui.post(data);
+            JsonObject o = res->as<JsonObject>();
+            embui.post(o);
             delete res;
         }
         return;
@@ -108,20 +118,21 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
 
 // EmbUI constructor
-EmbUI::EmbUI() : cfg(__CFGSIZE), section_handle(), server(80), ws(F(WEBSOCK_URI)){
+EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), section_handle(), server(80), ws(F(EMBUI_WEBSOCK_URI)){
+        _getmacid();
 
-    // Enable persistent storage for ESP8266 Core >3.0.0 (https://github.com/esp8266/Arduino/pull/7902)
-    #ifdef WIFI_IS_OFF_AT_BOOT
-        enableWiFiAtBootTime(); // can be called from anywhere with the same effect
-    #endif
-
-        memset(mc,0,sizeof(mc));
-        getmacid();
-
-        ts.addTask(embuischedw);    // WiFi helper
-        tAutoSave.set(sysData.asave * AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
+        tAutoSave.set(sysData.asave * EMBUI_AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
         ts.addTask(tAutoSave);
- }
+}
+
+EmbUI::~EmbUI(){
+    ts.deleteTask(tAutoSave);
+    ts.deleteTask(*tValPublisher);
+    ts.deleteTask(tHouseKeeper);
+    delete wifi;
+}
+
+
 
 void EmbUI::begin(){
     uint8_t retry_cnt = 3;
@@ -133,7 +144,7 @@ void EmbUI::begin(){
         delay(100);
         if (!retry_cnt){
             LOG(println, F("FS dirty, I Give up!"));
-            fsDirty = true;
+            sysData.fsDirty = true;
             return;
         }
     }
@@ -141,53 +152,41 @@ void EmbUI::begin(){
     load();                 // try to load config from file
     create_sysvars();       // create system variables (if missing)
     create_parameters();    // weak function, creates user-defined variables
-#ifdef EMBUI_MQTT
-    mqtt(param(FPSTR(P_m_pref)), param(FPSTR(P_m_host)), param(FPSTR(P_m_port)).toInt(), param(FPSTR(P_m_user)), param(FPSTR(P_m_pass)), mqtt_emptyFunction, false); // init mqtt
-#endif
-
     LOG(print, F("UI CONFIG: "));
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
 
-    // Set WiFi event handlers
-    #ifdef ESP8266
-        e1 = WiFi.onStationModeGotIP(std::bind(&EmbUI::onSTAGotIP, this, std::placeholders::_1));
-        e2 = WiFi.onStationModeDisconnected(std::bind(&EmbUI::onSTADisconnected, this, std::placeholders::_1));
-        e3 = WiFi.onStationModeConnected(std::bind(&EmbUI::onSTAConnected, this, std::placeholders::_1));
-        e4 = WiFi.onWiFiModeChange(std::bind(&EmbUI::onWiFiMode, this, std::placeholders::_1));
-    #elif defined ESP32
-        WiFi.onEvent(std::bind(&EmbUI::WiFiEvent, this, std::placeholders::_1, std::placeholders::_2));
-    #endif
-
-    // восстанавливаем настройки времени
-    timeProcessor.setcustomntp(paramVariant(FPSTR(P_userntp)).as<const char*>());
-    timeProcessor.tzsetup(param(FPSTR(P_TZSET)).substring(4).c_str());  // cut off 4 chars of html selector index
+    // restore Time settings
+    TimeProcessor::getInstance().setcustomntp(paramVariant(FPSTR(P_userntp)).as<const char*>());
+    TimeProcessor::getInstance().tzsetup(param(FPSTR(P_TZSET)).substring(4).c_str());  // cut off 4 chars of html selector index
     if (paramVariant(FPSTR(P_noNTPoDHCP)))
-        timeProcessor.ntpodhcp(false);
+        TimeProcessor::getInstance().ntpodhcp(false);
 
-    // запускаем WiFi
-    wifi_init();
+    // start-up WiFi
+    wifi = new WiFiController(this, paramVariant(P_APonly));
+    wifi->init();
     
-    ws.onEvent(onWsEvent);      // WebSocket event handler
+    // set WebSocket event handler
+    ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
-    http_set_handlers();        // install various http handlers
+    // install EmbUI http handlers
+    http_set_handlers();
     server.begin();
 
-#ifdef USE_SSDP
-    ssdp_begin(); LOG(println, F("Start SSDP"));
-#endif
-
-    setPubInterval(PUB_PERIOD);
+    setPubInterval(EMBUI_PUB_PERIOD);
 
     tHouseKeeper.set(TASK_SECOND, TASK_FOREVER, [this](){
-            ws.cleanupClients(MAX_WS_CLIENTS);
-            #ifdef ESP8266
-                MDNS.update();
-            #endif
-            taskGC();
+            ws.cleanupClients(EMBUI_MAX_WS_CLIENTS);
         } );
     ts.addTask(tHouseKeeper);
     tHouseKeeper.enableDelayed();
+
+#ifdef EMBUI_MQTT
+    mqtt(param(FPSTR(P_m_pref)), param(FPSTR(P_m_host)), param(FPSTR(P_m_port)).toInt(), param(FPSTR(P_m_user)), param(FPSTR(P_m_pass)), mqtt_emptyFunction, false); // init mqtt
+#endif
+#ifdef USE_SSDP
+    ssdp_begin(); LOG(println, F("Start SSDP"));
+#endif
 }
 
 /**
@@ -197,19 +196,22 @@ void EmbUI::begin(){
 void EmbUI::post(JsonObject &data){
     section_handle_t *section = nullptr;
 
-    const char *submit = data[FPSTR(P_submit)];
+    const char *submit = data[P_action];
 
-    if ( submit ){  // if it was a form post, than only 'submit' key is checked for matching section, not all data keys
+    if ( submit ){  // if it was a form post, than only 'action' key is checked for matching section, not all data keys
         section = sectionlookup(submit);
-    } else {        // otherwise scan all possible keys
-        for (JsonPair kv : data)
+    } else {        // otherwise scan all possible keys in data object (deprecated, kept for compatibility only)
+        JsonObject odata = data[P_data].as<JsonObject>();
+        for (JsonPair kv : odata)
             section = sectionlookup(kv.key().c_str());
     }
 
     if (section) {
-        LOG(printf_P, PSTR("UI: POST SECTION: %s\n"), section->name.c_str());
+        LOG(printf_P, PSTR("UI: POST Action: %s\n"), section->name.c_str());
         Interface *interf = new Interface(this, &ws);
-        section->callback(interf, &data);
+        if (!interf) return;
+        JsonObject odata = data[P_data].as<JsonObject>();
+        section->callback(interf, &odata);
         delete interf;
     }
 }
@@ -225,20 +227,16 @@ void EmbUI::section_handle_remove(const String &name)
 {
     for(int i=0; i<section_handle.size(); i++){
         if(section_handle.get(i)->name==name){
-            delete section_handle.get(i);
-            section_handle.remove(i);
+            section_handle.unlink(i);
             LOG(printf_P, PSTR("UI UNREGISTER: %s\n"), name.c_str());
             break;
         }
     }
 }
 
-
 void EmbUI::section_handle_add(const String &name, actionCallback response)
 {
-    section_handle_t *section = new section_handle_t;
-    section->name = name;
-    section->callback = response;
+    std::shared_ptr<section_handle_t> section(new section_handle_t(name, response));
     section_handle.add(section);
 
     LOG(printf_P, PSTR("UI REGISTER: %s\n"), name.c_str());
@@ -282,51 +280,12 @@ String EmbUI::param(const String &key)
     return v;
 }
 
-
-void EmbUI::led(uint8_t pin, bool invert){
-    if (pin == 31) return;
-    sysData.LED_PIN = pin;
-    sysData.LED_INVERT = invert;
-    pinMode(sysData.LED_PIN, OUTPUT);
-}
-
 void EmbUI::handle(){
     ts.execute();           // run task scheduler
 #ifdef EMBUI_MQTT
     mqtt_handle();
 #endif // EMBUI_MQTT
-    //btn();
-    //led_handle();
-
-#ifdef EMBUI_UDP
-    void udpLoop();
-#endif // EMBUI_UDP
 }
-
-/**
- * метод для установки коллбеков на системные события, типа:
- * - WiFi подключиля/отключился
- * - получено время от NTP
- */
-void EmbUI::set_callback(CallBack set, CallBack action, callback_function_t callback){
-
-    switch (action){
-        case CallBack::STAConnected :
-            set ? _cb_STAConnected = std::move(callback) : _cb_STAConnected = nullptr;
-            break;
-        case CallBack::STADisconnected :
-            set ? _cb_STADisconnected = std::move(callback) : _cb_STADisconnected = nullptr;
-            break;
-        case CallBack::STAGotIP :
-            set ? _cb_STAGotIP = std::move(callback) : _cb_STAGotIP = nullptr;
-            break;
-        case CallBack::TimeSet :
-            set ? timeProcessor.attach_callback(callback) : timeProcessor.dettach_callback();
-            break;
-        default:
-            return;
-    }
-};
 
 /**
  * call to create system-dependent variables,
@@ -334,14 +293,15 @@ void EmbUI::set_callback(CallBack set, CallBack action, callback_function_t call
  */
 void EmbUI::create_sysvars(){
     LOG(println, F("UI: Creating system vars"));
+#ifdef EMBUI_MQTT
     // параметры подключения к MQTT
     var_create(FPSTR(P_m_host), "");                   // MQTT server hostname
     var_create(FPSTR(P_m_port), "");                   // MQTT port
     var_create(FPSTR(P_m_user), "");                   // MQTT login
     var_create(FPSTR(P_m_pass), "");                   // MQTT pass
-    var_create(FPSTR(P_m_pref), embui.mc);             // MQTT topic == use ESP MAC address
+    var_create(FPSTR(P_m_pref), mc);                   // MQTT topic == use ESP MAC address
     var_create(FPSTR(P_m_tupd), TOSTRING(MQTT_PUB_PERIOD));              // интервал отправки данных по MQTT в секундах
-    // date/time related vars
+#endif // EMBUI_MQTT
 }
 
 /**
@@ -375,26 +335,6 @@ void EmbUI::autosave(bool force){
     }
 };
 
-void EmbUI::taskRecycle(Task *t){
-    if (!taskTrash)
-        taskTrash = new std::vector<Task*>(8);
-
-    taskTrash->emplace_back(t);
-}
-
-// Dyn tasks garbage collector
-void EmbUI::taskGC(){
-    if (!taskTrash || taskTrash->empty())
-        return;
-
-    size_t heapbefore = ESP.getFreeHeap();
-    for(auto& _t : *taskTrash) { delete _t; }
-
-    delete taskTrash;
-    taskTrash = nullptr;
-    LOG(printf_P, PSTR("UI: task garbage collect: released %d bytes\n"), ESP.getFreeHeap() - heapbefore);
-}
-
 // find callback section matching specified name
 section_handle_t*  EmbUI::sectionlookup(const char *id){
     unsigned _l = strlen(id);
@@ -406,7 +346,7 @@ section_handle_t*  EmbUI::sectionlookup(const char *id){
         const char *mall = strchr(sname, '*');      // look for 'id*' template sections
         unsigned len = mall? mall - sname - 1 : _l;
         if (strncmp(sname, id, len) == 0) {
-            return i;
+            return i.get();
         }
     };
     return nullptr;
@@ -423,3 +363,42 @@ void EmbUI::var_dropnulls(const String &key, JsonVariant value){
     }
     value ? var(key, value, true ) : var_remove(key);
 };
+
+/**
+ * @brief get/set device hosname
+ * if hostname has not been set or empty returns autogenerated __IDPREFIX-[mac_id] hostname
+ * autogenerated hostname is NOT saved into persistent config
+ * 
+ * @return const char* current hostname
+ */
+const char* EmbUI::hostname(){
+
+    JsonVariantConst h = paramVariant(FPSTR(P_hostname));
+    if (h && strlen(h.as<const char*>()))
+        return h.as<const char*>();
+
+    if (autohostname.get())
+        return autohostname.get();
+
+    autohostname.reset(new char[sizeof(EMBUI_IDPREFIX) + sizeof(mc) * 2]);
+    sprintf_P(autohostname.get(), PSTR(EMBUI_IDPREFIX "-%s"), mc);
+    LOG(printf_P, PSTR("generate autohostname: %s\n"), autohostname.get());
+
+    return autohostname.get();
+}
+
+const char* EmbUI::hostname(const char* name){
+    var_dropnulls(FPSTR(P_hostname), (char*)name);
+    return hostname();
+};
+
+/**
+ * формирует chipid из MAC-адреса вида 'ddeeff'
+ */
+void EmbUI::_getmacid(){
+    MacID _mac;
+    _mac.u64 = ESP.getEfuseMac();
+
+    sprintf_P(mc, PSTR("%02X%02X%02X"), _mac.mc[3], _mac.mc[4], _mac.mc[5]);
+    LOG(printf_P,PSTR("UI ID:%02X%02X%02X\n"), _mac.mc[3], _mac.mc[4], _mac.mc[5]);
+}

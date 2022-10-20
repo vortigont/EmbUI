@@ -10,8 +10,8 @@
  * List of UI languages in predefined i18n resources
  */
 enum LANG : uint8_t {
-    RU = (0U),
-    EN = (1U),
+    EN = (0U),
+    RU = (1U),
 };
 
 extern uint8_t lang;

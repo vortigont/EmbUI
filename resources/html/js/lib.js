@@ -489,8 +489,8 @@ var wbs = function(url){
 				if (lastmsg){ send(lastmsg); lastmsg = null; }
 			})}, 500);
 		},
-		send_post: function(dt){
-			send_msg({pkg:"post", data:dt});
+		send_post: function(id, dt){
+			send_msg({pkg:"post", action:id, data:dt});
 		}
 	};
 	return out;

@@ -1,3 +1,4 @@
 .pio
 .vscode
 etags.txt
+/platformio.ini

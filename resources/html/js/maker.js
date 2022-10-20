@@ -20,7 +20,7 @@ var customFuncs = {
 		if (typeof v == 'undefined' || typeof v == 'object'){
 			// if there was no 'value' given, than simply post the date string to MCU that triggers time/date setup
 			data["time"] = isodate;
-			ws.send_post(data);
+			ws.send_post("time", data);
 		} else {
 			// if there was a param 'value', then paste the date string into doc element with id='value'
 			// let's do this via simulating MCU value frame
@@ -35,6 +35,35 @@ var customFuncs = {
 
 var global = {menu_id:0, menu: [], value:{}};
 
+/* Color gradients calculator. Source is from https://gist.github.com/joocer/bf1626d38dd74fef9d9e5fb18fef517c */
+function colorGradient(colors, fadeFraction) {
+	if (fadeFraction >= 1) {
+		return colors[colors.length - 1]
+	} else if (fadeFraction <= 0) {
+		return colors[0]
+	}
+
+	var fade = fadeFraction * (colors.length - 1);
+	var interval = Math.trunc(fade);
+	fade = fade - interval;
+
+	var color1 = colors[interval];
+	var color2 = colors[interval + 1];
+
+	var diffRed = color2.red - color1.red;
+	var diffGreen = color2.green - color1.green;
+	var diffBlue = color2.blue - color1.blue;
+
+	var gradient = {
+		red: parseInt(Math.floor(color1.red + (diffRed * fade)), 10),
+		green: parseInt(Math.floor(color1.green + (diffGreen * fade)), 10),
+		blue: parseInt(Math.floor(color1.blue + (diffBlue * fade)), 10),
+	};
+
+return 'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
+}
+
+// template renderer
 var render = function(){
 	var tmpl_menu = new mustache(go("#tmpl_menu")[0],{
 		on_page: function(d,id) {
@@ -51,6 +80,7 @@ var render = function(){
 				custom_hook(this.id, d, id);
 			}
 		},
+		// hanlde elements change on a page
 		on_change: function(d, id, val) {
 
 			chkNumeric = function(v){
@@ -72,8 +102,7 @@ var render = function(){
 				switch (type){
 					case 'checkbox':
 						var chbox=document.getElementById(id);
-						if (chbox.checked) value = true;		// send 'checked' state as boolean true/false
-						else value = false;
+						value = chbox.checked ? true : false;		// send 'checked' state as boolean true/false
 						break;
 					case 'input':
 					case 'select-one':
@@ -95,7 +124,7 @@ var render = function(){
 			}
 
 			var data = {}; data[id] = (value !== undefined)? value : null;
-			ws.send_post(data);
+			ws.send_post(id, data);
 		},
 		on_showhide: function(d, id) {
 			go("#"+id).showhide();
@@ -106,9 +135,9 @@ var render = function(){
 		 */
 		on_submit: function(d, id, val) {
 			var form = go("#"+id), data = go.formdata(go("input, textarea, select", form));
-			data['submit'] = id;
-			if (val !== undefined && typeof val !== 'object') { data[id] = val; }	// submit button _might_ have it's own additional value
-			ws.send_post(data);
+			//data['submit'] = id;
+			if (val !== undefined && typeof val !== 'object') { data[id] = val; }	// submit button _might_ have it's own value
+			ws.send_post(id, data);
 		},
 		// run custom user-js function
 		on_js: function(d, id, val) {
@@ -131,8 +160,8 @@ var render = function(){
 			this.menu();
 			go("#main > div").display("none");
 			// go("#main #"+menu_id).display("block");
-			var data = {}; data[menu_id] = null
-			ws.send_post(data);
+			//var data = {}; data[menu_id] = null
+			ws.send_post(menu_id, {});
 		},
 		menu: function(){
 			go("#menu").clear().append(tmpl_menu.parse(global));
@@ -146,9 +175,10 @@ var render = function(){
 				go("#"+obj.section).replace(tmpl_section.parse(obj));
 			}
 		},
+		// process "pkg":"interface" messages and render template
 		make: function(obj){
-			var frame = obj.block;
 			if (!obj.block) return;
+			var frame = obj.block;
 			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
 				if (frame[i].section == "menu") {
 					global.menu =  frame[i].block;
@@ -169,36 +199,60 @@ var render = function(){
 			}
 			out.lockhist = false;
 		},
-		// обработка данных, полученных в пакете "pkg":"value"
+		// processing packets with values - "pkg":"value"
 		// блок разбирается на объекты по id и их value применяются к элементам шаблона на html странице
 		value: function(obj){
 			var frame = obj.block;
 			if (!obj.block) return;
 
 			/*
-			Sets the value 'val' to the DOM object with id 'key'  
+				Sets the value 'val' to the DOM object with id 'key'
+				if 'html' is set to 'true', than values applied as html-text value,
+				i.e. template tags visible on the page  ( <span>{{value}}</span> )
+				otherwise value applies as html element attribute ( <input type="range" value="{{value}}" )
 			*/
-			function setValue(key, val){
+			function setValue(key, val, html = false){
 				var el = go("#"+key);
-				if (el.length) {
-					if (frame[i].html) {	// update placeholders in html template, like {{value.pMem}}
-						global.value[key] = val
-						el.html(val);
-					} else{
-						el[0].value = val;
-						if (el[0].type == "range") go("#"+el[0].id+"-val").html(": "+el[0].value);
-						// проверяем чекбоксы на значение вкл/выкл
-						if (el[0].type == "checkbox") {
-							// allow multiple types of TRUE value for checkboxes
-							el[0].checked = (val == "1" || val == 1 || val == true || val == "true" );
-						}
+				if (!el.length) return;
+				if (html === true ){ el.html(val); return; }
+
+				//console.log("Element is: ", el[0], " class is: ", el[0].className);
+				el[0].value = val;
+				if (el[0].type == "range") { go("#"+el[0].id+"-val").html(": "+el[0].value); return; }		// update span with range's label
+				// проверяем чекбоксы на значение вкл/выкл
+				if (el[0].type == "checkbox") {
+					// allow multiple types of TRUE value for checkboxes
+					el[0].checked = (val == true  ||  val == 1 || val == "1" || val == "true" );
+					return;
+				}
+
+				// update progressbar's
+				if (el[0].className == "progressab") {
+					// value of '0' is endless 'in-progress'
+					if (val == 0){
+						el[0].style.width = "100%";
+						el[0].innerText = "...";
+						el[0].style.backgroundColor = 'rgb(10,0,0)';
+						return;
 					}
-				}	
+
+					el[0].style.width = val+"%";
+					el[0].innerText = val+"% Complete";
+
+					var color1 = { red: 200, green: 0, blue: 0 };
+					var color2 = { red: 220, green: 204, blue: 0 };
+					var color3 = { red: 0, green: 200, blue: 0 };
+					var color4 = { red: 0, green: 0, blue: 240 };
+					var bar_color = colorGradient([ color1, color2, color3, color4 ], val/100 ); // expect percents here
+					el[0].style.backgroundColor = bar_color;
+					//console.log("progress upd ", el[0], " color: ", bar_color);
+					return;
+				}
 			}
 
 			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
 
-				// check if the object contains just a plain assoc array with key:value pairs
+				// check if the object contains just an array with key:value pairs (comes from echo-back packets)
 				if (!frame[i].id && !frame[i].value){
 					for(var k in frame[i]) {
 						setValue(k, frame[i][k]);
@@ -206,12 +260,12 @@ var render = function(){
 					continue;
 				}
 
-				/* otherwise it must be
+				/* otherwise it must be a dict
 					{ "id": "someid",
 					  "value": "somevalue"
-					}
+					},
 				*/
-				setValue(frame[i].id, frame[i].value);
+				setValue(frame[i].id, frame[i].value, frame[i].html);
 			}
 		}
 	};
@@ -372,7 +426,7 @@ window.addEventListener("load", function(ev){
 window.addEventListener("popstate", function(e){
 	if (e = e.state && e.state.hist) {
 		rdr.lockhist = true;
-		var data = {}; data[e] = null;
-		ws.send_post(data);
+		//var data = {}; data[e] = null;
+		ws.send_post(e, {});
 	}
 });

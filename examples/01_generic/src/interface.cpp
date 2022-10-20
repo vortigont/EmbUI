@@ -66,7 +66,7 @@ void section_main_frame(Interface *interf, JsonObject *data){
   block_menu(interf, data);                         // Строим UI блок с меню выбора других секций
   interf->json_frame_flush();
 
-  if(!embui.sysData.wifi_sta){                      // если контроллер не подключен к внешней AP, сразу открываем вкладку с настройками WiFi
+  if(!(WiFi.getMode() & WIFI_MODE_STA)){            // if WiFI is no connected to external AP, than show page with WiFi setup
     LOG(println, F("UI: Opening network setup section"));
     basicui::block_settings_netw(interf, data);
   } else {
@@ -122,7 +122,7 @@ void block_demopage(Interface *interf, JsonObject *data){
     interf->checkbox(FPSTR(V_LED), F("Onboard LED"), true);
 
     interf->text(FPSTR(V_VAR1), F("текстовое поле"));                                 // текстовое поле со значением переменной из конфигурации
-    interf->text(FPSTR(V_VAR2), F("some default val"), F("Второе текстовое поле"), false);   // текстовое поле со значением "по-умолчанию"
+    interf->text(FPSTR(V_VAR2), F("some default val"), F("Второе текстовое поле"));   // текстовое поле со значением "по-умолчанию"
 
     /*  кнопка отправки данных секции на обработку
      *  первый параметр FPSTR(T_DEMO) определяет алиас акшена обработчика данных формы 
