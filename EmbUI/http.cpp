@@ -82,23 +82,9 @@ void EmbUI::http_set_handlers(){
         request->redirect(F("/"));
     });
 
-<<<<<<< HEAD
-// esp32 handles updates via external lib
-#ifdef ESP32
-    fz.provide_ota_form(&server, UPDATE_URI);
-    fz.handle_ota_form(&server, UPDATE_URI);
-#endif
-
-#ifdef ESP8266
-    static const char* url PROGMEM = "/update";
-    ota_register(server, url);
-#endif
-
-=======
     // esp32 handles updates via external lib
     fz.provide_ota_form(&server, UPDATE_URI);
     fz.handle_ota_form(&server, UPDATE_URI);
->>>>>>> stage
 
     // some ugly stats
     server.on(PSTR("/heap"), HTTP_GET, [this](AsyncWebServerRequest *request){
