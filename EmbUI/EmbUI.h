@@ -161,10 +161,17 @@ void    __attribute__((weak)) create_parameters();
 
 typedef std::function<void(Interface *interf, JsonObject *data)> actionCallback;
 
-typedef struct section_handle_t{
+/**
+ * @brief a struct that keeps action handlers and thier name+id
+ * used to run callbacks on actions from UI
+ * 
+ */
+struct section_handle_t{
     String name;
     actionCallback callback;
-} section_handle_t;
+    section_handle_t();
+    section_handle_t(const String& n, actionCallback& cb) : name(n), callback(cb){};
+};
 
 
 class EmbUI
@@ -196,7 +203,8 @@ class EmbUI
     } BITFIELDS;
 
     DynamicJsonDocument cfg;                        // system config
-    LList<section_handle_t*> section_handle;        // action handlers
+    LList<std::shared_ptr<section_handle_t>> section_handle;        // action handlers
+
 
   public:
     EmbUI();

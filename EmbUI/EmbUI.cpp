@@ -227,8 +227,7 @@ void EmbUI::section_handle_remove(const String &name)
 {
     for(int i=0; i<section_handle.size(); i++){
         if(section_handle.get(i)->name==name){
-            delete section_handle.get(i);
-            section_handle.remove(i);
+            section_handle.unlink(i);
             LOG(printf_P, PSTR("UI UNREGISTER: %s\n"), name.c_str());
             break;
         }
@@ -237,9 +236,7 @@ void EmbUI::section_handle_remove(const String &name)
 
 void EmbUI::section_handle_add(const String &name, actionCallback response)
 {
-    section_handle_t *section = new section_handle_t;
-    section->name = name;
-    section->callback = response;
+    std::shared_ptr<section_handle_t> section(new section_handle_t(name, response));
     section_handle.add(section);
 
     LOG(printf_P, PSTR("UI REGISTER: %s\n"), name.c_str());
@@ -349,7 +346,7 @@ section_handle_t*  EmbUI::sectionlookup(const char *id){
         const char *mall = strchr(sname, '*');      // look for 'id*' template sections
         unsigned len = mall? mall - sname - 1 : _l;
         if (strncmp(sname, id, len) == 0) {
-            return i;
+            return i.get();
         }
     };
     return nullptr;
