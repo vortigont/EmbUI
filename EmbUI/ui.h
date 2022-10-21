@@ -106,9 +106,9 @@ class frameSendAll: public frameSend {
     private:
         AsyncWebSocket *ws;
     public:
-        frameSendAll(AsyncWebSocket *server){ ws = server; }
+        frameSendAll(AsyncWebSocket *server) : ws(server){}
         ~frameSendAll() { ws = nullptr; }
-        void send(const String &data){ if (data.length()) ws->textAll(data); };
+        void send(const String &data){ if (!data.isEmpty()) ws->textAll(data); };
         void send(const JsonObject& data);
 };
 
@@ -116,9 +116,9 @@ class frameSendClient: public frameSend {
     private:
         AsyncWebSocketClient *cl;
     public:
-        frameSendClient(AsyncWebSocketClient *client){ cl = client; }
+        frameSendClient(AsyncWebSocketClient *client) : cl(client){}
         ~frameSendClient() { cl = nullptr; }
-        void send(const String &data){ if (data.length()) cl->text(data); };
+        void send(const String &data){ if (!data.isEmpty()) cl->text(data); };
         /**
          * @brief - serialize and send json obj directly to the ws buffer
          */
@@ -130,8 +130,7 @@ class frameSendHttp: public frameSend {
         AsyncWebServerRequest *req;
         AsyncResponseStream *stream;
     public:
-        frameSendHttp(AsyncWebServerRequest *request){
-            req = request;
+        frameSendHttp(AsyncWebServerRequest *request) : req(request) {
             stream = req->beginResponseStream(FPSTR(PGmimejson));
             stream->addHeader(FPSTR(PGhdrcachec), FPSTR(PGnocache));
         }
@@ -165,10 +164,10 @@ class Interface {
         js
     };
 
+    EmbUI *embui;
     DynamicJsonDocument json;
     LList<section_stack_t*> section_stack;
     frameSend *send_hndl;
-    EmbUI *embui;
 
 
     /**
@@ -198,19 +197,17 @@ class Interface {
     void button_generic(const String &id, const T &value, const String &label, const String &color, BType type = generic);
 
     public:
-        Interface(EmbUI *j, AsyncWebSocket *server, size_t size = IFACE_DYN_JSON_SIZE): json(size), section_stack(){
-            embui = j;
+        Interface(EmbUI *j, AsyncWebSocket *server, size_t size = IFACE_DYN_JSON_SIZE): embui(j), json(size) {
             send_hndl = new frameSendAll(server);
         }
-        Interface(EmbUI *j, AsyncWebSocketClient *client, size_t size = IFACE_DYN_JSON_SIZE): json(size), section_stack(){
-            embui = j;
+        Interface(EmbUI *j, AsyncWebSocketClient *client, size_t size = IFACE_DYN_JSON_SIZE): embui(j), json(size) {
             send_hndl = new frameSendClient(client);
         }
-        Interface(EmbUI *j, AsyncWebServerRequest *request, size_t size = IFACE_DYN_JSON_SIZE): json(size), section_stack(){
-            embui = j;
+        Interface(EmbUI *j, AsyncWebServerRequest *request, size_t size = IFACE_DYN_JSON_SIZE): embui(j), json(size) {
             send_hndl = new frameSendHttp(request);
         }
         ~Interface(){
+            json_frame_clear();
             delete send_hndl;
             send_hndl = nullptr;
             embui = nullptr;
@@ -246,19 +243,29 @@ class Interface {
         void json_frame_add( UIelement<desiredCapacity> &ui){ json_frame_add(ui.obj.template as<JsonObject>()); }
 
         void json_frame_next();
+        
+        /**
+         * @brief purge all current section data
+         * 
+         */
         void json_frame_clear();
+        
+        /**
+         * @brief finalize and send current sections stack
+         * 
+         */
         void json_frame_flush();
 
         /**
          * @brief - serialize and send Interface object to the WebSocket 
          */
-        void json_frame_send(){ if (send_hndl) send_hndl->send(json.as<JsonObject>()); };
+        inline void json_frame_send(){ if (send_hndl) send_hndl->send(json.as<JsonObject>()); };
 
         /**
          * @brief - start UI section
          * A section contains html UI elements, this is generic one
          */
-        void json_section_begin(const String &name, const String &label = "", bool main = false, bool hidden = false, bool line = false);
+        void json_section_begin(const String &name, const String &label = (char*)0, bool main = false, bool hidden = false, bool line = false);
         void json_section_begin(const String &name, const String &label, bool main, bool hidden, bool line, JsonObject obj);
 
         /**
@@ -270,7 +277,7 @@ class Interface {
          * @brief - opens section for UI elements that are aligned in one line on a page
          * each json_section_line() must be closed by a json_section_end() call
          */
-        void json_section_line(const String &name = "");
+        inline void json_section_line(const String &name = (char*)0){ json_section_begin(name, (char*)0, false, false, true); };
 
         /**
          * @brief - start a section with left-side MENU elements
@@ -680,10 +687,6 @@ void Interface::value(const String &id, const T& val, bool html){
     ui.obj[FPSTR(P_value)] = val;
     ui.html(html);
     json_frame_add(ui);
-
-    // frame_add_safe(obj.as<JsonObject>()); // crashes in sys ctx
-    // if (!json_frame_add(obj.as<JsonObject>())) { value(id, val, html); }
-    //json_frame_add(obj.as<JsonObject>());
 };
 
 template <typename T>

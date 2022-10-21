@@ -65,7 +65,7 @@ void Interface::json_frame(const String &type){
     json[F("pkg")] = type;
     json[FPSTR(P_final)] = false;
 
-    json_section_begin("root" + String(micros()));
+    json_section_begin(String(micros()));
 }
 
 
@@ -129,10 +129,9 @@ void Interface::json_frame_next(){
 }
 
 void Interface::json_frame_clear(){
-    while(section_stack.size()) {
-        section_stack_t *section = section_stack.shift();
-        delete section;
-    }
+    while (section_stack.size())
+        delete section_stack.shift();
+
     json.clear();
 }
 
@@ -143,10 +142,6 @@ void Interface::json_frame_flush(){
     json_section_end();
     json_frame_send();
     json_frame_clear();
-}
-
-void Interface::json_section_line(const String &name){
-    json_section_begin(name, "", false, false, true);
 }
 
 void Interface::json_section_begin(const String &name, const String &label, bool main, bool hidden, bool line){
@@ -171,7 +166,7 @@ void Interface::json_section_begin(const String &name, const String &label, bool
     section->block = obj.createNestedArray(FPSTR(P_block));
     section->idx = 0;
     section_stack.add(section);
-    LOG(printf_P, PSTR("UI: section begin:'%s' [#%u] %u free\n"), name.c_str(), section_stack.size()-1, json.capacity() - json.memoryUsage());   // section index counts from 0
+    LOG(printf_P, PSTR("UI: section begin:'%s' [#%u] %u free\n"), name.isEmpty() ? "" : name.c_str(), section_stack.size()-1, json.capacity() - json.memoryUsage());   // section index counts from 0
 }
 
 void Interface::json_section_end(){
@@ -181,7 +176,7 @@ void Interface::json_section_end(){
     if (section_stack.size()) {
         section_stack.tail()->idx++;
     }
-    LOG(printf_P, PSTR("UI: section end:'%s' [#%u] MEM: %u\n"), section->name.c_str(), section_stack.size(), ESP.getFreeHeap());        // size() before pop()
+    LOG(printf_P, PSTR("UI: section end:'%s' [#%u] MEM: %u\n"), section->name.isEmpty() ? "" : section->name.c_str(), section_stack.size(), ESP.getFreeHeap());        // size() before pop()
     delete section;
 }
 
@@ -200,7 +195,7 @@ void frameSendAll::send(const JsonObject& data){
     if (!buffer)
         return;
 
-    serializeJson(data, (char*)buffer->get(), ++length);
+    serializeJson(data, (char*)buffer->get(), length);
     ws->textAll(buffer);
 };
 
@@ -213,6 +208,6 @@ void frameSendClient::send(const JsonObject& data){
     if (!buffer)
         return;
 
-    serializeJson(data, (char*)buffer->get(), ++length);
+    serializeJson(data, (char*)buffer->get(), length);
     cl->text(buffer);
 };
