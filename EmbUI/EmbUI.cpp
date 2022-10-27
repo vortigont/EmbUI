@@ -118,7 +118,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
 
 // EmbUI constructor
-EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), section_handle(), server(80), ws(F(EMBUI_WEBSOCK_URI)){
+EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), server(80), ws(F(EMBUI_WEBSOCK_URI)){
         _getmacid();
 
         tAutoSave.set(sysData.asave * EMBUI_AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
@@ -127,8 +127,8 @@ EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), section_handle(), server(80), ws(F(EMBUI_WE
 
 EmbUI::~EmbUI(){
     ts.deleteTask(tAutoSave);
-    ts.deleteTask(*tValPublisher);
     ts.deleteTask(tHouseKeeper);
+    delete tValPublisher;
     delete wifi;
 }
 
@@ -310,7 +310,7 @@ void EmbUI::create_sysvars(){
  */
 void EmbUI::setPubInterval(uint16_t _t){
     if (!_t && tValPublisher){
-        ts.deleteTask(*tValPublisher);
+        delete tValPublisher;
         tValPublisher = nullptr;
         return;
     }
