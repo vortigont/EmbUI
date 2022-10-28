@@ -114,8 +114,7 @@ void Interface::json_frame_next(){
 
 void Interface::json_frame_clear(){
     while(section_stack.size()) {
-        section_stack_t *section = section_stack.shift();
-        delete section;
+        delete section_stack.shift();
     }
     json.clear();
 }
@@ -178,7 +177,7 @@ void frameSendAll::send(const JsonObject& data){
     if (!buffer)
         return;
 
-    serializeJson(data, (char*)buffer->get(), ++length);
+    serializeJson(data, (char*)buffer->get(), length);
     ws->textAll(buffer);
 };
 
@@ -191,7 +190,7 @@ void frameSendClient::send(const JsonObject& data){
     if (!buffer)
         return;
 
-    serializeJson(data, (char*)buffer->get(), ++length);
+    serializeJson(data, (char*)buffer->get(), length);
     cl->text(buffer);
 };
 

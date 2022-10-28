@@ -241,12 +241,7 @@ class EmbUI
 
   public:
     EmbUI();
-
-    ~EmbUI(){
-        ts.deleteTask(tAutoSave);
-        ts.deleteTask(*tValPublisher);
-        ts.deleteTask(tHouseKeeper);
-    }
+    ~EmbUI();
 
     BITFIELDS sysData;
     AsyncWebServer server;

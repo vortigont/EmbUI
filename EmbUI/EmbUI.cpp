@@ -10,8 +10,9 @@
 #define POST_LARGE_SIZE   256       // large post threshold
 
 
-
+#ifdef EMBUI_MQTT
 void mqtt_emptyFunction(const String &, const String &);
+#endif // EMBUI_MQTT
 
 EmbUI embui;
 
@@ -41,7 +42,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         AwsFrameInfo *info = (AwsFrameInfo*)arg;
         if(info->final && info->index == 0 && info->len == len){
             LOG(printf_P, PSTR("UI: =POST= LEN: %u\n"), len);
-            // ignore all packets without 'post'
+            // ignore packets without 'post' marker
             if (strncmp_P((const char *)data+1, PSTR("\"pkg\":\"post\""), 12))
                 return;
 
@@ -72,13 +73,17 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                 delete interf;
 
                 if (len > POST_LARGE_SIZE){     // если прилетел большой пост, то откладываем обработку и даем возможность освободить часть памяти
-                    new Task(POST_ACTION_DELAY, TASK_ONCE, nullptr, &ts, true, nullptr, [res](){
-                        JsonObject data = (*res)[F("data")];
-                        embui.post(data);
-                        delete res;
-                        TASK_RECYCLE;
-                    });
-                    return;
+                    Task *t = new Task(POST_ACTION_DELAY, TASK_ONCE,
+                        [res](){
+                            JsonObject data = (*res)[F("data")];
+                            embui.post(data);
+                            delete res; },
+                        &ts, false, nullptr, nullptr, true
+                    );
+                    if (t){
+                        t->enableDelayed();
+                        return;
+                    }
                 }
             }
 
@@ -108,7 +113,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
 
 // EmbUI constructor
-EmbUI::EmbUI() : cfg(__CFGSIZE), section_handle(), server(80), ws(F(WEBSOCK_URI)){
+EmbUI::EmbUI() : cfg(__CFGSIZE), server(80), ws(F(WEBSOCK_URI)){
 
     // Enable persistent storage for ESP8266 Core >3.0.0 (https://github.com/esp8266/Arduino/pull/7902)
     #ifdef WIFI_IS_OFF_AT_BOOT
@@ -121,7 +126,13 @@ EmbUI::EmbUI() : cfg(__CFGSIZE), section_handle(), server(80), ws(F(WEBSOCK_URI)
         ts.addTask(embuischedw);    // WiFi helper
         tAutoSave.set(sysData.asave * AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
         ts.addTask(tAutoSave);
- }
+}
+
+EmbUI::~EmbUI(){
+    ts.deleteTask(tAutoSave);
+    ts.deleteTask(tHouseKeeper);
+    delete tValPublisher;
+}
 
 void EmbUI::begin(){
     uint8_t retry_cnt = 3;
@@ -347,7 +358,7 @@ void EmbUI::create_sysvars(){
  */
 void EmbUI::setPubInterval(uint16_t _t){
     if (!_t && tValPublisher){
-        ts.deleteTask(*tValPublisher);
+        delete tValPublisher;
         tValPublisher = nullptr;
         return;
     }

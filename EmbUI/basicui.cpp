@@ -31,7 +31,9 @@ void add_sections(){
     embui.section_handle_add(FPSTR(T_SET_HOSTNAME), set_hostname);          // hostname setup
     embui.section_handle_add(FPSTR(T_SET_WIFI), set_settings_wifi);         // обработка настроек WiFi Client
     embui.section_handle_add(FPSTR(T_SET_WIFIAP), set_settings_wifiAP);     // обработка настроек WiFi AP
+#ifdef EMBUI_MQTT
     embui.section_handle_add(FPSTR(T_SET_MQTT), set_settings_mqtt);         // обработка настроек MQTT
+#endif  // #ifdef EMBUI_MQTT
     embui.section_handle_add(FPSTR(T_SET_TIME), set_settings_time);         // установки даты/времени
     embui.section_handle_add(FPSTR(P_LANGUAGE), set_language);              // смена языка интерфейса
     embui.section_handle_add(FPSTR(T_REBOOT), set_reboot);                  // ESP reboot action
@@ -70,7 +72,9 @@ void section_settings_frame(Interface *interf, JsonObject *data){
     //interf->button_value(FPSTR(T_SH_SECT), 0, FPSTR(T_GNRL_SETUP));                 // кнопка перехода в общие настройки
     interf->button_value(FPSTR(T_SH_SECT), 1, FPSTR(T_DICT[lang][TD::D_WiFi]));     // кнопка перехода в настройки сети
     interf->button_value(FPSTR(T_SH_SECT), 2, FPSTR(T_DICT[lang][TD::D_DATETIME]));     // кнопка перехода в настройки времени
+#ifdef EMBUI_MQTT
     interf->button_value(FPSTR(T_SH_SECT), 3, FPSTR(T_EN_MQTT));     // кнопка перехода в настройки MQTT
+#endif
     interf->button_value(FPSTR(T_SH_SECT), 4, FPSTR(T_DICT[lang][TD::D_SYSSET]));      // кнопка перехода в настройки System
 
     interf->spacer();
@@ -101,9 +105,11 @@ void show_section(Interface *interf, JsonObject *data){
         case 2 :    // time setup section
             block_settings_time(interf, nullptr);
             break;
+    #ifdef EMBUI_MQTT
         case 3 :    // MQTT setup section
             block_settings_mqtt(interf, nullptr);
             break;
+    #endif  // #ifdef EMBUI_MQTT
         case 4 :    // System setup section
             block_settings_sys(interf, nullptr);
             break;
@@ -264,6 +270,7 @@ void block_settings_time(Interface *interf, JsonObject *data){
 
 }
 
+#ifdef EMBUI_MQTT
 /**
  *  BasicUI блок интерфейса настроек MQTT
  */
@@ -288,6 +295,7 @@ void block_settings_mqtt(Interface *interf, JsonObject *data){
 
     interf->json_frame_flush();
 }
+#endif  // #ifdef EMBUI_MQTT
 
 /**
  *  BasicUI блок настройки system
@@ -330,7 +338,7 @@ void set_settings_wifi(Interface *interf, JsonObject *data){
     embui.var_remove(FPSTR(P_APonly)); // сборосим режим принудительного AP, при попытке подключения к роутеру
     embui.wifi_connect(ssid.c_str(), pwd.c_str());
 
-    section_settings_frame(interf, data);           // переходим в раздел "настройки"
+    section_settings_frame(interf, nullptr);           // переходим в раздел "настройки"
 }
 
 /**
@@ -347,6 +355,7 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
     if (interf) section_settings_frame(interf, data);   // переходим в раздел "настройки"
 }
 
+#ifdef EMBUI_MQTT
 /**
  * Обработчик настроек MQTT
  */
@@ -365,6 +374,7 @@ void set_settings_mqtt(Interface *interf, JsonObject *data){
 
     section_settings_frame(interf, data);
 }
+#endif  // #ifdef EMBUI_MQTT
 
 /**
  * Обработчик настроек даты/времени
@@ -377,15 +387,15 @@ void set_settings_time(Interface *interf, JsonObject *data){
 
     String tzrule = (*data)[FPSTR(P_TZSET)];
     if (!tzrule.isEmpty()){
-        embui.timeProcessor.tzsetup(tzrule.substring(4).c_str());   // cutoff '000_' prefix key
+        TimeProcessor::getInstance().tzsetup(tzrule.substring(4).c_str());   // cutoff '000_' prefix key
     }
 
-    SETPARAM_NONULL(FPSTR(P_userntp), embui.timeProcessor.setcustomntp((*data)[FPSTR(P_userntp)]));
+    SETPARAM_NONULL(FPSTR(P_userntp), TimeProcessor::getInstance().setcustomntp((*data)[FPSTR(P_userntp)]));
 
 #if ARDUINO <= 10805
     // ESP32's Arduino Core <=1.0.6 miss NTPoDHCP feature
 #else
-    SETPARAM_NONULL( FPSTR(P_noNTPoDHCP), embui.timeProcessor.ntpodhcp(!(*data)[FPSTR(P_noNTPoDHCP)]) )
+    SETPARAM_NONULL( FPSTR(P_noNTPoDHCP), TimeProcessor::getInstance().ntpodhcp(!(*data)[FPSTR(P_noNTPoDHCP)]) )
 #endif
 
     // if there is a field with custom ISO date/time, call time setter
@@ -417,7 +427,7 @@ void set_language(Interface *interf, JsonObject *data){
 void embuistatus(Interface *interf){
     if (!interf) return;
     interf->json_frame_value();
-    interf->value(F("pTime"), embui.timeProcessor.getFormattedShortTime(), true);
+    interf->value(F("pTime"), TimeProcessor::getInstance().getFormattedShortTime(), true);
     interf->value(F("pMem"), ESP.getFreeHeap(), true);
     interf->value(F("pUptime"), millis()/1000, true);
     interf->json_frame_flush();
