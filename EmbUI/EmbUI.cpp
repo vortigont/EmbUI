@@ -234,7 +234,7 @@ void EmbUI::send_pub(){
 
 void EmbUI::section_handle_remove(const String &name)
 {
-    for(int i=0; i<section_handle.size(); i++){
+    for(unsigned i=0; i<section_handle.size(); i++){
         if(section_handle.get(i)->name==name){
             section_handle.unlink(i);
             LOG(printf_P, PSTR("UI UNREGISTER: %s\n"), name.c_str());

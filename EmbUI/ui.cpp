@@ -102,7 +102,7 @@ bool Interface::json_frame_add(const JsonObject &obj) {
 void Interface::json_frame_next(){
     json.clear();
     JsonObject obj = json.to<JsonObject>();
-    for (int i = 0; i < section_stack.size(); i++) {
+    for (unsigned i = 0; i < section_stack.size(); i++) {
         if (i) obj = section_stack[i - 1]->block.createNestedObject();
         obj[FPSTR(P_section)] = section_stack[i]->name;
         obj[F("idx")] = section_stack[i]->idx;
