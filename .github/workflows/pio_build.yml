@@ -9,40 +9,48 @@ on:
     branches: [ main, feat, stage ]
   pull_request:
     branches: [ main ]
+    paths:
+    - '**.ino'
+    - '**.cpp'
+    - '**.hpp'
+    - '**.h'
+    - '**.c'
+    - '**.ini'
+    - '**.yml'
+
 
 jobs:
   build:
-
+  
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 2
       matrix:
         example:
           - "examples/01_generic"
           - "examples/02_sensors"
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Cache pip
-      uses: actions/cache@v2
+    - uses: actions/checkout@v3
+    - name: PIO Cache
+      uses: actions/cache@v3
       with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: ${{ runner.os }}-pip-
-    - name: Cache PlatformIO
-      uses: actions/cache@v2
-      with:
-        path: ~/.platformio
-        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+        path: |
+          ~/.cache/pip
+          ~/.platformio/.cache
+        key: ${{ runner.os }}-pio
+        #restore-keys: |
+        #  ${{ runner.os }}-pio
     - name: Set up Python 3.x
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
     - name: Install Platformio
       run: |
         python -m pip install --upgrade pip
         pip install --upgrade platformio
-        pio update
-    - name: Run PlatformIO
+        #platformio pkg update
+    - name: PlatformIO Build
       env: 
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
       run: |
