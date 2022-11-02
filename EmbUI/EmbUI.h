@@ -13,20 +13,6 @@
 
 #include "globals.h"
 
-#define EMBUI_VERSION_MAJOR     2
-#define EMBUI_VERSION_MINOR     6
-#define EMBUI_VERSION_REVISION  999  // '999' here is current dev version
-
-#define EMBUI_VERSION_VALUE     (MAJ, MIN, REV) ((MAJ) << 16 | (MIN) << 8 | (REV))
-
-/* make version as integer for comparison */
-#define EMBUI_VERSION           EMBUI_VERSION_VALUE(EMBUI_VERSION_MAJOR, EMBUI_VERSION_MINOR, EMBUI_VERSION_REVISION)
-
-/* make version as string, i.e. "2.6.1" */
-#define EMBUI_VERSION_STRING    TOSTRING(EMBUI_VERSION_MAJOR) "." TOSTRING(EMBUI_VERSION_MINOR) "." TOSTRING(EMBUI_VERSION_REVISION)
-// compat definiton
-#define EMBUIVER                EMBUI_VERSION_STRING
-
 #include <FS.h>
 
 #ifdef ESP_ARDUINO_VERSION
@@ -89,50 +75,6 @@
 // forward declarations
 class Interface;
 
-//-----------------------
-#define TOGLE_STATE(val, curr) (val == "1")? true : (val == "0")? false : !curr;
-
-#define SETPARAM(key, call...) { \
-    embui.var(key, (*data)[key]); \
-    call; \
-}
-
-// Saves non-null keys, otherwise - removes key
-#define SETPARAM_NONULL(key, call...) { \
-    embui.var_dropnulls(key, (JsonVariant)(*data)[key]); \
-    call; \
-}
-
-#define CALL_SETTER(key, val, call) { \
-    obj[key] = val; \
-    call(nullptr, &obj); \
-    obj.clear(); \
-}
-
-#define CALL_INTF(key, val, call) { \
-    obj[key] = val; \
-    Interface *interf = embui.ws.count()? new Interface(&embui, &embui.ws, SMALL_JSON_SIZE) : nullptr; \
-    call(interf, &obj); \
-    if (interf) { \
-        interf->json_frame_value(); \
-        interf->value(key, val, false); \
-        interf->json_frame_flush(); \
-        delete interf; \
-    } \
-}
-
-#define CALL_INTF_OBJ(call) { \
-    Interface *interf = embui.ws.count()? new Interface(&embui, &embui.ws, SMALL_JSON_SIZE*1.5) : nullptr; \
-    call(interf, &obj); \
-    if (interf) { \
-        interf->json_frame_value(); \
-        for (JsonPair kv : obj) { \
-            interf->value(kv.key().c_str(), kv.value(), false); \
-        } \
-        interf->json_frame_flush(); \
-        delete interf; \
-    } \
-}
 
 // Weak Callback functions (user code might override it)
 void    __attribute__((weak)) section_main_frame(Interface *interf, JsonObject *data);
@@ -142,22 +84,6 @@ uint8_t __attribute__((weak)) uploadProgress(size_t len, size_t total);
 void    __attribute__((weak)) create_parameters();
 
 //----------------------
-
-#ifdef USE_SSDP
-  #ifndef EXTERNAL_SSDP
-    #define __SSDPNAME      ("EmbUI")
-    #define __SSDPURLMODEL  ("https://github.com/vortigont/")
-    #define __SSDPMODEL     EMBUI_VERSION_STRING
-    #define __SSDPURLMANUF  ("https://github.com/anton-zolotarev")
-    #define __SSDPMANUF     ("obliterator")
-  #endif
-
-  static const char PGnameModel[] PROGMEM = TOSTRING(__SSDPNAME);
-  static const char PGurlModel[] PROGMEM = TOSTRING(__SSDPURLMODEL);
-  static const char PGversion[] PROGMEM = EMBUI_VERSION_STRING;
-  static const char PGurlManuf[] PROGMEM = TOSTRING(__SSDPURLMANUF);
-  static const char PGnameManuf[] PROGMEM = TOSTRING(__SSDPMANUF);
-#endif
 
 typedef std::function<void(Interface *interf, JsonObject *data)> actionCallback;
 
@@ -483,7 +409,8 @@ class EmbUI
     friend void mqtt_dummy_connect();
     AsyncMqttClient mqttClient;
 
-    String m_pref; // к сожалению они нужны, т.к. в клиент передаются указатели на уже имеющийся объект, значит на конфиг ссылку отдавать нельзя!!!
+    // need to keep params in obj and pass by reference
+    String m_pref;
     String m_host;
     String m_port;
     String m_user;
@@ -501,8 +428,6 @@ class EmbUI
 
 #ifdef USE_SSDP
     void ssdp_begin() {
-          String hn = hostname();
-
           uint32_t chipId;
           #ifdef ESP32
               chipId = ESP.getEfuseMac();
@@ -581,6 +506,59 @@ class EmbUI
 #endif
 };
 
-// Глобальный объект фреймворка
+// Global EmbUI instance
 extern EmbUI embui;
 #include "ui.h"
+
+
+// ----------------------- UI/VAR MACRO's
+
+/**
+ * @brief save key from the (*data) in sys config and call function
+ * 
+ */
+#define SETPARAM(key, call...) { \
+    embui.var(key, (*data)[key]); \
+    call; \
+}
+
+/**
+ * @brief save key from the (*data) in sys config but only if non empty/non null
+ * and call function
+ * if empty or null, then drop matching key from sys config
+ */
+#define SETPARAM_NONULL(key, call...) { \
+    embui.var_dropnulls(key, (JsonVariant)(*data)[key]); \
+    call; \
+}
+
+#define CALL_SETTER(key, val, call) { \
+    obj[key] = val; \
+    call(nullptr, &obj); \
+    obj.clear(); \
+}
+
+#define CALL_INTF(key, val, call) { \
+    obj[key] = val; \
+    Interface *interf = embui.ws.count()? new Interface(&embui, &embui.ws, SMALL_JSON_SIZE) : nullptr; \
+    call(interf, &obj); \
+    if (interf) { \
+        interf->json_frame_value(); \
+        interf->value(key, val, false); \
+        interf->json_frame_flush(); \
+        delete interf; \
+    } \
+}
+
+#define CALL_INTF_OBJ(call) { \
+    Interface *interf = embui.ws.count()? new Interface(&embui, &embui.ws, SMALL_JSON_SIZE*1.5) : nullptr; \
+    call(interf, &obj); \
+    if (interf) { \
+        interf->json_frame_value(); \
+        for (JsonPair kv : obj) { \
+            interf->value(kv.key().c_str(), kv.value(), false); \
+        } \
+        interf->json_frame_flush(); \
+        delete interf; \
+    } \
+}

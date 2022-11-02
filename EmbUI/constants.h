@@ -159,3 +159,19 @@ static const char PGmimehtml[] PROGMEM = "text/html; charset=utf-8";
 
 // LOG Messages
 static const char P_ERR_obj2large[] PROGMEM  = "UI: ERORR - can't add object to frame, too large!";
+
+#ifdef USE_SSDP
+  #ifndef EXTERNAL_SSDP
+    #define __SSDPNAME      ("EmbUI")
+    #define __SSDPURLMODEL  ("https://github.com/vortigont/")
+    #define __SSDPMODEL     EMBUI_VERSION_STRING
+    #define __SSDPURLMANUF  ("https://github.com/anton-zolotarev")
+    #define __SSDPMANUF     ("obliterator")
+  #endif
+
+  static const char PGnameModel[] PROGMEM = TOSTRING(__SSDPNAME);
+  static const char PGurlModel[] PROGMEM = TOSTRING(__SSDPURLMODEL);
+  static const char PGversion[] PROGMEM = EMBUI_VERSION_STRING;
+  static const char PGurlManuf[] PROGMEM = TOSTRING(__SSDPURLMANUF);
+  static const char PGnameManuf[] PROGMEM = TOSTRING(__SSDPMANUF);
+#endif
