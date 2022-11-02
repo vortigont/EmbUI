@@ -191,11 +191,16 @@ void Interface::json_section_extend(const String &name){
  */
 void frameSendAll::send(const JsonObject& data){
     size_t length = measureJson(data);
-    AsyncWebSocketMessageBuffer * buffer = ws->makeBuffer(length);
+    auto buffer = ws->makeBuffer(length);
     if (!buffer)
         return;
 
+#ifndef YUBOXMOD
     serializeJson(data, (char*)buffer->get(), length);
+#else
+    serializeJson(data, (char*)buffer->data() , length);
+#endif
+
     ws->textAll(buffer);
 };
 
@@ -204,10 +209,14 @@ void frameSendAll::send(const JsonObject& data){
  */
 void frameSendClient::send(const JsonObject& data){
     size_t length = measureJson(data);
-    AsyncWebSocketMessageBuffer * buffer = cl->server()->makeBuffer(length);
+    auto buffer = cl->server()->makeBuffer(length);
     if (!buffer)
         return;
 
+#ifndef YUBOXMOD
     serializeJson(data, (char*)buffer->get(), length);
+#else
+    serializeJson(data, (char*)buffer->data(), length);
+#endif
     cl->text(buffer);
 };
