@@ -1,32 +1,39 @@
+__[ENGLISH](/README.en.md) | [EXAMPLES](/examples) | [CHANGELOG](/CHANGELOG.md)__ | [![PlatformIO CI](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml/badge.svg)](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml)
+
 # EmbUI
 Embedded WebUI Interface framework
 
-__[EXAMPLES](/examples) | [CHANGELOG](/CHANGELOG.md)__ | [![PlatformIO CI](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml/badge.svg)](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml)
 
+Фреймворк для построения web-интерфейса и динамических элементов управления для проектов Arduino
 
-Фреймворк построения web-интерфейса и элементов управления для проектов под Arduino 
 ## Поддерживаемые платформы
- - ESP8266 Arduino Core
- - ESP32, ESP32-S2, ESP32-C3 Arduino Core (ESP32-S3 not tested)
+ - ESP32, ESP32-S2, ESP32-C3, ESP32-S3 Arduino Core
+ - ESP8266 Arduino Core [branch v2.6](https://github.com/vortigont/EmbUI/tree/v2.6) only
 
 ## Возможности
+ - асинхронный интерфейс обмена данными с браузером через WebSocket
+ - построение элементов DOM на основе шаблонизатора [{{ mustache }}](https://mustache.github.io/)
+ - пакетный интерфейс обмена с WebUI, возможность передавать большие объекты из множества элементов по частям
+ - динамическое обновление отдельных элементов интерфейса безе перерисовки всего документа
+ - возможность подгружать данные/элементы интерфейса через AJAX
+ - поддержка нескольких параллельных WebUI подключений с обратной связью, интерфейс обновляется одновременно на всех устройствах
+ - встроенный WiFi менеджер, автопереключение в режим AP при потере клиентского соединения
+ - полная поддержка всех существующих часовых зон, автоматический переход на летнее/зимнее время, корректная калькуляция дат/временных интервалов
+ - встроенная синхронизация часов через интернет, поддержка NTPoDHCP, пользовательский NTP
+ - OTA, обновление прошивки/образа ФС через браузер/cli
+ - поддрежка обновления из сжатых образов (zlib-compressed FOTA) через библиотеку [esp32-flashz](https://github.com/vortigont/esp32-flashz)
  - автопубликация контроллера в локальной сети через [mDNS](https://en.wikipedia.org/wiki/Multicast_DNS)/[ZeroConf](https://en.wikipedia.org/wiki/Zero-configuration_networking)
  - возможность обнаружения устройства:
     - [Service Browser](https://play.google.com/store/apps/details?id=com.druk.servicebrowser) Android
     - [SSDP](https://en.wikipedia.org/wiki/Simple_Service_Discovery_Protocol) for Windows
     - [Bonjour](https://en.wikipedia.org/wiki/Bonjour_(software)) iOS/MacOS
- - обмен данными с браузером через WebSocket
- - поддержка нескольких параллельных подключений, интерфейс обновляется одновременно на всех устройствах
  - self-hosted - нет зависимостей от внешних ресурсов/CDN/Cloud сервисов
- - встроенный WiFi менеджер, автопереключение в режим AP при потере клиентского соединения
- - полная поддержка всех существующих Временных Зон, автоматический переход на летнее/зимнее время, корректная калькуляция дат/временных интервалов
- - OTA, обновление прошивки/образа ФС через браузер. zlib-compressed FOTA see [example](/examples/02_sensors)
- - возможность подгружать данные/элементы интерфейса через AJAX
 
 ## Проекты на EmbUI
  - [ESPEM](https://github.com/vortigont/espem) - энергометр на основе измерителя PZEM-004
  - [InfoClock](https://github.com/vortigont/infoclock) - Часы-информер на матричных модулях Max72xx
- - [FireLamp_JeeUI](https://github.com/DmytroKorniienko/FireLamp_JeeUI/tree/dev) - огненная лампа на светодиодной матрице ws2812 _(исходный проект, не совместим с данным форком)_
+ - [FireLamp_JeeUI](https://github.com/DmytroKorniienko/FireLamp_JeeUI/tree/dev) - огненная лампа на светодиодной матрице ws2812 _(API не совместим с данным форком)_
+ - [EmbUI](https://github.com/DmytroKorniienko/) - исходный проект данного форка
 
 
 
