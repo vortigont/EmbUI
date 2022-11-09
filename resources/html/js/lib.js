@@ -5,12 +5,17 @@ var go = function(param, context){
 	return new GO(param);
 }
 
-// form data processing
+// process form data before serializing and sending to backend
 go.formdata = function(form){
 	var controls = {},
 	checkValue = function(element){
+		// cast empty strings to null
+		if (typeof element.value == 'string' && element.value == "") return null;
+
 		switch (element.type.toLowerCase()){
-			case 'checkbox':		// use boolean true/false as a value for 'checked' boxes  
+			case 'password':
+				return element.value;		// keep password field value as string
+			case 'checkbox':				// use boolean true/false as a value for 'checked' boxes  
 				return element.checked?	true : false;
 			case 'radio':
 				if(element.checked) return chkNumeric(element);
@@ -21,9 +26,6 @@ go.formdata = function(form){
 		}
 	},
 	chkNumeric = function(element){
-		// cast empty strings to null
-		if (typeof element.value == 'string' && element.value == "") return null;
-
 		if(isFinite(element.value)){
 			return Number(element.value);
 		} else {
@@ -38,10 +40,10 @@ go.formdata = function(form){
 				var val = checkValue(el);
 				if (typeof val != "undefined") controls[el.name || el.id]= val;
 				break;
-			case 'textarea':
 			case 'select':
 				controls[el.name || el.id]= chkNumeric(el);
 				break;
+			//case 'textarea':
 			default:
 				continue;
 		}
