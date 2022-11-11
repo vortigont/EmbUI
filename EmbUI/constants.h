@@ -3,6 +3,9 @@
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
 // and others people
 
+// Empty string
+static const char P_EMPTY[] = "";
+
 // Interface
 static const char P_action[] PROGMEM = "action";
 static const char P_block[] PROGMEM = "block";
@@ -66,7 +69,7 @@ static const char P_wifi[] PROGMEM = "wifi";
 
 
 // order of elements MUST match with 'enum class ui_element_t' in ui.h
-#define UI_T_DICT_SIZE  35      // increase index in case of new elements
+#define UI_T_DICT_SIZE  30      // increase index in case of new elements
 static const char *const UI_T_DICT[UI_T_DICT_SIZE] PROGMEM = {
   NULL,         // custom
   P_button,
@@ -96,8 +99,8 @@ static const char *const UI_T_DICT[UI_T_DICT_SIZE] PROGMEM = {
 };
 
 
-// order of elements MUST match with 'enum class ui_element_t' in ui.h
-#define UI_KEY_DICT_SIZE  35      // increase index in case of new elements
+// order of elements MUST match with 'enum class ui_param_t' in ui.h
+#define UI_KEY_DICT_SIZE  10      // increase index in case of new elements
 static const char *const UI_KEY_DICT[UI_KEY_DICT_SIZE] PROGMEM = {
   P_html,
   P_id,
@@ -115,6 +118,7 @@ static const char P_GREEN[] PROGMEM = "green";
 static const char P_BLUE[] PROGMEM = "blue";
 static const char P_GRAY[] PROGMEM = "gray";
 static const char P_BLACK[] PROGMEM = "black";
+static const char P_WHITE[] PROGMEM = "white";
 
 // System configuration variables
 static const char P_cfgfile[] PROGMEM = "/config.json";

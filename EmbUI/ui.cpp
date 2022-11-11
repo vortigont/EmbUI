@@ -89,11 +89,11 @@ bool Interface::json_frame_enqueue(const JsonObject &obj) {
     LOG(printf_P, PSTR("UI: Frame add obj %u b, mem:%d/%d"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
 
     if (json.capacity() - json.memoryUsage() > obj.memoryUsage() + 16 && section_stack.tail()->block.add(obj)) {
-        LOG(printf_P, PSTR("...OK idx:%u\tMEM: %u\n"), section_stack.tail()->idx, ESP.getFreeHeap());
+        LOG(printf_P, PSTR("...OK idx:%u\tmem free: %u\n"), section_stack.tail()->idx, ESP.getFreeHeap());
         section_stack.tail()->idx++;        // incr idx for next obj
         return true;
     }
-    LOG(printf_P, PSTR(" - Frame full! Heap: %u\n"), ESP.getFreeHeap());
+    LOG(printf_P, PSTR(" - Frame full! Heap free: %u\n"), ESP.getFreeHeap());
 
     json_frame_send();
     json_frame_next();
@@ -155,7 +155,7 @@ void Interface::json_section_begin(const String &name, const String &label, bool
 }
 
 void Interface::json_section_begin(const String &name, const String &label, bool main, bool hidden, bool line, JsonObject obj){
-    obj[FPSTR(P_section)] = name;
+    if (name.isEmpty()) obj[P_section] = P_EMPTY; else obj[P_section] = name;
     if (!label.isEmpty()) obj[FPSTR(P_label)] = label;
     if (main) obj[F("main")] = true;
     if (hidden) obj[FPSTR(P_hidden)] = true;
@@ -166,7 +166,7 @@ void Interface::json_section_begin(const String &name, const String &label, bool
     section->block = obj.createNestedArray(FPSTR(P_block));
     section->idx = 0;
     section_stack.add(section);
-    LOG(printf_P, PSTR("UI: section begin:'%s' [#%u] %u free\n"), name.isEmpty() ? "" : name.c_str(), section_stack.size()-1, json.capacity() - json.memoryUsage());   // section index counts from 0
+    LOG(printf_P, PSTR("UI: section begin:'%s' [#%u] %u free\n"), name.isEmpty() ? P_EMPTY : name.c_str(), section_stack.size()-1, json.capacity() - json.memoryUsage());   // section index counts from 0
 }
 
 void Interface::json_section_end(){
@@ -176,7 +176,7 @@ void Interface::json_section_end(){
     if (section_stack.size()) {
         section_stack.tail()->idx++;
     }
-    LOG(printf_P, PSTR("UI: section end:'%s' [#%u] MEM: %u\n"), section->name.isEmpty() ? "" : section->name.c_str(), section_stack.size(), ESP.getFreeHeap());        // size() before pop()
+    LOG(printf_P, PSTR("UI: section end:'%s' [#%u] RAM: %u\n"), section->name.isEmpty() ? P_EMPTY : section->name.c_str(), section_stack.size(), ESP.getFreeHeap());        // size() before pop()
     delete section;
 }
 

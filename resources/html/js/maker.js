@@ -80,7 +80,7 @@ var render = function(){
 				custom_hook(this.id, d, id);
 			}
 		},
-		// hanlde elements change on a page
+		// handle dynamicaly changed elements on a page
 		on_change: function(d, id, val) {
 
 			chkNumeric = function(v){

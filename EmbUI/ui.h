@@ -76,7 +76,7 @@ public:
     UIelement(ui_element_t t, const String &id);
     UIelement(ui_element_t t) : UIelement(t, (char*)0) {};
     template <typename T>
-    UIelement(ui_element_t t, const String &id, const T &value, const String &label) : UIelement(t, id ) {  obj[FPSTR(P_value)] = value; obj[FPSTR(P_label)] = label; };
+    UIelement(ui_element_t t, const String &id, const T &value, const String &label) : UIelement(t, id ) {  obj[P_value] = value; if (!label.isEmpty()) obj[P_label] = label; };
 
     template <typename T>
     void param(ui_param_t key, const T &value){ obj[UI_KEY_DICT[(uint8_t)key]] = value; };
@@ -86,11 +86,11 @@ public:
     
     /**
      * @brief set 'html' flag for element
-     * if set, than value updated for placeholders in html template, otherwise within dynamicaly created elements on page
+     * if set, than value updated for {{}} placeholders in html template, otherwise within dynamicaly created elements on page
      * 
      * @param v boolen
      */
-    inline void html(bool v){ if (v) obj[FPSTR(P_html)] = true; };
+    inline void html(bool v = true){ obj[FPSTR(P_html)] = v; };
 
 };
 
@@ -589,8 +589,8 @@ UIelement<desiredCapacity>::UIelement(ui_element_t t, const String &id) : _t(t) 
             case ui_element_t::option :
             case ui_element_t::value :
                 return;
-            default :                       // default is to set elent type from dict
-                obj[FPSTR(P_html)] = FPSTR(UI_T_DICT[(uint8_t)t]);
+            default :                       // default is to set element type from dict
+                obj[P_html] = UI_T_DICT[(uint8_t)t];
         }
     }
 }
@@ -613,10 +613,10 @@ void Interface::constant(const String &id, const T &value, const String &label){
 
 template <typename T>
 void Interface::display(const String &id, const T &value, const String &label, const String &css, const JsonObject &params ){
-    String cssclass(css);   // make css selector like "class id", id used as a secondary distinguisher 
-    if (!css.length())
-        cssclass += P_display;   // "display is the default css selector"
-    cssclass += F(" ");
+    String cssclass(css);   // make css selector like 'class "css" "id"', id used as a secondary distinguisher 
+    if (css.isEmpty())
+        cssclass = P_display;   // "display is the default css selector"
+    cssclass += (char)0x20;
     cssclass += id;
     div(id, P_html, value, label, cssclass, params);
 };
