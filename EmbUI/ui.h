@@ -158,10 +158,11 @@ class Interface {
     } section_stack_t;
 
     // UI Button type enum
-    enum BType : uint8_t {
+    enum class button_t:uint8_t {
         generic = (0U),
         submit,
-        js
+        js,
+        href
     };
 
     EmbUI *embui;
@@ -194,7 +195,7 @@ class Interface {
      *  type 2 - call a js function with name ~ id + pass it a value
      */
     template <typename T>
-    void button_generic(const String &id, const T &value, const String &label, const String &color, BType type = generic);
+    void button_generic(const String &id, const T &value, const String &label, const String &color, button_t btype = button_t::generic);
 
     public:
         Interface(EmbUI *j, AsyncWebSocket *server, size_t size = IFACE_DYN_JSON_SIZE): embui(j), json(size) {
@@ -321,14 +322,23 @@ class Interface {
         inline void button(const String &id, const String &label, const String &color = (char*)0){ button_generic(id, nullptr, label, color); };
         template <typename T>
         inline void button_value(const String &id, const T &value, const String &label, const String &color = (char*)0){ button_generic(id, value, label, color); };
-        inline void button_submit(const String &section, const String &label, const String &color = (char*)0){ button_generic(section, nullptr, label, color, BType::submit); };
+        inline void button_submit(const String &section, const String &label, const String &color = (char*)0){ button_generic(section, nullptr, label, color, button_t::submit); };
         template <typename T>
-        inline void button_submit_value(const String &section, const T &value, const String &label, const String &color = (char*)0){ button_generic(section, value, label, color, BType::submit); };
+        inline void button_submit_value(const String &section, const T &value, const String &label, const String &color = (char*)0){ button_generic(section, value, label, color, button_t::submit); };
         // Run user-js function on click, id - acts as a js function selector
-        inline void button_js(const String &id, const String &label, const String &color = (char*)0){ button_generic(id, nullptr, label, color, BType::js); };
+        inline void button_js(const String &id, const String &label, const String &color = (char*)0){ button_generic(id, nullptr, label, color, button_t::js); };
         // Run user-js function on click, id - acts as a js function selector, value - any additional value or object passed to js function
         template <typename T>
-        inline void button_js_value(const String &id, const T &value, const String &label, const String &color = (char*)0){ button_generic(id, value, label, color, BType::js); };
+        inline void button_js_value(const String &id, const T &value, const String &label, const String &color = (char*)0){ button_generic(id, value, label, color, button_t::js); };
+        /**
+         * @brief create button that acts like a link on click
+         * 
+         * @param id element id
+         * @param href link URL
+         * @param label button label
+         * @param color button color (optional)
+         */
+        inline void button_href(const String &id, const String &href, const String &label, const String &color = (char*)0){ button_generic(id, href, label, color, button_t::href); };
 
         /**
          * @brief - элемент интерфейса checkbox
@@ -596,7 +606,7 @@ UIelement<desiredCapacity>::UIelement(ui_element_t t, const String &id) : _t(t) 
 }
 
 template <typename T>
-void Interface::button_generic(const String &id, const T &value, const String &label, const String &color, BType type){
+void Interface::button_generic(const String &id, const T &value, const String &label, const String &color, button_t type){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::button, id, value, label);
     ui.obj[FPSTR(P_type)] = (uint8_t)type;
     if (!color.isEmpty())
