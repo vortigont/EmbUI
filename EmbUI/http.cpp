@@ -26,12 +26,17 @@ uint8_t uploadProgress(size_t len, size_t total);
 
 /**
  * @brief Default HTTP callback function
- * a catch-all stub for uknown http handlers
+ * a catch-all stub for uknown http /cmd commands
  */
 String httpCallback(const String &param, const String &value, bool isSet) { return String(); }
 
 // default 404 handler
 void notFound(AsyncWebServerRequest *request) {
+    if (!embui.paramVariant(P_NOCaptP) && WiFi.getMode() & WIFI_AP){         // return redirect to root page in Captive-Portal mode
+        request->redirect("/");
+        return;
+    }
+
     request->send(404, FPSTR(PGmimetxt), FPSTR(PG404));
 }
 

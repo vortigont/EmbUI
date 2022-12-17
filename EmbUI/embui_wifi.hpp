@@ -20,6 +20,7 @@ version of EmbUI project https://github.com/DmytroKorniienko/EmbUI
 #endif
 #endif
 
+#include <DNSServerAsync.h>
 #include "ts.h"
 
 class EmbUI;
@@ -71,6 +72,12 @@ class WiFiController {
 public:
     WiFiController(EmbUI *ui, bool aponly = false);
     ~WiFiController();
+
+    /**
+     * @brief DNSServer provides Captive-Portal capability in AP mode
+     * 
+     */
+    DNSServer dnssrv;
 
     /**
      * Initialize WiFi using stored configuration

@@ -2,7 +2,7 @@
     "name": "EmbUI",
     "frameworks": "arduino",
     "keywords": "embui, arduino",
-    "description": "Embeded Web UI framework for esp8266/esp32 IoT prototyping",
+    "description": "Embeded Web UI framework for ESP32 IoT prototyping",
     "url": "https://github.com/vortigont/EmbUI",
     "authors": [
         {
@@ -25,7 +25,7 @@
         "type": "git",
         "url": "https://github.com/vortigont/EmbUI.git"
     },
-    "platforms": ["espressif8266", "espressif32"],
+    "platforms": ["espressif32"],
     "version": "2.6.999",
     "dependencies":
     [
@@ -45,13 +45,17 @@
          "version": "https://github.com/vortigont/LinkedList"},
         {"owner": "vortigont",
          "name": "esp32-flashz",
-         "version": "https://github.com/vortigont/esp32-flashz#v1.1.0",
+         "version": "https://github.com/vortigont/esp32-flashz",
+         "platforms": ["espressif32"]},
+        {"owner": "vortigont",
+         "name": "ESP32-DNSServerAsync",
+         "version": "https://github.com/vortigont/ESP32-DNSServerAsync",
          "platforms": ["espressif32"]}
     ],
     "build": {
         "srcDir": "EmbUI",
-	"libLDFMode": "chain",
-	"libCompatMode": "strict"
+	    "libLDFMode": "chain",
+	    "libCompatMode": "strict"
     },
     "examples": [
         {

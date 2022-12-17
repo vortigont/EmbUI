@@ -124,14 +124,15 @@ static const char P_WHITE[] PROGMEM = "white";
 static const char P_cfgfile[] PROGMEM = "/config.json";
 static const char P_cfgfile_bkp[] PROGMEM = "/config_bkp.json";
 
-static const char P_hostname[] PROGMEM = "hostname";    // System hostname
 static const char P_APonly[] PROGMEM = "APonly";        // AccessPoint-only mode
 static const char P_APpwd[] PROGMEM = "APpwd";          // AccessPoint password
 static const char P_TZSET[] PROGMEM = "TZSET";          // TimeZone rule variable
-static const char P_userntp[] PROGMEM = "userntp";      // user-defined NTP server
 static const char P_DTIME[] PROGMEM = "dtime";
+static const char P_NOCaptP[] PROGMEM = "ncapp";        // Captive Portal Disabled
+static const char P_hostname[] PROGMEM = "hostname";    // System hostname
 static const char P_LANGUAGE[] PROGMEM = "lang";        // UI language
 static const char P_noNTPoDHCP[] PROGMEM = "ntpod";     // Disable NTP over DHCP
+static const char P_userntp[] PROGMEM = "userntp";      // user-defined NTP server
 
 // WiFi vars
 static const char P_WCSSID[] PROGMEM = "wcssid";        // WiFi-Client SSID

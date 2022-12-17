@@ -166,7 +166,7 @@ void block_settings_netw(Interface *interf, JsonObject *data){
     interf->button_submit(FPSTR(T_SET_HOSTNAME), FPSTR(T_DICT[lang][TD::D_SAVE]), FPSTR(P_GREEN));
     interf->json_section_end(); // Hostname setup
 
-    // форма настроек Wi-Fi Client
+    // Wi-Fi Client setup block
     interf->json_section_hidden(FPSTR(T_SET_WIFI), FPSTR(T_DICT[lang][TD::D_WiFiClient]));
     interf->spacer(FPSTR(T_DICT[lang][TD::D_WiFiClientOpts]));
     interf->text(FPSTR(P_WCSSID), WiFi.SSID(), FPSTR(T_DICT[lang][TD::D_WiFiSSID]));
@@ -174,20 +174,25 @@ void block_settings_netw(Interface *interf, JsonObject *data){
     interf->button_submit(FPSTR(T_SET_WIFI), FPSTR(T_DICT[lang][TD::D_CONNECT]), FPSTR(P_GRAY));
     interf->json_section_end();
 
-    // форма настроек Wi-Fi AP
+    // Wi-Fi AP setup block
     interf->json_section_hidden(FPSTR(T_SET_WIFIAP), FPSTR(T_DICT[lang][TD::D_WiFiAP]));
     interf->spacer(FPSTR(T_DICT[lang][TD::D_WiFiAPOpts]));
+
+    interf->password(FPSTR(P_APpwd),  FPSTR(T_DICT[lang][TD::D_MSG_APProtect]));    // AP password
 
     interf->json_section_line();
     interf->comment(F("Access Point SSID (hostname)"));
     interf->constant(FPSTR(T_EN_OTHER), "", embui.hostname());
     interf->json_section_end(); // Line
 
+    interf->json_section_line();
+    interf->checkbox(FPSTR(P_APonly), FPSTR(T_DICT[lang][TD::D_APOnlyMode]));       // checkbox "AP-only mode"
     interf->comment(FPSTR(T_DICT[lang][TD::D_MSG_APOnly]));
+    interf->json_section_end(); // Line
 
     interf->json_section_line();
-    interf->checkbox(FPSTR(P_APonly), FPSTR(T_DICT[lang][TD::D_APOnlyMode]));
-    interf->password(FPSTR(P_APpwd),  FPSTR(T_DICT[lang][TD::D_MSG_APProtect]));
+    interf->checkbox(P_NOCaptP, "Disable WiFi Captive-Portal");                     // checkbox "Disable Captive-portal"
+    interf->comment("Do not run catch-all DNS in AP mode");
     interf->json_section_end(); // Line
 
     interf->button_submit(FPSTR(T_SET_WIFIAP), FPSTR(T_DICT[lang][TD::D_SAVE]), FPSTR(P_GRAY));
@@ -347,13 +352,14 @@ void set_settings_wifi(Interface *interf, JsonObject *data){
 void set_settings_wifiAP(Interface *interf, JsonObject *data){
     if (!data) return;
 
-    embui.var_dropnulls(FPSTR(P_APonly), (*data)[FPSTR(P_APonly)]);
-    embui.var_dropnulls(FPSTR(P_APpwd), (*data)[FPSTR(P_APpwd)]);
+    embui.var_dropnulls(FPSTR(P_APonly), (*data)[FPSTR(P_APonly)]);     // AP-Only chkbx
+    embui.var_dropnulls(FPSTR(P_APpwd), (*data)[FPSTR(P_APpwd)]);       // AP password
+    embui.var_dropnulls(P_NOCaptP, (*data)[P_NOCaptP]);                 // captive portal chkbx
 
     embui.wifi->aponly((*data)[P_APonly]);
     //embui.wifi->setupAP(true);        // no need to apply settings now?
 
-    if (interf) section_settings_frame(interf, data);   // переходим в раздел "настройки"
+    if (interf) section_settings_frame(interf, nullptr);                // go to "Options" page
 }
 
 #ifdef EMBUI_MQTT

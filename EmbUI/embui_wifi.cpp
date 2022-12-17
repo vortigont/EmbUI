@@ -95,6 +95,8 @@ void WiFiController::setupAP(bool force){
     LOG(printf_P, PSTR("UI WiFi: set AP params to SSID:%s, pwd:%s\n"), emb->hostname(), emb->paramVariant(P_APpwd) ? emb->paramVariant(P_APpwd).as<const char*>() : "");
 
     WiFi.softAP(emb->hostname(), emb->paramVariant(P_APpwd).as<const char*>());
+    if (!emb->paramVariant(P_NOCaptP))          // start DNS server in "captive portal mode"
+        dnssrv.start();
 }
 
 void WiFiController::init(){
@@ -190,6 +192,7 @@ void WiFiController::_state_switcher(){
     case wifi_recon_t::ap_grace_disable:
         if (ap_ctr){
             if(!--ap_ctr && (WiFi.getMode() & WIFI_MODE_STA)){
+                dnssrv.stop();
                 WiFi.enableAP(false);
                 LOG(println, F("UI WiFi: AP disabled"));
                 wconn = wifi_recon_t::sta_good;
@@ -202,7 +205,6 @@ void WiFiController::_state_switcher(){
         if (ap_ctr){
             if(!--ap_ctr && !(WiFi.getMode() & WIFI_MODE_AP)){
                 setupAP();
-                //WiFi.enableAP(true);
                 LOG(println, F("UI WiFi: AP enabled"));
                 wconn = wifi_recon_t::sta_reconnecting;
                 sta_ctr = WIFI_STA_CONNECT_TIMEOUT;
@@ -212,7 +214,7 @@ void WiFiController::_state_switcher(){
 
     case wifi_recon_t::sta_reconnecting:
         if(sta_ctr){
-            if(!--sta_ctr){
+            if(!--sta_ctr){                             // disable STA mode for cooldown period
                 WiFi.enableSTA(false);
                 LOG(println, F("UI WiFi: STA disabled"));
                 wconn = wifi_recon_t::sta_cooldown;
@@ -223,7 +225,7 @@ void WiFiController::_state_switcher(){
 
     case wifi_recon_t::sta_cooldown:
         if(sta_ctr){
-            if(!--sta_ctr){
+            if(!--sta_ctr){                             // try to reconnect STA
                 LOG(println, F("UI WiFi: STA reconnecting"));
                 wconn = wifi_recon_t::sta_reconnecting;
                 sta_ctr = WIFI_STA_CONNECT_TIMEOUT;
