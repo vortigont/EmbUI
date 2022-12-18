@@ -361,10 +361,11 @@ class Interface {
 
         /**
          * @brief Create inactive button with a visible label that does nothing but (possibly) carries value
-         *  could be used the same way as 'hidden' element
+         *  could be used same way as 'hidden' element
          */
         template <typename T>
         void constant(const String &id, const T &value, const String &label);
+        void constant(const String &label){ constant((char*)0, (char*)0, label); };
         inline void constant(const String &id, const String &label){ constant(id, embui->paramVariant(id), label); };
 
         inline void date(const String &id, const String &value, const String &label){ html_input(id, FPSTR(P_date), value, label); };
@@ -403,9 +404,9 @@ class Interface {
         inline void email(const String &id, const String &label){ html_input(id, FPSTR(P_email), embui->paramVariant(id), label); };
 
         /**
-         * @brief create a file uplaod form
-         * based in a template creates html form, an input file upload and optional parametr 'opt'
-         * that could be processed by templater
+         * @brief create a file upload form
+         * based on a template it will create an html form containing an input "file upload"
+         * an optional parameter 'opt' could be used to set additional values via templater
          * 
          * @param id - file upload id
          * @param action - URI for upload action
@@ -444,7 +445,7 @@ class Interface {
         /**
          * @brief - create empty div and call js-function over this div
          * js function receives div.id and params obj as arguments
-         * js function must be predefined in front-end's WebUI
+         * js function must be predefined in front-end's WebUI .js files
          * 
          * @param id - element/div DOM id
          * @param value - js function name

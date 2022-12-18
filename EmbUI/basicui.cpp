@@ -160,7 +160,7 @@ void block_settings_netw(Interface *interf, JsonObject *data){
     interf->json_section_hidden(FPSTR(T_SET_HOSTNAME), F("Device name"));
     interf->json_section_line();
     interf->comment(FPSTR(T_DICT[lang][TD::D_Hostname]));
-    interf->constant(FPSTR(T_EN_OTHER), "", embui.hostname());
+    interf->constant(embui.hostname());
     interf->json_section_end(); // Line
     interf->text(FPSTR(P_hostname), "", F("Redefine hostname, or clear to reset to default"));
     interf->button_submit(FPSTR(T_SET_HOSTNAME), FPSTR(T_DICT[lang][TD::D_SAVE]), FPSTR(P_GREEN));
@@ -182,7 +182,7 @@ void block_settings_netw(Interface *interf, JsonObject *data){
 
     interf->json_section_line();
     interf->comment(F("Access Point SSID (hostname)"));
-    interf->constant(FPSTR(T_EN_OTHER), "", embui.hostname());
+    interf->constant(embui.hostname());
     interf->json_section_end(); // Line
 
     interf->json_section_line();
