@@ -34,7 +34,7 @@ void create_parameters(){
     /**
      * регистрируем свои переменные
      */
-    embui.var_create(FPSTR(V_LED), "1");    // LED default status is on
+    embui.var_create(FPSTR(V_LED), true);    // LED default status is on
     embui.var_create(FPSTR(V_VAR1), "");    // заводим пустую переменную по умолчанию
 
     /**
