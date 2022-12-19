@@ -402,3 +402,11 @@ void EmbUI::_getmacid(){
     sprintf_P(mc, PSTR("%02X%02X%02X"), _mac.mc[3], _mac.mc[4], _mac.mc[5]);
     LOG(printf_P,PSTR("UI ID:%02X%02X%02X\n"), _mac.mc[3], _mac.mc[4], _mac.mc[5]);
 }
+
+void EmbUI::var_remove(const String &key){
+    if (!cfg[key].isNull()){
+        LOG(printf_P, PSTR("UI cfg REMOVE key:'%s'\n"), key.c_str());
+        cfg.remove(key);
+        autosave();
+    }
+}

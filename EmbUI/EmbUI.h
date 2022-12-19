@@ -5,12 +5,6 @@
 
 #pragma once
 
-#ifdef ESP8266
-#error "Sorry, esp8266 is no longer supported"
-#error "use v2.6 branch for 8266 https://github.com/vortigont/EmbUI/tree/v2.6"
-#include "no_esp8266"
-#endif
-
 #include "globals.h"
 
 #include <FS.h>
@@ -44,8 +38,6 @@
 #ifndef EMBUI_PUB_PERIOD
 #define EMBUI_PUB_PERIOD              10      // Values Publication period, s
 #endif
-
-#define EMBUI_MQTT_PUB_PERIOD         30
 
 #define EMBUI_AUTOSAVE_TIMEOUT        2       // configuration autosave timer, sec    (4 bit value, multiplied by AUTOSAVE_MULTIPLIER)
 
@@ -88,7 +80,7 @@ void    __attribute__((weak)) create_parameters();
 typedef std::function<void(Interface *interf, JsonObject *data)> actionCallback;
 
 /**
- * @brief a struct that keeps action handlers and thier name+id
+ * @brief a struct that keeps action handlers and their name+id
  * used to run callbacks on actions from UI
  * 
  */
@@ -114,7 +106,7 @@ class EmbUI
             bool mqtt_enable:1;
         #endif  // #ifdef EMBUI_MQTT
         };
-        uint32_t flags; // набор битов для конфига
+
         _BITFIELDS() {
             cfgCorrupt = false;
             fsDirty = false;
@@ -135,6 +127,9 @@ class EmbUI
   public:
     EmbUI();
     ~EmbUI();
+    // Copy semantics not implemented
+    EmbUI(const EmbUI&) = delete;
+    EmbUI& operator=(const EmbUI&) = delete;
 
     BITFIELDS sysData;
     AsyncWebServer server;
@@ -258,36 +253,14 @@ class EmbUI
      * Note: by default if key has not been registerred on init it won't be created
      * beware of dangling pointers here passing non-static char*, use JsonVariant or String instead 
      */
-    template <typename T> void var(const String &key, const T& value, bool force = false){
-        if (!force && cfg[key].isNull()) {
-            LOG(printf_P, PSTR("UI ERR: KEY (%s) is NOT initialized!\n"), key.c_str());
-            return;
-        }
-
-        // do not update key if new value is the same as existing one
-        if (cfg[key] == value){
-            LOG(printf_P, PSTR("UI: skip same value for KEY:'%s'\n"), key.c_str());
-            return;
-        }
-
-        if ((cfg.capacity() - cfg.memoryUsage()) < EMBUI_CFGSIZE_MIN_FREE){
-            // cfg is out of mem, try to compact it
-            cfg.garbageCollect();
-            LOG(printf_P, PSTR("UI: cfg garbage cleanup: %u free out of %u\n"), cfg.capacity() - cfg.memoryUsage(), cfg.capacity());
-        }
-
-        if (cfg[key].set(value)){
-            LOG(printf_P, PSTR("UI cfg WRITE key:'%s' val:'%s...', cfg mem free: %d\n"), key.c_str(), cfg[key].as<String>().substring(0, 5).c_str(), cfg.capacity() - cfg.memoryUsage());
-            autosave();
-            return;
-        }
-
-        LOG(printf_P, PSTR("UI ERR: KEY (%s), cfg out of mem!\n"), key.c_str());
-    }
+    template <typename T>
+    void var(const String &key, const T& value, bool force = false);
 
     /**
-     * @brief - create varialbe template
+     * @brief - create config varialbe if it does not exist yet
      * it accepts types suitable to be added to the ArduinoJson cfg document used as a dictionary
+     * only non-existing variables are created/assigned a value. If var is already present in cfg
+     * it's value won't be replaced
      */
     template <typename T>
     inline void var_create(const String &key, const T& value){ if(cfg[key].isNull()){var(key, value, true );} }
@@ -295,13 +268,7 @@ class EmbUI
     /**
      * @brief - remove key from config
      */
-    void var_remove(const String &key){
-        if (!cfg[key].isNull()){
-            LOG(printf_P, PSTR("UI cfg REMOVE key:'%s'\n"), key.c_str());
-            cfg.remove(key);
-            autosave();
-        }
-    }
+    void var_remove(const String &key);
 
     /**
      * @brief create/update cfg key only with non-null value
@@ -319,21 +286,7 @@ class EmbUI
      * @param value - keys' value
      */
     template <typename T>
-    void var_dropnulls(const String &key, const T& value){
-/*
-    // C++17, cant't build for esp32
-        if constexpr (std::is_same_v<T, const char*>){  // check if pointed str is not empty ""
-            (value && *value) ? var(key, (char*)value, true ) : var_remove(key);    // deep copy
-            return;
-        }
-        if constexpr (std::is_same_v<T, JsonVariant>){  // JVars that points to strings must be treaded differently
-            JsonVariant _v = value;
-            _v.is<const char*>() ? var_dropnulls(key, _v.as<const char*>()) : var_remove(key);
-            return;
-        }
-*/
-        value ? var(key, value, true ) : var_remove(key);
-    }
+    void var_dropnulls(const String &key, const T& value);
 
     void var_dropnulls(const String &key, const char* value);
     void var_dropnulls(const String &key, JsonVariant value);
@@ -561,4 +514,54 @@ extern EmbUI embui;
         interf->json_frame_flush(); \
         delete interf; \
     } \
+}
+
+/* ======================================== */
+/* Templated methods implementation follows */
+/* ======================================== */
+
+template <typename T>
+void EmbUI::var(const String &key, const T& value, bool force){
+    if (!force && cfg[key].isNull()) {
+        LOG(printf_P, PSTR("UI ERR: KEY (%s) is NOT initialized!\n"), key.c_str());
+        return;
+    }
+
+    // do not update key if new value is the same as existing one
+    if (cfg[key] == value){
+        LOG(printf_P, PSTR("UI: skip same value for KEY:'%s'\n"), key.c_str());
+        return;
+    }
+
+    if ((cfg.capacity() - cfg.memoryUsage()) < EMBUI_CFGSIZE_MIN_FREE){
+        // cfg is out of mem, try to compact it
+        cfg.garbageCollect();
+        LOG(printf_P, PSTR("UI: cfg garbage cleanup: %u free out of %u\n"), cfg.capacity() - cfg.memoryUsage(), cfg.capacity());
+    }
+
+    if (cfg[key].set(value)){
+        LOG(printf_P, PSTR("UI cfg WRITE key:'%s' val:'%s...', cfg mem free: %d\n"), key.c_str(), cfg[key].as<String>().substring(0, 5).c_str(), cfg.capacity() - cfg.memoryUsage());
+        autosave();
+        return;
+    }
+
+    LOG(printf_P, PSTR("UI ERR: KEY (%s), cfg out of mem!\n"), key.c_str());
+}
+
+
+template <typename T>
+void EmbUI::var_dropnulls(const String &key, const T& value){
+/*
+// C++17, cant't build for esp32
+    if constexpr (std::is_same_v<T, const char*>){  // check if pointed str is not empty ""
+        (value && *value) ? var(key, (char*)value, true ) : var_remove(key);    // deep copy
+        return;
+    }
+    if constexpr (std::is_same_v<T, JsonVariant>){  // JVars that points to strings must be treaded differently
+        JsonVariant _v = value;
+        _v.is<const char*>() ? var_dropnulls(key, _v.as<const char*>()) : var_remove(key);
+        return;
+    }
+*/
+    value ? var(key, value, true ) : var_remove(key);
 }
