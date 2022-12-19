@@ -24,6 +24,7 @@ Embedded WebUI Interface framework
  - поддрежка обновления из сжатых образов (zlib-compressed FOTA) через библиотеку [esp32-flashz](https://github.com/vortigont/esp32-flashz)
  - автопубликация контроллера в локальной сети через [mDNS](https://en.wikipedia.org/wiki/Multicast_DNS)/[ZeroConf](https://en.wikipedia.org/wiki/Zero-configuration_networking)
  - возможность обнаружения устройства:
+    - WiFi Captive Portal detection - при подключении к WiFi AP контроллера устройтсво/браузер покажет всплюывающее окно с предложением открыть страницу настройки EmbUI
     - [Service Browser](https://play.google.com/store/apps/details?id=com.druk.servicebrowser) Android
     - [SSDP](https://en.wikipedia.org/wiki/Simple_Service_Discovery_Protocol) for Windows
     - [Bonjour](https://en.wikipedia.org/wiki/Bonjour_(software)) iOS/MacOS

@@ -26,13 +26,14 @@
         "url": "https://github.com/vortigont/EmbUI.git"
     },
     "platforms": ["espressif32"],
-    "version": "2.6.999",
+    "version": "2.7.0",
     "dependencies":
     [
         {"owner": "bblanchon",
          "name": "ArduinoJson",
          "version": "*"},
-        {"name": "AsyncWebServerMod",
+        {"owner": "vortigont",
+         "name": "ESPAsyncWebServer",
          "version": "https://github.com/vortigont/ESPAsyncWebServer#hotfixes"},
         {"owner": "marvinroger",
          "name": "AsyncMqttClient",

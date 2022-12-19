@@ -1,7 +1,8 @@
 ## Changelog
 
+### v2.7.0 - 2022.12.20
 ### core
-* code clenup and optimization
++ WiFI Captive Portal feature, upon connecting to esp's AP a pop-up will arise advising to open EmbUI's setup page
 - Obsolete Task Garbage collector, use task destructor instead
 + abstracted WiFi control into it's own class
   - WiFi conection manager turned into state machine
@@ -11,6 +12,11 @@
 + pick ws action depending on post pkgs carry 'action' key (*API change*)
 - removed support for esp8266, will backport most critical features to v2.6 branch
 - removed legacy led/button/udp features, better to rewrite from scratch
++ compat with yubox mod of WebServerAsync and yubox AsyncTCP lib
+* fix potential mem leaks with tasks and Interface class
+* fix running with a version 3.7 of TaskScheduler lib
+* code cleanup and optimization
+
 
 ### user UI/FrontEnd
 + WebUI post pkgs carry 'action' key (*API change*)
@@ -18,6 +24,8 @@
   -  other form data follows within an "data": array as before
   -  simplify action lookups and helps to avoid key clashing on complex forms
 * update [pure-css](https://github.com/pure-css/pure/releases/) to v2.1.0
++ add UI element "href button"
+* fixed password/text area fields were casted to numeric upon sending via webui
 
 ### v2.6.3 - 2022.10.02
 =======

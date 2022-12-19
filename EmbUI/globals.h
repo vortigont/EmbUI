@@ -36,8 +36,8 @@
 
 
 #define EMBUI_VERSION_MAJOR     2
-#define EMBUI_VERSION_MINOR     6
-#define EMBUI_VERSION_REVISION  999  // '999' here is current dev version
+#define EMBUI_VERSION_MINOR     7
+#define EMBUI_VERSION_REVISION  0  // '999' here is current dev version
 
 #define EMBUI_VERSION_VALUE     (MAJ, MIN, REV) ((MAJ) << 16 | (MIN) << 8 | (REV))
 

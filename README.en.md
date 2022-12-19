@@ -24,6 +24,7 @@ A framework that helps to create WebUI and dynamic control elements for Arduino 
  - zlib-compressed FOTA using [esp32-flashz](https://github.com/vortigont/esp32-flashz) lib
  - [mDNS](https://en.wikipedia.org/wiki/Multicast_DNS)/[ZeroConf](https://en.wikipedia.org/wiki/Zero-configuration_networking) publisher, discovery
  - device autodiscovery via:
+    - WiFi Captive Portal detection - upon connecting to esp's WiFi AP a device/browser will show a pop-up advising to open an EmbUI's setup page
     - [Service Browser](https://play.google.com/store/apps/details?id=com.druk.servicebrowser) Android
     - [SSDP](https://en.wikipedia.org/wiki/Simple_Service_Discovery_Protocol) for Windows
     - [Bonjour](https://en.wikipedia.org/wiki/Bonjour_(software)) iOS/MacOS
