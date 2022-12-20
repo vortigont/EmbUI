@@ -477,7 +477,7 @@ class Interface {
          * front-end converts numeric values to integers or floats
          */
         template <typename V>
-        inline void number(const String &id, V value, const String &label){ number_constrained(id, value, label, 0); };
+        inline void number(const String &id, V value, const String &label){ number_constrained(id, value, label, static_cast<V>(0)); };
 
         /**
          * @brief number filled from system config
