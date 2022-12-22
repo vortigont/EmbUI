@@ -118,7 +118,7 @@
 				label - becomes span "comment" element
 			-->
 			{{#if2 label}}<span class="comment">{{label}}</span>{{/if2}}
-			<div id="{{id}}" name="{{id}}" {{#if2 class}}class="{{class}}"{{/if2}}><img src onerror='{{value}}("{{id}}","{{param.arg1}}")'></div>
+			<div id="{{id}}" name="{{id}}" {{#if2 class}}class="{{class}}"{{/if2}}><img src onerror='{{value}}("{{id}}","{{params.arg1}}")'></div>
 		{{/if}}
 		{{#if html == "div" && type == "html"}}
 			<!-- Custom div with text content,
