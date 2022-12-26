@@ -3,6 +3,9 @@
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
 // and others people
 
+// Empty string
+static const char P_EMPTY[] = "";
+
 // Interface
 static const char P_block[] PROGMEM = "block";
 static const char P_button[] PROGMEM = "button";

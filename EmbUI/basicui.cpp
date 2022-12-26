@@ -327,16 +327,13 @@ void block_settings_sys(Interface *interf, JsonObject *data){
 }
 
 /**
- * Обработчик настроек WiFi в режиме клиента
+ * WiFi Client settings handler
  */
 void set_settings_wifi(Interface *interf, JsonObject *data){
     if (!data) return;
 
-    String ssid = (*data)[FPSTR(P_WCSSID)];     // переменные доступа в конфиге не храним
-    String pwd = (*data)[FPSTR(P_WCPASS)];      // фреймворк хранит последнюю доступную точку самостоятельно
-
-    embui.var_remove(FPSTR(P_APonly)); // сборосим режим принудительного AP, при попытке подключения к роутеру
-    embui.wifi_connect(ssid.c_str(), pwd.c_str());
+    embui.var_remove(FPSTR(P_APonly));              // remove "force AP mode" parameter when attempting connection to external AP
+    embui.wifi_connect((*data)[P_WCSSID].as<const char*>(), (*data)[P_WCPASS].as<const char*>());
 
     section_settings_frame(interf, nullptr);           // переходим в раздел "настройки"
 }
