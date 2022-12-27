@@ -183,7 +183,7 @@ void Interface::json_section_end(){
 void Interface::json_section_extend(const String &name){
     section_stack.tail()->idx--;
     // open new nested section
-    json_section_begin(name, (char*)0, false, false, false, section_stack.tail()->block.getElement(section_stack.tail()->block.size()-1));    // find last array element
+    json_section_begin(name, (char*)0, false, false, false, section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element
 };
 
 /**
