@@ -36,10 +36,9 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     if(type == WS_EVT_CONNECT){
         LOG(printf_P, PSTR("UI: ws[%s][%u] connect MEM: %u\n"), server->url(), client->id(), ESP.getFreeHeap());
 
-        Interface *interf = new Interface(&embui, client);
-        section_main_frame(interf, nullptr);
+        { Interface interf(&embui, client);
+        section_main_frame(&interf, nullptr); }
         embui.send_pub();
-        delete interf;
         return;
     }
 
@@ -219,9 +218,8 @@ void EmbUI::post(JsonObject &data){
 
 void EmbUI::send_pub(){
     if (!ws.count()) return;
-    Interface *interf = new Interface(this, &ws, SMALL_JSON_SIZE);
-    pubCallback(interf);
-    delete interf;
+    Interface interf(this, &ws, SMALL_JSON_SIZE);
+    pubCallback(&interf);
 }
 
 void EmbUI::section_handle_remove(const String &name)
