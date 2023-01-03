@@ -68,38 +68,6 @@ void Interface::json_frame(const String &type){
     json_section_begin(String(micros()));
 }
 
-
-/**
- * @brief - begin Interface UI secton
- * used to construc WebUI html elements
- */
-void Interface::json_frame_interface(const String &name){
-    json[F("app")] = name;
-    json[F("mc")] = embui->macid();
-    json[F("ver")] = F(EMBUI_VERSION_STRING);
-
-    json_frame_interface();
-}
-
-
-bool Interface::json_frame_enqueue(const JsonObject &obj) {
-    if (!obj.memoryUsage()) // пустышки не передаем
-        return false;
-
-    LOG(printf_P, PSTR("UI: Frame add obj %u b, mem:%d/%d"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
-
-    if (json.capacity() - json.memoryUsage() > obj.memoryUsage() + 16 && section_stack.tail()->block.add(obj)) {
-        LOG(printf_P, PSTR("...OK idx:%u\tmem free: %u\n"), section_stack.tail()->idx, ESP.getFreeHeap());
-        section_stack.tail()->idx++;        // incr idx for next obj
-        return true;
-    }
-    LOG(printf_P, PSTR(" - Frame full! Heap free: %u\n"), ESP.getFreeHeap());
-
-    json_frame_send();
-    json_frame_next();
-    return false;
-}
-
 /**
  * @brief - add object to frame with mem overflow protection 
  */
@@ -115,6 +83,59 @@ void Interface::json_frame_add(const JsonObject &jobj){
     } while (!json_frame_enqueue(jobj) && _cnt );
 };
 
+void Interface::json_frame_clear(){
+    while (section_stack.size())
+        delete section_stack.shift();
+
+    json.clear();
+}
+
+bool Interface::json_frame_enqueue(const JsonObject &obj, bool shallow){
+    if (!obj.memoryUsage()) // пустышки не передаем
+        return false;
+
+    if(shallow){
+        LOG(printf_P, PSTR("UI: Frame add shallow obj %u b, mem:%d/%d\n"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
+        JsonObject nested = section_stack.tail()->block.createNestedObject();
+        nested.operator ArduinoJson6200_F1::JsonVariant().shallowCopy(obj);
+        return true;
+    }
+
+    LOG(printf_P, PSTR("UI: Frame add obj %u b, mem:%d/%d"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
+
+    if (json.capacity() - json.memoryUsage() > obj.memoryUsage() + 16 && section_stack.tail()->block.add(obj)) {
+        LOG(printf_P, PSTR("...OK idx:%u\tmem free: %u\n"), section_stack.tail()->idx, ESP.getFreeHeap());
+        section_stack.tail()->idx++;        // incr idx for next obj
+        return true;
+    }
+    LOG(printf_P, PSTR(" - Frame full! Heap free: %u\n"), ESP.getFreeHeap());
+
+    json_frame_send();
+    json_frame_next();
+    return false;
+}
+
+void Interface::json_frame_flush(){
+    if (!section_stack.size()) return;
+    LOG(println, F("UI: json_frame_flush"));
+    json[FPSTR(P_final)] = true;
+    json_section_end();
+    json_frame_send();
+    json_frame_clear();
+}
+
+/**
+ * @brief - begin Interface UI secton
+ * used to construc WebUI html elements
+ */
+void Interface::json_frame_interface(const String &name){
+    json[F("app")] = name;
+    json[F("mc")] = embui->macid();
+    json[F("ver")] = F(EMBUI_VERSION_STRING);
+
+    json_frame_interface();
+}
+
 void Interface::json_frame_next(){
     json.clear();
     JsonObject obj = json.to<JsonObject>();
@@ -128,20 +149,12 @@ void Interface::json_frame_next(){
     LOG(printf_P, PSTR("json_frame_next: [#%u], mem:%u/%u\n"), section_stack.size()-1, obj.memoryUsage(), json.capacity());   // section index counts from 0
 }
 
-void Interface::json_frame_clear(){
-    while (section_stack.size())
-        delete section_stack.shift();
-
-    json.clear();
-}
-
-void Interface::json_frame_flush(){
-    if (!section_stack.size()) return;
-    LOG(println, F("UI: json_frame_flush"));
-    json[FPSTR(P_final)] = true;
-    json_section_end();
-    json_frame_send();
-    json_frame_clear();
+void Interface::json_frame_value(JsonVariant &val, bool shallow){
+    json_frame(P_value);
+    if (shallow)
+        json_frame_enqueue(val, shallow);
+    else
+        json_frame_add(val);
 }
 
 void Interface::json_section_begin(const String &name, const String &label, bool main, bool hidden, bool line){
@@ -166,7 +179,7 @@ void Interface::json_section_begin(const String &name, const String &label, bool
     section->block = obj.createNestedArray(FPSTR(P_block));
     section->idx = 0;
     section_stack.add(section);
-    LOG(printf_P, PSTR("UI: section begin:'%s' [#%u] %u free\n"), name.isEmpty() ? P_EMPTY : name.c_str(), section_stack.size()-1, json.capacity() - json.memoryUsage());   // section index counts from 0
+    LOG(printf_P, PSTR("UI: section #%u begin:'%s', %u b free\n"), section_stack.size()-1, name.isEmpty() ? P_EMPTY : name.c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0
 }
 
 void Interface::json_section_end(){
@@ -176,7 +189,7 @@ void Interface::json_section_end(){
     if (section_stack.size()) {
         section_stack.tail()->idx++;
     }
-    LOG(printf_P, PSTR("UI: section end:'%s' [#%u] RAM: %u\n"), section->name.isEmpty() ? P_EMPTY : section->name.c_str(), section_stack.size(), ESP.getFreeHeap());        // size() before pop()
+    LOG(printf_P, PSTR("UI: section #%u end:'%s', RAM: %u\n"), section_stack.size(), section->name.isEmpty() ? P_EMPTY : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
     delete section;
 }
 

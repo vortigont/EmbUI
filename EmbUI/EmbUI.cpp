@@ -6,8 +6,8 @@
 #include "EmbUI.h"
 #include "ui.h"
 
-#define POST_ACTION_DELAY   50      // delay for large posts processing
-#define POST_LARGE_SIZE   256       // large post threshold
+#define POST_ACTION_DELAY   50      // delay for large posts processing in ms
+#define POST_LARGE_SIZE     1024    // large post threshold
 
 union MacID
 {
@@ -67,21 +67,20 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                 delete res;
                 return;
             }
-            res->shrinkToFit();      // this doc should not grow anyway
+            //res->shrinkToFit();      // this doc should not grow anyway
 
             if (embui.ws.count()>1 && data){   // if there are multiple ws cliens connected, we must echo back data section, to reflect any changes in UI
-                JsonObject _d = (*res)[F("data")];
-                Interface *interf = new Interface(&embui, &embui.ws, _d.memoryUsage()+128);      // about 128 bytes overhead requred for section structs
-                interf->json_frame_value();
-                interf->value(_d);              // copy values array as-is
-                interf->json_frame_flush();
-                delete interf;
+                Interface interf(&embui, &embui.ws, TINY_JSON_SIZE);
+                JsonVariant d = (*res)[P_data];
+                interf.json_frame_value(d, true);
+                interf.json_frame_flush();
 
                 if (len > POST_LARGE_SIZE){     // если прилетел большой пост, то откладываем обработку и даем возможность освободить часть памяти
                     Task *t = new Task(POST_ACTION_DELAY, TASK_ONCE,
                         [res](){
-                            JsonObject data = (*res)[F("data")];
-                            embui.post(data);
+                            //JsonObject data = (*res)[F("data")];
+                            JsonObject o = res->as<JsonObject>();
+                            embui.post(o);
                             delete res; },
                         &ts, false, nullptr, nullptr, true
                     );

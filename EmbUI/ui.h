@@ -175,13 +175,14 @@ class Interface {
      * @brief append supplied json data to the current Interface frame
      * this function is unsafe, i.e. when frame is full and can't append
      * current data it returns false and tries to send current frame and open new one
-     * use json frame_frame_add() to add data in a safe way
+     * use json_frame_add() to add data in a safe way
      * 
-     * @param obj 
-     * @return true 
-     * @return false 
+     * @param obj - json object to add
+     * @param shallow - add object using shallow copy
+     * @return true on success adding obj
+     * @return false otherwise
      */
-    bool json_frame_enqueue(const JsonObject &obj);
+    bool json_frame_enqueue(const JsonObject &obj, bool shallow = false);
 
 
     /**
@@ -221,20 +222,6 @@ class Interface {
          */
         void json_frame(const String &type);
 
-
-        /**
-         * @brief - begin Interface UI secton
-         * used to construct WebUI html elements
-         */
-        inline void json_frame_interface(){ json_frame(FPSTR(P_interface)); };
-        void json_frame_interface(const String &name);
-
-        /**
-         * @brief - begin Value UI secton
-         * used to supply WebUI with data (key:value pairs)
-         */
-        inline void json_frame_value(){ json_frame(FPSTR(P_value)); };
-
         /**
          * @brief - add object to current Intreface frame
          * attempts to retry on mem overflow
@@ -243,8 +230,6 @@ class Interface {
         template <size_t desiredCapacity>
         void json_frame_add( UIelement<desiredCapacity> &ui){ json_frame_add(ui.obj.template as<JsonObject>()); }
 
-        void json_frame_next();
-        
         /**
          * @brief purge all current section data
          * 
@@ -256,6 +241,30 @@ class Interface {
          * 
          */
         void json_frame_flush();
+
+        /**
+         * @brief - begin Interface UI secton
+         * used to construct WebUI html elements
+         */
+        inline void json_frame_interface(){ json_frame(FPSTR(P_interface)); };
+        void json_frame_interface(const String &name);
+
+        void json_frame_next();
+        
+        /**
+         * @brief - begin Value UI secton
+         * used to supply WebUI with data (key:value pairs)
+         */
+        inline void json_frame_value(){ json_frame(FPSTR(P_value)); };
+
+        /**
+         * @brief - begin Value UI secton with supplied json object
+         * used to supply WebUI with data (key:value pairs)
+         * @param val json object with supplied data to be copied
+         * @param shallow use 'shallow' copy, be SURE to keep val object alive intact until frame is fully send
+         *                with json_frame_send() or json_frame_flush()
+         */
+        void json_frame_value(JsonVariant &val, bool shallow = false);
 
         /**
          * @brief - serialize and send Interface object to the WebSocket 
@@ -640,7 +649,7 @@ void Interface::div(const String &id, const String &type, const T &value, const 
         ui.obj[P_class] = css;
     if (!params.isNull()){
         JsonObject nobj = ui.obj.createNestedObject(FPSTR(P_params));
-        nobj.set(params);
+        nobj.operator ArduinoJson6200_F1::JsonVariant().shallowCopy(params);
     }
     json_frame_add(ui);
 };
