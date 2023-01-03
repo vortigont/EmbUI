@@ -201,8 +201,10 @@ void EmbUI::post(JsonObject &data){
         section = sectionlookup(submit);
     } else {        // otherwise scan all possible keys in data object (deprecated, kept for compatibility only)
         JsonObject odata = data[P_data].as<JsonObject>();
-        for (JsonPair kv : odata)
+        for (JsonPair kv : odata){
             section = sectionlookup(kv.key().c_str());
+            if (section) break;
+        }
     }
 
     if (section) {
