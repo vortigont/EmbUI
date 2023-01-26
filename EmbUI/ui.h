@@ -17,9 +17,14 @@
 #define SMALL_JSON_SIZE     512
 #endif
 
+// static json obj size for small ui elements
+#ifndef MEDIUM_JSON_SIZE
+#define MEDIUM_JSON_SIZE     1024
+#endif
+
 // dynamic json for creating websocket frames to be sent to UI
 #ifndef IFACE_DYN_JSON_SIZE
-#define IFACE_DYN_JSON_SIZE 8192
+#define IFACE_DYN_JSON_SIZE 4096
 #endif
 
 // static json doc size
@@ -90,7 +95,7 @@ public:
      * 
      * @param v boolen
      */
-    inline void html(bool v = true){ obj[FPSTR(P_html)] = v; };
+    void html(bool v = true){ if (v) obj[P_html] = v; else obj.remove(P_html); }         // tend to null pattern
 
 };
 
