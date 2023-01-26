@@ -1,5 +1,17 @@
 ## Changelog
 
+### v2.7.1 - 2023.01.26
++ progress bar css resources
++ use ArduinoJson shallow copy feature where applicapble
+* fix in old "section lookup" algo (kept for compat)
+* fix issue with arduinojson v6.20.0
+* fix issue when trying to connect to AP's without password from webui
+* small fixes and improvements
+  - fix 'params' element
+  + do not add '"html" = false' to UI elements
+  + create some Interface obj on stack
+
+
 ### v2.7.0 - 2022.12.20
 ### core
 + WiFI Captive Portal feature, upon connecting to esp's AP a pop-up will arise advising to open EmbUI's setup page
