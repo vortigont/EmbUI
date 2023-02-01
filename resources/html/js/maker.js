@@ -1,4 +1,24 @@
 /**
+ * global objects placeholder
+ */
+var global = {menu_id:0, menu: [], value:{}};
+
+
+/**
+ * EmbUI's js api version
+ * used to set compatibilty dependency between backend firmware and WebUI js
+ */
+const ui_jsapi = 1;
+
+/**
+ * User application versions - frontend/backend
+ * could be overriden with user js code to make EmbUI check code compatibilty
+ * checked as integer comparison if not zero
+ */
+var app_jsapi = 0;
+
+
+/**
  * A placeholder array for user js-functions that could be executed on button click
  * any user-specific funcs could be appended/removed/replaced to this array later on
  * 
@@ -32,8 +52,6 @@ var customFuncs = {
 	}//,
 	//func2: function () {     console.log('Called func 2'); }
 };
-
-var global = {menu_id:0, menu: [], value:{}};
 
 /* Color gradients calculator. Source is from https://gist.github.com/joocer/bf1626d38dd74fef9d9e5fb18fef517c */
 function colorGradient(colors, fadeFraction) {
@@ -160,7 +178,7 @@ var render = function(){
 			this.menu();
 			go("#main > div").display("none");
 			// go("#main #"+menu_id).display("block");
-			//var data = {}; data[menu_id] = null
+			// var data = {}; data[menu_id] = null
 			ws.send_post(menu_id, {});
 		},
 		menu: function(){
@@ -182,20 +200,29 @@ var render = function(){
 			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
 				if (frame[i].section == "menu") {
 					global.menu =  frame[i].block;
-					document.title = obj.app + " - " + obj.mc;
-					global.app = obj.app;
-					global.mc = obj.mc;
-					global.ver = obj.ver;
 					if (!global.menu_id) global.menu_id = global.menu[0].value
 					this.menu();
-				} else
+					continue;
+				}
 				if (frame[i].section == "content") {
 					for (var n = 0; n < frame[i].block.length; n++) {
 						go("#"+frame[i].block[n].id).replace(tmpl_content.parse(frame[i].block[n]));
 					}
-				} else {
-					this.section(frame[i]);
+					continue;
 				}
+				if (frame[i].section == "manifest"){
+					let manifest = frame[i].block[0];
+					document.title = manifest.app + " - " + manifest.mc;
+					global.app = manifest.app;
+					global.macid = manifest.mc;
+					global.uiver = manifest.uiver;
+					global.uijsapi = manifest.uijsapi;
+					global.appver = manifest.appver;
+					global.appjsapi = manifest.appjsapi;
+					continue;
+				}
+				// fallback to normal section
+				this.section(frame[i]);
 			}
 			out.lockhist = false;
 		},

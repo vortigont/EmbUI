@@ -175,6 +175,18 @@ class Interface {
     LList<section_stack_t*> section_stack;
     frameSend *send_hndl;
 
+    /**
+     * @brief - create html button to submit itself's id, value or section form
+     * depend on type button can send:
+     *  type 0 - it's id with null value
+     *  type 0 - it's id + value
+     *  type 1 - submit a section's values + it's own id
+     *  type 1 - submit a form with section + it's own id + value
+     *  type 2 - call a js function with name ~ id
+     *  type 2 - call a js function with name ~ id + pass it a value
+     */
+    template <typename T>
+    void button_generic(const String &id, const T &value, const String &label, const String &color, button_t btype = button_t::generic);
 
     /**
      * @brief append supplied json data to the current Interface frame
@@ -189,19 +201,23 @@ class Interface {
      */
     bool json_frame_enqueue(const JsonObject &obj, bool shallow = false);
 
+    /**
+     * @brief purge json object while keeping section structure
+     * used to release mem after json_frame_send() call
+     */
+    void json_frame_next();
 
     /**
-     * @brief - create html button to submit itself's id, value or section form
-     * depend on type button can send:
-     *  type 0 - it's id with null value
-     *  type 0 - it's id + value
-     *  type 1 - submit a section's values + it's own id
-     *  type 1 - submit a form with section + it's own id + value
-     *  type 2 - call a js function with name ~ id
-     *  type 2 - call a js function with name ~ id + pass it a value
+     * @brief - serialize and send Interface object to the WebSocket
      */
-    template <typename T>
-    void button_generic(const String &id, const T &value, const String &label, const String &color, button_t btype = button_t::generic);
+    inline void json_frame_send(){ if (send_hndl) send_hndl->send(json.as<JsonObject>()); };
+
+    /**
+     * @brief - start UI section
+     * A section contains DOM UI elements, this is generic one
+     */
+    void json_section_begin(const String &name, const String &label, bool main, bool hidden, bool line, JsonObject obj);
+
 
     public:
         Interface(EmbUI *j, AsyncWebSocket *server, size_t size = IFACE_DYN_JSON_SIZE): embui(j), json(size) {
@@ -228,7 +244,7 @@ class Interface {
         void json_frame(const String &type);
 
         /**
-         * @brief - add object to current Intreface frame
+         * @brief - add object to current Interface frame
          * attempts to retry on mem overflow
          */
         void json_frame_add(const JsonObject &obj);
@@ -242,8 +258,8 @@ class Interface {
         void json_frame_clear();
         
         /**
-         * @brief finalize and send current sections stack
-         * 
+         * @brief finalize, send and clear current sections stack
+         * implies  json_section_end(); json_frame_send(); json_frame_clear();
          */
         void json_frame_flush();
 
@@ -252,10 +268,7 @@ class Interface {
          * used to construct WebUI html elements
          */
         inline void json_frame_interface(){ json_frame(FPSTR(P_interface)); };
-        void json_frame_interface(const String &name);
 
-        void json_frame_next();
-        
         /**
          * @brief - begin Value UI secton
          * used to supply WebUI with data (key:value pairs)
@@ -272,16 +285,19 @@ class Interface {
         void json_frame_value(JsonVariant &val, bool shallow = false);
 
         /**
-         * @brief - serialize and send Interface object to the WebSocket 
-         */
-        inline void json_frame_send(){ if (send_hndl) send_hndl->send(json.as<JsonObject>()); };
-
-        /**
-         * @brief - start UI section
-         * A section contains html UI elements, this is generic one
+         * @brief start UI section
+         * A section contains DOM UI elements, this is generic method
+         * 
+         * @param name - name identifies a group of DOM objects, could be arbitrary name.
+         *               Some names are reserved:
+         *                  'menu' - contains left-side menu elements
+         *                  'content' - updates values for exiting DOM elements  
+         * @param label - a headliner for a group of section elements
+         * @param main  - main section starts a blank page, may contain other nested sections
+         * @param hidden - creates section hidden under 'spoiler' button, user needs to press the button to unfold it
+         * @param line  -  all elements of the section will be alligned in a line
          */
         void json_section_begin(const String &name, const String &label = (char*)0, bool main = false, bool hidden = false, bool line = false);
-        void json_section_begin(const String &name, const String &label, bool main, bool hidden, bool line, JsonObject obj);
 
         /**
          * @brief - content section is meant to replace existing data on the page
@@ -293,6 +309,17 @@ class Interface {
          * each json_section_line() must be closed by a json_section_end() call
          */
         inline void json_section_line(const String &name = (char*)0){ json_section_begin(name, (char*)0, false, false, true); };
+
+        /**
+         * @brief - section with manifest data
+         * it contains manifest data for WebUI, like fw name, version, Chip ID
+         * and any arbitrary json'ed data that could be processed in user js code
+         * could be supplied with additional date via (optional) value() call, otherwise just closed
+         * @param appname - application name, builds Document title on the page
+         * @param fwversion - numeric firmware version, this is for compatibility checking between fw and user JS code,
+         * if 0 - than no checking required
+         */
+        void json_section_manifest(const String &appname, unsigned appjsapi = 0, const String &appversion = (char*)0);
 
         /**
          * @brief - start a section with left-side MENU elements

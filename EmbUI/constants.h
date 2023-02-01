@@ -35,6 +35,7 @@ static const char P_js[] PROGMEM = "js";
 static const char P_input[] PROGMEM = "input";
 static const char P_interface[] PROGMEM = "interface";
 static const char P_label[] PROGMEM = "label";
+static const char P_manifest[] PROGMEM = "manifest";
 static const char P_max[] PROGMEM = "max";
 static const char P_menu[] PROGMEM = "menu";
 static const char P_min[] PROGMEM = "min";

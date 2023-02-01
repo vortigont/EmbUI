@@ -124,18 +124,6 @@ void Interface::json_frame_flush(){
     json_frame_clear();
 }
 
-/**
- * @brief - begin Interface UI secton
- * used to construc WebUI html elements
- */
-void Interface::json_frame_interface(const String &name){
-    json[F("app")] = name;
-    json[F("mc")] = embui->macid();
-    json[F("ver")] = F(EMBUI_VERSION_STRING);
-
-    json_frame_interface();
-}
-
 void Interface::json_frame_next(){
     json.clear();
     JsonObject obj = json.to<JsonObject>();
@@ -198,6 +186,17 @@ void Interface::json_section_extend(const String &name){
     // open new nested section
     json_section_begin(name, (char*)0, false, false, false, section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element
 };
+
+void Interface::json_section_manifest(const String &appname, unsigned appjsapi, const String &appversion){
+    json_section_begin("manifest",  (char*)0, false, false, false);
+    JsonObject obj = section_stack.tail()->block.createNestedObject();
+    obj["uijsapi"] = EMBUI_JSAPI;
+    obj["uiver"] = EMBUI_VERSION_STRING;
+    obj[F("app")] = appname;
+    obj[F("appjsapi")] = appjsapi;
+    if (appversion.length()) obj[F("appver")] = appversion;
+    obj[F("mc")] = embui->macid();
+}
 
 /**
  * @brief - serialize and send json obj directly to the ws buffer
