@@ -398,8 +398,8 @@ void EmbUI::_getmacid(){
     MacID _mac;
     _mac.u64 = ESP.getEfuseMac();
 
-    sprintf_P(mc, PSTR("%02X%02X%02X"), _mac.mc[3], _mac.mc[4], _mac.mc[5]);
-    LOG(printf_P,PSTR("UI ID:%02X%02X%02X\n"), _mac.mc[3], _mac.mc[4], _mac.mc[5]);
+    sprintf_P(mc, PSTR("%02X%02X%02X%02X%02X%02X"), _mac.mc[0],_mac.mc[1],_mac.mc[2], _mac.mc[3], _mac.mc[4], _mac.mc[5]);
+    LOG(printf_P,PSTR("UI ID:%s\n"), mc);
 }
 
 void EmbUI::var_remove(const String &key){
