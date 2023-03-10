@@ -96,8 +96,8 @@ bool Interface::json_frame_enqueue(const JsonObject &obj, bool shallow){
 
     if(shallow){
         LOG(printf_P, PSTR("UI: Frame add shallow obj %u b, mem:%d/%d\n"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
-        JsonObject nested = section_stack.tail()->block.createNestedObject();
-        nested.operator ArduinoJson6200_F1::JsonVariant().shallowCopy(obj);
+        JsonVariant nested = section_stack.tail()->block.createNestedObject();
+        nested.shallowCopy(obj);
         return true;
     }
 

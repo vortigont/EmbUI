@@ -653,8 +653,8 @@ void Interface::div(const String &id, const String &type, const T &value, const 
     if (!css.isEmpty())
         ui.obj[P_class] = css;
     if (!params.isNull()){
-        JsonObject nobj = ui.obj.createNestedObject(FPSTR(P_params));
-        nobj.operator ArduinoJson6200_F1::JsonVariant().shallowCopy(params);
+        JsonVariant nobj = ui.obj.createNestedObject(FPSTR(P_params));
+        nobj.shallowCopy(params);
     }
     json_frame_add(ui);
 };
