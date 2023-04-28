@@ -43,7 +43,10 @@
         {"owner": "vortigont",
          "name": "LinkedList",
          "version": "https://github.com/vortigont/LinkedList"},
-        {"owner": "vortigont",
+         {"owner": "dplasa",
+         "name": "FTPClientServer",
+         "version": "https://github.com/dplasa/FTPClientServer"},
+         {"owner": "vortigont",
          "name": "esp32-flashz",
          "version": "https://github.com/vortigont/esp32-flashz#v1.1.1",
          "platforms": ["espressif32"]}

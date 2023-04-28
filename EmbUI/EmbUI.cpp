@@ -5,6 +5,7 @@
 
 #include "EmbUI.h"
 #include "ui.h"
+#include "ftpsrv.h"
 
 #define POST_ACTION_DELAY   50      // delay for large posts processing
 #define POST_LARGE_SIZE   256       // large post threshold
@@ -132,6 +133,9 @@ EmbUI::~EmbUI(){
     ts.deleteTask(tAutoSave);
     ts.deleteTask(tHouseKeeper);
     delete tValPublisher;
+#ifndef EMBUI_NOFTP
+    ftp_stop();
+#endif
 }
 
 void EmbUI::begin(){
@@ -199,6 +203,10 @@ void EmbUI::begin(){
         } );
     ts.addTask(tHouseKeeper);
     tHouseKeeper.enableDelayed();
+// FTP server
+#ifndef EMBUI_NOFTP
+    if (paramVariant(FPSTR(P_ftp))) ftp_start();
+#endif
 }
 
 /**
@@ -309,6 +317,10 @@ void EmbUI::handle(){
 #ifdef EMBUI_UDP
     void udpLoop();
 #endif // EMBUI_UDP
+// FTP server
+#ifndef EMBUI_NOFTP
+    ftp_loop();
+#endif
 }
 
 /**
