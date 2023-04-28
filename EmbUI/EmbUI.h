@@ -135,6 +135,7 @@ class EmbUI
     AsyncWebServer server;
     AsyncWebSocket ws;
     WiFiController *wifi;
+
 #ifdef EMBUI_MQTT
     typedef void (*mqttCallback) ();
     mqttCallback onConnect;

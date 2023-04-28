@@ -5,6 +5,7 @@
 
 #include "EmbUI.h"
 #include "ui.h"
+#include "ftpsrv.h"
 
 #define POST_ACTION_DELAY   50      // delay for large posts processing in ms
 #define POST_LARGE_SIZE     1024    // large post threshold
@@ -128,6 +129,9 @@ EmbUI::~EmbUI(){
     ts.deleteTask(tHouseKeeper);
     delete tValPublisher;
     delete wifi;
+#ifndef EMBUI_NOFTP
+    ftp_stop();
+#endif
 }
 
 
@@ -184,6 +188,10 @@ void EmbUI::begin(){
 #endif
 #ifdef USE_SSDP
     ssdp_begin(); LOG(println, F("Start SSDP"));
+#endif
+// FTP server
+#ifndef EMBUI_NOFTP
+    if (paramVariant(FPSTR(P_ftp))) ftp_start();
 #endif
 }
 
@@ -284,6 +292,10 @@ void EmbUI::handle(){
 #ifdef EMBUI_MQTT
     mqtt_handle();
 #endif // EMBUI_MQTT
+// FTP server
+#ifndef EMBUI_NOFTP
+    ftp_loop();
+#endif
 }
 
 /**

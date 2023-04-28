@@ -22,6 +22,7 @@ static const char T_OPT_NETW[] PROGMEM = "netwrk";
 
 // UI handlers
 static const char T_DO_OTAUPD[] PROGMEM = "update";
+static const char T_SET_FTP[] PROGMEM = "set_ftp";
 static const char T_SET_WIFI[] PROGMEM = "set_wifi";
 static const char T_SET_WIFIAP[] PROGMEM = "set_wifiAP";
 static const char T_SET_MQTT[] PROGMEM = "set_mqtt";
@@ -73,7 +74,9 @@ namespace basicui {
   void section_settings_frame(Interface *interf, JsonObject *data);
   void set_settings_wifi(Interface *interf, JsonObject *data);
   void set_settings_wifiAP(Interface *interf, JsonObject *data);
+#ifdef EMBUI_MQTT
   void set_settings_mqtt(Interface *interf, JsonObject *data);
+#endif
   void set_settings_time(Interface *interf, JsonObject *data);
   void set_language(Interface *interf, JsonObject *data);
   void embuistatus(Interface *interf);
