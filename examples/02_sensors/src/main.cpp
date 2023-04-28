@@ -9,10 +9,6 @@
  *
  */
 
-#ifdef USE_FTP
- #include "ftpSrv.h"
-#endif
-
 #ifdef ESP8266
   ADC_MODE(ADC_VCC);  // read internal Vcc
 #endif
@@ -30,18 +26,10 @@ void setup() {
 
   // restore LED state from configuration
   digitalWrite( LED_BUILTIN, !embui.param(FPSTR(V_LED)) );
-
-  #ifdef USE_FTP
-      ftp_setup(); // запуск ftp-сервера
-  #endif
 }
 
 
 // MAIN loop
 void loop() {
   embui.handle();
-
-#ifdef USE_FTP
-    ftp_loop(); // цикл обработки событий фтп-сервера
-#endif
 }
