@@ -159,7 +159,7 @@ void EmbUI::begin(){
 
     // restore Time settings
     TimeProcessor::getInstance().setcustomntp(paramVariant(FPSTR(P_userntp)).as<const char*>());
-    TimeProcessor::getInstance().tzsetup(param(FPSTR(P_TZSET)).substring(4).c_str());  // cut off 4 chars of html selector index
+    TimeProcessor::getInstance().tzsetup(paramVariant(FPSTR(P_TZSET)).as<String>().substring(4).c_str());  // cut off 4 chars of html selector index
     if (paramVariant(FPSTR(P_noNTPoDHCP)))
         TimeProcessor::getInstance().ntpodhcp(false);
 
