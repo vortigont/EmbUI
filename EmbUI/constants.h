@@ -27,6 +27,7 @@ static const char P_file[] PROGMEM = "file";
 static const char P_final[] PROGMEM = "final";
 static const char P_form[] PROGMEM = "form";
 static const char P_frame[] PROGMEM = "frame";
+static const char P_iframe[] PROGMEM = "iframe";
 static const char P_ftp[] PROGMEM = "ftp";
 static const char P_ftp_usr[] PROGMEM = "ftp_usr";
 static const char P_ftp_pwd[] PROGMEM = "ftp_pwd";

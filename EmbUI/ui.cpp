@@ -26,7 +26,7 @@ void Interface::file_form(const String &id, const String &action, const String &
 
 void Interface::iframe(const String &id, const String &value){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::iframe, id);
-    ui.obj[FPSTR(P_type)] = FPSTR(P_frame);
+    ui.obj[FPSTR(P_type)] = FPSTR(P_iframe);
     ui.obj[FPSTR(P_value)] = value;
     json_frame_add(ui);
 }
