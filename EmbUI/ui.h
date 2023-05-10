@@ -449,7 +449,7 @@ class Interface {
         void html_input(const String &id, const String &type, const T &value, const String &label, bool direct = false);
 
         /**
-         * @brief cleate an iframe on page
+         * @brief create an iframe on page
          * 
          * @param id 
          * @param value 
