@@ -5,20 +5,9 @@
 
 #include "ui.h"
 
-void Interface::frame(const String &id, const String &value){
+void Interface::iframe(const String &id, const String &value){
     StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
     obj[FPSTR(P_html)] = F("iframe");
-    obj[FPSTR(P_type)] = F("frame");
-    obj[FPSTR(P_id)] = id;
-    obj[FPSTR(P_value)] = value;
-
-    frame_add_safe(obj.as<JsonObject>());
-}
-
-void Interface::frame2(const String &id, const String &value){
-    StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
-    obj[FPSTR(P_html)] = F("iframe2");;
-    obj[FPSTR(P_type)] = F("frame");
     obj[FPSTR(P_id)] = id;
     obj[FPSTR(P_value)] = value;
 

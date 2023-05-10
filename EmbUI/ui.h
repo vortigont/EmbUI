@@ -227,8 +227,13 @@ class Interface {
          */
         void json_section_end();
 
-        void frame(const String &id, const String &value);
-        void frame2(const String &id, const String &value);
+        /**
+         * @brief insert iFrame
+         * 
+         * @param id 
+         * @param value 
+         */
+        void iframe(const String &id, const String &value);
 
         /**
          * @brief - Add 'value' object to the Interface frame
