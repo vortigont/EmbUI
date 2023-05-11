@@ -337,9 +337,6 @@ class EmbUI
      */ 
     void create_sysvars();
 
-    // Dyn tasks garbage collector
-    void taskGC();
-
     // find callback section matching specified name
     section_handle_t* sectionlookup(const char *id);
 
