@@ -62,9 +62,8 @@ void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
         Task *t = new Task(WIFI_RECONNECT_TIMER * TASK_SECOND, TASK_ONCE,
                 [this](){ embuischedw.disable();
                 WiFi.enableSTA(true);
-                WiFi.begin();
-                TASK_RECYCLE; },
-                &ts, false
+                WiFi.begin(); },
+                &ts, false, nullptr, nullptr, true
             );
         t->enableDelayed();
     } );

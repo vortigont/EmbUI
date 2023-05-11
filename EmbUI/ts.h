@@ -9,5 +9,3 @@
 #define _TASK_SCHEDULING_OPTIONS
 #define _TASK_SELF_DESTRUCT
 #include <TaskSchedulerDeclarations.h>
-
-#define TASK_RECYCLE embui.taskRecycle(ts.getCurrentTask())

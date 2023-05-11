@@ -482,10 +482,6 @@ class EmbUI
      */
     void autosave(bool force = false);
 
-    /**
-     * Recycler for dynamic tasks
-     */
-    void taskRecycle(Task *t);
 
   private:
     /**
@@ -505,7 +501,6 @@ class EmbUI
     Task *tValPublisher;     // Status data publisher
     Task tHouseKeeper;     // Maintenance task, runs every second
     Task tAutoSave;          // config autosave timer
-    std::vector<Task*> *taskTrash = nullptr;    // ptr to a vector container with obsolete tasks
 
     // WiFi-related
     /**
@@ -575,9 +570,6 @@ class EmbUI
     callback_function_t _cb_STAGotIP = nullptr;
 
     void setup_mDns();
-
-    // Dyn tasks garbage collector
-    void taskGC();
 
     // find callback section matching specified name
     section_handle_t* sectionlookup(const char *id);
