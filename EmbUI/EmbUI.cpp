@@ -219,24 +219,24 @@ void EmbUI::post(JsonObject &data){
 
     if ( submit ){  // if it was a form post, than only 'submit' key is checked for matching section, not all data keys
         section = sectionlookup(submit);
-    } else {        // otherwise scan all possible keys
-        for (JsonPair kv : data)
+    } else {        // otherwise scan all possible keys (deprecated, kept for compatibility only)
+        for (JsonPair kv : data){
             section = sectionlookup(kv.key().c_str());
+            if (section) break;
+        }
     }
 
     if (section) {
         LOG(printf_P, PSTR("UI: POST SECTION: %s\n"), section->name.c_str());
-        Interface *interf = new Interface(this, &ws);
-        section->callback(interf, &data);
-        delete interf;
+        Interface interf(this, &ws);
+        section->callback(&interf, &data);
     }
 }
 
 void EmbUI::send_pub(){
     if (!ws.count()) return;
-    Interface *interf = new Interface(this, &ws, SMALL_JSON_SIZE);
-    pubCallback(interf);
-    delete interf;
+    Interface interf(this, &ws, SMALL_JSON_SIZE);
+    pubCallback(&interf);
 }
 
 void EmbUI::section_handle_remove(const String &name)
