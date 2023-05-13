@@ -67,11 +67,10 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
             if (embui.ws.count()>1 && data){   // if there are multiple ws cliens connected, we must echo back data section, to reflect any changes in UI
                 JsonObject _d = (*res)[F("data")];
-                Interface *interf = new Interface(&embui, &embui.ws, _d.memoryUsage()+128);      // about 128 bytes overhead requred for section structs
-                interf->json_frame_value();
-                interf->value(_d);              // copy values array as-is
-                interf->json_frame_flush();
-                delete interf;
+                Interface interf(&embui, &embui.ws, _d.memoryUsage()+128);      // about 128 bytes overhead requred for section structs
+                interf.json_frame_value();
+                interf.value(_d);              // copy values array as-is
+                interf.json_frame_flush();
 
                 if (len > POST_LARGE_SIZE){     // если прилетел большой пост, то откладываем обработку и даем возможность освободить часть памяти
                     Task *t = new Task(POST_ACTION_DELAY, TASK_ONCE,
@@ -212,7 +211,7 @@ void EmbUI::begin(){
  * @brief - process posted data for the registered action
  * looks for registered action for the section name and calls the action with post data if found
  */
-void EmbUI::post(JsonObject &data){
+void EmbUI::post(JsonObject &data, bool inject){
     section_handle_t *section = nullptr;
 
     const char *submit = data[FPSTR(P_submit)];
@@ -226,10 +225,18 @@ void EmbUI::post(JsonObject &data){
         }
     }
 
-    if (section) {
-        LOG(printf_P, PSTR("UI: POST SECTION: %s\n"), section->name.c_str());
+    if (section || inject) {
         Interface interf(this, &ws);
-        section->callback(&interf, &data);
+        if (inject && ws.count()){
+            interf.json_frame_value();
+            interf.value(data);              // copy values array as-is
+            interf.json_frame_flush();
+        }
+
+        if(section){
+            LOG(printf_P, PSTR("UI: POST SECTION: %s\n"), section->name.c_str());
+            section->callback(&interf, &data);
+        }
     }
 }
 
