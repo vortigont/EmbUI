@@ -397,7 +397,7 @@ class EmbUI
      * beware of dangling pointers here passing non-static char*, use JsonVariant or String instead 
      */
     template <typename T> void var(const String &key, const T& value, bool force = false){
-        if (!force && cfg[key].isNull()) {
+        if (!force && !cfg.containsKey(key)) {
             LOG(printf_P, PSTR("UI ERR: KEY (%s) is NOT initialized!\n"), key.c_str());
             return;
         }
@@ -428,13 +428,13 @@ class EmbUI
      * it accepts types suitable to be added to the ArduinoJson cfg document used as a dictionary
      */
     template <typename T>
-    inline void var_create(const String &key, const T& value){ if(cfg[key].isNull()){var(key, value, true );} }
+    inline void var_create(const String &key, const T& value){ if(!cfg.containsKey(key)){var(key, value, true );} }
 
     /**
      * @brief - remove key from config
      */
     void var_remove(const String &key){
-        if (!cfg[key].isNull()){
+        if (cfg.containsKey(key)){
             LOG(printf_P, PSTR("UI cfg REMOVE key:'%s'\n"), key.c_str());
             cfg.remove(key);
             autosave();
