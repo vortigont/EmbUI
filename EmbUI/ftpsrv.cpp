@@ -7,7 +7,7 @@ FTPServer *ftpsrv = nullptr;
 
 void ftp_start(void){
   if (!ftpsrv) ftpsrv = new FTPServer(LittleFS);
-  if (ftpsrv) ftpsrv->begin(embui.paramVariant(FPSTR(P_ftp_usr)) | String(P_ftp), embui.paramVariant(FPSTR(P_ftp_pwd)) | String(P_ftp));
+  if (ftpsrv) ftpsrv->begin(embui.paramVariant(FPSTR(P_ftp_usr)) | String(FPSTR(P_ftp)), embui.paramVariant(FPSTR(P_ftp_pwd)) | String(P_ftp));
 }
 
 void ftp_stop(void){
@@ -34,7 +34,7 @@ void block_settings_ftp(Interface *interf, JsonObject *data){
 
     interf->checkbox(FPSTR(P_ftp), ftp_status(), F("Enable FTP Server"));     // FTP On/off
 
-    interf->text(FPSTR(P_ftp_usr), embui.paramVariant(FPSTR(P_ftp_usr)) | String(FPSTR(P_ftp)), "FTP login");
+    interf->text(FPSTR(P_ftp_usr), embui.paramVariant(FPSTR(P_ftp_usr)) | String(FPSTR(P_ftp)), "FTP login", false);
     interf->password(FPSTR(P_ftp_pwd), embui.paramVariant(FPSTR(P_ftp_pwd)) | String(FPSTR(P_ftp)), FPSTR(T_DICT[lang][TD::D_Password]));
     interf->button_submit(FPSTR(T_SET_FTP), FPSTR(T_DICT[lang][TD::D_SAVE]), FPSTR(P_BLUE));
 
