@@ -7,7 +7,7 @@ FTPServer *ftpsrv = nullptr;
 
 void ftp_start(void){
   if (!ftpsrv) ftpsrv = new FTPServer(LittleFS);
-  if (ftpsrv) ftpsrv->begin(embui.paramVariant(FPSTR(P_ftp_usr)) | String(P_ftp), embui.paramVariant(FPSTR(P_ftp_pwd)) | String(P_ftp));
+  if (ftpsrv) ftpsrv->begin(embui.paramVariant(FPSTR(P_ftp_usr)) | String(FPSTR(P_ftp)), embui.paramVariant(FPSTR(P_ftp_pwd)) | String(P_ftp));
 }
 
 void ftp_stop(void){
