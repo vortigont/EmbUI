@@ -100,7 +100,7 @@ extern Scheduler ts;
 class Interface;
 
 //-----------------------
-#define TOGLE_STATE(val, curr) (val == "1")? true : (val == "0")? false : !curr;
+//#define TOGLE_STATE(val, curr) (val == "1")? true : (val == "0")? false : !curr;  // no more strings
 
 #define SETPARAM(key, call...) { \
     embui.var(key, (*data)[key]); \
