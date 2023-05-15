@@ -264,7 +264,7 @@ class EmbUI
      * it's value won't be replaced
      */
     template <typename T>
-    inline void var_create(const String &key, const T& value){ if(cfg[key].isNull()){var(key, value, true );} }
+    inline void var_create(const String &key, const T& value){ if(!cfg.containsKey(key)){var(key, value, true );} }
 
     /**
      * @brief - remove key from config
@@ -520,7 +520,7 @@ extern EmbUI embui;
 
 template <typename T>
 void EmbUI::var(const String &key, const T& value, bool force){
-    if (!force && cfg[key].isNull()) {
+    if (!force && !cfg.containsKey(key)) {
         LOG(printf_P, PSTR("UI ERR: KEY (%s) is NOT initialized!\n"), key.c_str());
         return;
     }

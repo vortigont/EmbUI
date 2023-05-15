@@ -421,7 +421,7 @@ void EmbUI::_getmacid(){
 }
 
 void EmbUI::var_remove(const String &key){
-    if (!cfg[key].isNull()){
+    if (cfg.containsKey(key)){
         LOG(printf_P, PSTR("UI cfg REMOVE key:'%s'\n"), key.c_str());
         cfg.remove(key);
         autosave();
