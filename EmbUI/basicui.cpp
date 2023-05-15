@@ -372,14 +372,11 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
 void set_settings_mqtt(Interface *interf, JsonObject *data){
     if (!data) return;
     // сохраняем настройки в конфиг
-    SETPARAM(FPSTR(P_m_host));
-    SETPARAM(FPSTR(P_m_port));
-    SETPARAM(FPSTR(P_m_user));
-    SETPARAM(FPSTR(P_m_pass));
-    SETPARAM(FPSTR(P_m_pref));
-    SETPARAM(FPSTR(P_m_tupd));
-    //SETPARAM(FPSTR(P_m_tupd), some_mqtt_object.semqtt_int((*data)[FPSTR(P_m_tupd)]));
-
+    var_dropnulls(P_m_host, (*data)[P_m_host]);
+    var_dropnulls(P_m_user, (*data)[P_m_user]);
+    var_dropnulls(P_m_pass, (*data)[P_m_pass]);
+    var_dropnulls(P_m_pref, (*data)[P_m_pref]);
+    var_dropnulls(P_m_tupd, (*data)[P_m_tupd]);
     embui.save();
 
     section_settings_frame(interf, data);

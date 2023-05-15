@@ -152,7 +152,7 @@ void EmbUI::begin(){
     }
 
     load();                 // try to load config from file
-    create_sysvars();       // create system variables (if missing)
+    //create_sysvars();       // create system variables, if missing (this one is empty now)
     create_parameters();    // weak function, creates user-defined variables
     LOG(print, F("UI CONFIG: "));
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
@@ -184,7 +184,9 @@ void EmbUI::begin(){
     tHouseKeeper.enableDelayed();
 
 #ifdef EMBUI_MQTT
-    mqtt(param(FPSTR(P_m_pref)), param(FPSTR(P_m_host)), param(FPSTR(P_m_port)).toInt(), param(FPSTR(P_m_user)), param(FPSTR(P_m_pass)), mqtt_emptyFunction, false); // init mqtt
+    // try to connect to mqtt if mqtt hostname is defined
+    if (param(FPSTR(P_m_host)).length())
+        mqtt(param(FPSTR(P_m_pref)), param(FPSTR(P_m_host)), paramVariant(FPSTR(P_m_port)), param(FPSTR(P_m_user)), param(FPSTR(P_m_pass)), mqtt_emptyFunction, false); // init mqtt
 #endif
 #ifdef USE_SSDP
     ssdp_begin(); LOG(println, F("Start SSDP"));
@@ -309,16 +311,8 @@ void EmbUI::handle(){
  * both run-time and persistent
  */
 void EmbUI::create_sysvars(){
-    LOG(println, F("UI: Creating system vars"));
-#ifdef EMBUI_MQTT
-    // параметры подключения к MQTT
-    var_create(FPSTR(P_m_host), "");                   // MQTT server hostname
-    var_create(FPSTR(P_m_port), "");                   // MQTT port
-    var_create(FPSTR(P_m_user), "");                   // MQTT login
-    var_create(FPSTR(P_m_pass), "");                   // MQTT pass
-    var_create(FPSTR(P_m_pref), mc);                   // MQTT topic == use ESP MAC address
-    var_create(FPSTR(P_m_tupd), TOSTRING(MQTT_PUB_PERIOD));              // интервал отправки данных по MQTT в секундах
-#endif // EMBUI_MQTT
+    LOG(println, F("UI: Creating EmbUI system vars"));
+    // this one is empty since all EmbUI vars could use defaults
 }
 
 /**
