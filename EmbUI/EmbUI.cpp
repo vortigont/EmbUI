@@ -199,7 +199,7 @@ void EmbUI::begin(){
  * @brief - process posted data for the registered action
  * looks for registered action for the section name and calls the action with post data if found
  */
-void EmbUI::post(JsonObject &data){
+void EmbUI::post(JsonObject &data, bool inject){
     section_handle_t *section = nullptr;
 
     const char *submit = data[P_action];
@@ -214,13 +214,19 @@ void EmbUI::post(JsonObject &data){
         }
     }
 
-    if (section) {
-        LOG(printf_P, PSTR("UI: POST Action: %s\n"), section->name.c_str());
-        Interface *interf = new Interface(this, &ws);
-        if (!interf) return;
+    if (section || inject) {
+        Interface interf(this, &ws);
         JsonObject odata = data[P_data].as<JsonObject>();
-        section->callback(interf, &odata);
-        delete interf;
+        if (inject && ws.count()){            // echo back injected data to WebUI
+            interf.json_frame_value();
+            interf.value(odata);              // copy values array as-is
+            interf.json_frame_flush();
+        }
+
+        if(section){                           // execute an action on registered data
+            LOG(printf_P, PSTR("UI: POST SECTION: %s\n"), section->name.c_str());
+            section->callback(&interf, &odata);
+        }
     }
 }
 
