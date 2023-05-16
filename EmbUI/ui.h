@@ -297,10 +297,10 @@ class Interface {
 
         // 4-й параметр обязателен, т.к. компилятор умудряется привести F() к булевому виду и использует неверный оверлоад (под esp32)
         void text(const String &id, const String &value, const String &label, bool directly){ html_input(id, F("text"), value, label, directly); };
-        void text(const String &id, const String &label, bool directly = false){ text(id, embui->paramVariant(id), label, directly); };
+        void text(const String &id, const String &label, bool directly = false){ text(id, embui->param(id), label, directly); };
 
         void password(const String &id, const String &value, const String &label){ html_input(id, FPSTR(P_password), value, label); };
-        void password(const String &id, const String &label){ password(id, embui->paramVariant(id), label); };
+        void password(const String &id, const String &label){ password(id, embui->param(id), label); };
 
         /**
          * @brief - create "number" html field with optional step, min, max constraints
