@@ -346,7 +346,7 @@ class Interface {
         inline void datetime(const String &id, const String &label){ datetime(id, embui->paramVariant(id), label); };
 
         void email(const String &id, const String &value, const String &label){ html_input(id, F("email"), value, label); };
-        void email(const String &id, const String &label){ email(id, embui->paramVariant(id), label); };
+        void email(const String &id, const String &label){ email(id, embui->param(id), label); };
 
         /**
          * @brief - create "range" html field with step, min, max constraints
@@ -429,7 +429,7 @@ class Interface {
          */
         template <typename T>
         void textarea(const String &id, const T &value, const String &label){ html_input(id, F("textarea"), value, label); };
-        inline void textarea(const String &id, const String &label){ textarea(id, embui->paramVariant(id), label); };
+        inline void textarea(const String &id, const String &label){ textarea(id, embui->param(id), label); };
 
         void file(const String &name, const String &action, const String &label, const String &opt = "");
 
