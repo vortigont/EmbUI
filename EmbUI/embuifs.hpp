@@ -27,7 +27,7 @@ namespace embuifs{
      *  @param jsonfile - файл, для загрузки
      */
     bool deserializeFile(DynamicJsonDocument& doc, const char* filepath);
-    bool deserializeFile(DynamicJsonDocument& doc, const String& filepath){ return deserializeFile(doc, filepath.c_str()); };
+    bool deserializeFile(DynamicJsonDocument& doc, const String& filepath);
 
     /**
      * @brief serialize and write JsonDocument to a file using buffered writes
@@ -37,6 +37,6 @@ namespace embuifs{
      * @return size_t bytes written
      */
     size_t serialize2file(DynamicJsonDocument& doc, const char* filepath, size_t bufsize = FILE_WRITE_BUFF_SIZE);
-    size_t serialize2file(DynamicJsonDocument& doc, const String& filepath, size_t bufsize = FILE_WRITE_BUFF_SIZE){ return serialize2file(doc, filepath.c_str(), bufsize); };
+    size_t serialize2file(DynamicJsonDocument& doc, const String& filepath, size_t bufsize = FILE_WRITE_BUFF_SIZE);
 
 }
