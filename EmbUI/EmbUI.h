@@ -22,8 +22,6 @@
 // compat definiton
 #define EMBUIVER                EMBUI_VERSION_STRING
 
-#include "embuifs.hpp"
-
 #ifdef ESP8266
  #define FORMAT_LITTLEFS_IF_FAILED
  #include <Updater.h>
@@ -37,9 +35,8 @@
 #endif
 
 
+#include "embuifs.hpp"
 #include <ESPAsyncWebServer.h>
-#include <ArduinoJson.h>
-
 #include "LList.h"
 #include "ts.h"
 #include "timeProcessor.h"
@@ -289,9 +286,6 @@ class EmbUI
     void save(const char *_cfg = nullptr, bool force = false);
     void load(const char *cfgfile = nullptr);   // if null, than default cfg file is used
     void cfgclear();                            // clear current config, both in RAM and file
-
-    //  * tries to load json file from FS and deserialize it into provided DynamicJsonDocument, returns false on error
-    bool loadjson(const char *filepath, DynamicJsonDocument &obj);
 
 #ifdef EMBUI_UDP
     void udp(const String &message);
