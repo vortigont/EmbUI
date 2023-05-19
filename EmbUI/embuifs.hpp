@@ -36,7 +36,7 @@ namespace embuifs{
      * @param filepath to write to
      * @return size_t bytes written
      */
-    size_t serialize2file(DynamicJsonDocument& doc, const char* filepath, size_t bufsize = FILE_WRITE_BUFF_SIZE);
-    size_t serialize2file(DynamicJsonDocument& doc, const String& filepath, size_t bufsize = FILE_WRITE_BUFF_SIZE);
+    size_t serialize2file(const DynamicJsonDocument& doc, const char* filepath, size_t bufsize = FILE_WRITE_BUFF_SIZE);
+    size_t serialize2file(const DynamicJsonDocument& doc, const String& filepath, size_t bufsize = FILE_WRITE_BUFF_SIZE);
 
 }

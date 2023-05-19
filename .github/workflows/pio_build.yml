@@ -6,7 +6,7 @@ name: PlatformIO CI
 
 on:
   push:
-    branches: [ main, feat, stage, v2.6 ]
+    branches: [ main, feat, v2.6, 2.6tst ]
   pull_request:
     branches: [ main ]
 

@@ -38,7 +38,7 @@ namespace embuifs {
         return false;
     }
 
-    size_t serialize2file(DynamicJsonDocument& doc, const String& filepath, size_t bufsize){ return serialize2file(doc, filepath.c_str(), bufsize); };
+    size_t serialize2file(const DynamicJsonDocument& doc, const String& filepath, size_t bufsize){ return serialize2file(doc, filepath.c_str(), bufsize); };
 
     size_t serialize2file(const DynamicJsonDocument& doc, const char* filepath, size_t bufsize){
         File hndlr = LittleFS.open(filepath, "w");
