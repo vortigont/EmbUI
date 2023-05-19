@@ -9,15 +9,10 @@
 
 #include <FS.h>
 #include "embuifs.hpp"
-
-#ifndef FORMAT_LITTLEFS_IF_FAILED
-  #define FORMAT_LITTLEFS_IF_FAILED true
-#endif
 #define U_FS   U_SPIFFS
 
+#include "embuifs.hpp"
 #include <ESPAsyncWebServer.h>
-#include <ArduinoJson.h>
-
 #include "LList.h"
 #include "ts.h"
 #include "timeProcessor.h"
@@ -190,9 +185,6 @@ class EmbUI
     void load(const char *cfgfile = nullptr);   // if null, than default cfg file is used
     void cfgclear();                            // clear current config, both in RAM and file
 
-    // tries to load json file from FS and deserialize it into provided DynamicJsonDocument, returns false on error
-    bool loadjson(const char *filepath, DynamicJsonDocument &obj);
-
     /**
      * @brief - initialize/restart config autosave timer
      * each call postpones cfg write to flash
@@ -285,6 +277,10 @@ class EmbUI
 
     void var_dropnulls(const String &key, const char* value);
     void var_dropnulls(const String &key, JsonVariant value);
+#ifdef EMBUI_UDP
+    void udp(const String &message);
+    void udp();
+#endif // EMBUI_UDP
 
 
 #ifdef EMBUI_MQTT

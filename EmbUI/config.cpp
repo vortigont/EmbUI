@@ -5,6 +5,18 @@
 
 #include "EmbUI.h"
 
+#ifdef ESP32
+// remove esp8266's macros
+ #ifdef FPSTR
+  #undef FPSTR
+  #define FPSTR(pstr_pointer) (pstr_pointer)
+ #endif
+ #ifdef F
+  #undef F
+  #define F(string_literal) (string_literal)
+ #endif
+#endif
+
 void EmbUI::save(const char *_cfg, bool force){
 
     if ( sysData.fsDirty && !force ){
@@ -17,13 +29,11 @@ void EmbUI::save(const char *_cfg, bool force){
     if (_cfg == nullptr) {
         LOG(println, F("UI: Save default main config file"));
         LittleFS.rename(FPSTR(P_cfgfile),FPSTR(P_cfgfile_bkp));
-        configFile = LittleFS.open(FPSTR(P_cfgfile), "w");
+        embuifs::serialize2file(cfg, FPSTR(P_cfgfile));
     } else {
         LOG(printf_P, PSTR("UI: Save %s main config file\n"), _cfg);
-        configFile = LittleFS.open(_cfg, "w");
+        embuifs::serialize2file(cfg, _cfg);
     }
-
-    serializeJson(cfg, configFile);
 }
 
 void EmbUI::load(const char *cfgfile){
@@ -31,14 +41,14 @@ void EmbUI::load(const char *cfgfile){
     LOG(print, F("UI: Config file load "));
 
     if (cfgfile){
-        if (loadjson(cfgfile, cfg))
+        if (embuifs::deserializeFile(cfg, cfgfile))
             return;
     } else {
-        String f = FPSTR(P_cfgfile);
-        if (!loadjson(f.c_str(), cfg)){
+        String f(FPSTR(P_cfgfile));
+        if (!embuifs::deserializeFile(cfg, f.c_str())){
             LOG(println, F("...failed, trying with backup"));
             f = FPSTR(P_cfgfile_bkp);
-            if (loadjson(f.c_str(), cfg)){
+            if (embuifs::deserializeFile(cfg, f.c_str())){
                 LOG(println, F("BackUp load OK!"));
                 return;
             }
@@ -50,32 +60,6 @@ void EmbUI::load(const char *cfgfile){
 
     // тут выясняется, что оба конфига повреждены, очищаем конфиг, он будет заполнен значениями по-умолчанию
     cfg.clear();
-}
-
-/**
- * tries to load json file from FS and deserialize it into provided DynamicJsonDocument
- */
-bool EmbUI::loadjson(const char *filepath, DynamicJsonDocument &obj){
-    if ( sysData.fsDirty ){
-        LOG(println, F("UI: FS corrupt flag is set, won't load"));
-        return false;
-    }
-
-    File jsonFile = LittleFS.open(filepath, "r");
-
-    if (!jsonFile){
-        LOG(printf_P, PSTR("Can't open file: %s"), filepath);
-        return false;
-    }
-
-    DeserializationError error = deserializeJson(obj, jsonFile);
-    jsonFile.close();
-
-    if (!error)
-        return true;
-    
-    LOG(printf_P, PSTR("UI: JSON deserializeJson error, file: %s, code: %d\n"), filepath, error.code());
-    return false;
 }
 
 void EmbUI::cfgclear(){
