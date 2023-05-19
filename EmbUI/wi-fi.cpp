@@ -11,14 +11,14 @@ void EmbUI::wifi_connect(const char *ssid, const char *pwd)
     String _ssid(ssid); String _pwd(pwd);   // I need objects to pass it to lambda
     embuischedw.set(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE,
         [_ssid, _pwd](){
-                LOG(printf_P, PSTR("UI WiFi: client connecting to SSID:'%s', pwd:'%s'\n"), _ssid.c_str(), _pwd.isEmpty() ? P_EMPTY : _pwd.c_str());
+                LOG(printf_P, PSTR("UI WiFi: client connecting to SSID:'%s', pwd:'%s'\n"), _ssid.c_str(), _pwd.isEmpty() ? "" : _pwd.c_str());
                 #ifdef ESP32
                     WiFi.disconnect();
                     WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
                 #endif
 
                 _ssid.length() ? WiFi.begin(_ssid.c_str(), _pwd.c_str()) : WiFi.begin();
-                ts.getCurrentTask()->disable();
+                //ts.getCurrentTask()->disable();
         }
     );
 

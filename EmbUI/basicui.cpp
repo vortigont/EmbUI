@@ -339,7 +339,7 @@ void set_settings_wifi(Interface *interf, JsonObject *data){
     if (!data) return;
 
     embui.var_remove(FPSTR(P_APonly));              // remove "force AP mode" parameter when attempting connection to external AP
-    embui.wifi_connect((*data)[P_WCSSID].as<const char*>(), (*data)[P_WCPASS].as<const char*>());
+    embui.wifi_connect((*data)[FPSTR(P_WCSSID)], (*data)[FPSTR(P_WCPASS)]);
 
     section_settings_frame(interf, nullptr);           // переходим в раздел "настройки"
 }
