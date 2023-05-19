@@ -8,13 +8,7 @@
 #include "globals.h"
 
 #include <FS.h>
-
-#ifdef ESP_ARDUINO_VERSION
-  #include <LittleFS.h>
-#else       // for older Arduino core <2.0
-  #include <LITTLEFS.h>
-  #define LittleFS LITTLEFS
-#endif
+#include "embuifs.hpp"
 
 #ifndef FORMAT_LITTLEFS_IF_FAILED
   #define FORMAT_LITTLEFS_IF_FAILED true
