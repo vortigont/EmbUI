@@ -22,23 +22,14 @@
 // compat definiton
 #define EMBUIVER                EMBUI_VERSION_STRING
 
-#include <FS.h>
+#include "embuifs.hpp"
 
 #ifdef ESP8266
-// #include <ESPAsyncTCP.h>
- #include <LittleFS.h>
  #define FORMAT_LITTLEFS_IF_FAILED
  #include <Updater.h>
 #endif
 
 #ifdef ESP32
- #ifdef ESP_ARDUINO_VERSION
-  #include <LittleFS.h>
- #else
-  #include <LITTLEFS.h>
-  #define LittleFS LITTLEFS
- #endif
-
  #ifndef FORMAT_LITTLEFS_IF_FAILED
   #define FORMAT_LITTLEFS_IF_FAILED true
  #endif
