@@ -31,7 +31,7 @@
     [
         {"owner": "bblanchon",
          "name": "ArduinoJson",
-         "version": "~6.21.0"},
+         "version": "^6.21.0"},
         {"owner": "bblanchon",
          "name": "ArduinoStreamUtils",
          "version": "https://github.com/bblanchon/ArduinoStreamUtils"},
@@ -51,7 +51,7 @@
          "version": "https://github.com/vortigont/FTPClientServer#feat"},
         {"owner": "vortigont",
          "name": "esp32-flashz",
-         "version": "https://github.com/vortigont/esp32-flashz",
+         "version": "^1.1.2",
          "platforms": ["espressif32"]}
     ],
     "build": {
