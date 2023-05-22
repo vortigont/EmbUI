@@ -103,7 +103,7 @@ void EmbUI::http_set_handlers(){
     // serve all static files from LittleFS root /
     server.serveStatic("/", LittleFS, "/")
         .setDefaultFile(PSTR("index.html"))
-        .setCacheControl(PSTR("max-age=14400"));
+        .setCacheControl(PSTR("max-age=10, must-revalidate"));  // 10 second for caching, then revalidate based on etag/IMS headers
 
 
     // 404 handler

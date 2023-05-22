@@ -25,7 +25,7 @@ namespace embuifs {
         File jfile = LittleFS.open(filepath, "r");
 
         if (!jfile){
-            LOG(printf_P, PSTR("Can't open file: %s"), filepath);
+            LOG(printf_P, PSTR("Can't open file: %s\n"), filepath);
             return false;
         }
 
