@@ -239,7 +239,7 @@ class Interface {
          * @brief - Add 'value' object to the Interface frame
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
-        template <typename T> void value(const String &id, const T& val, bool html = false){
+        template <typename T> void value(const String &id, const T& val, bool html){
             StaticJsonDocument<IFACE_STA_JSON_SIZE> obj;
             obj[FPSTR(P_id)] = id;
             obj[FPSTR(P_value)] = val;
