@@ -239,6 +239,7 @@ var render = function(){
 				otherwise value applies as html element attribute ( <input type="range" value="{{value}}" )
 			*/
 			function setValue(key, val, html = false){
+				if (val == null || typeof val == "object") return;	// skip undef/null or (empty) objects
 				var el = go("#"+key);
 				if (!el.length) return;
 				if (html === true ){ el.html(val); return; }
