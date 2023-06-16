@@ -179,6 +179,7 @@ var render = function(){
 			Sets the value 'val' to the DOM object with id 'key'  
 			*/
 			function setValue(key, val){
+				if (val == null || typeof val == "object") return;	// skip undef/null or (empty) objects
 				var el = go("#"+key);
 				if (el.length) {
 					if (frame[i].html) {	// update placeholders in html template, like {{value.pMem}}
