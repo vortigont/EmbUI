@@ -139,8 +139,8 @@ void EmbUI::http_set_handlers(){
         .setCacheControl(PSTR("max-age=10, must-revalidate"));  // 10 second for caching, then revalidate based on etag/IMS headers
 
 
-    // 404 handler
-    server.onNotFound(notFound);
+    // 404 handler - disabled to allow override in user code
+    //server.onNotFound(notFound);
 
 
 /*
