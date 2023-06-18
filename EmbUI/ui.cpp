@@ -25,24 +25,11 @@ void Interface::file_form(const String &id, const String &action, const String &
 }
 
 void Interface::iframe(const String &id, const String &value){
-    UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::iframe, id);
+    UIelement<TINY_JSON_SIZE> ui(ui_element_t::iframe, id);
     ui.obj[FPSTR(P_type)] = FPSTR(P_frame);
     ui.obj[FPSTR(P_value)] = value;
     json_frame_add(ui);
 }
-
-/*
-void Interface::frame2(const String &id, const String &value){
-    StaticJsonDocument<UI_DEFAULT_JSON_SIZE> obj;
-    obj[FPSTR(P_html)] = F("iframe2");;
-    obj[FPSTR(P_type)] = F("frame");
-    obj[FPSTR(P_id)] = id;
-    obj[FPSTR(P_value)] = value;
-
-    json_frame_add(obj.as<JsonObject>());
-}
-*/
-
 
 void Interface::spacer(const String &label){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::spacer);
@@ -96,8 +83,8 @@ bool Interface::json_frame_enqueue(const JsonObject &obj, bool shallow){
 
     if(shallow){
         LOG(printf_P, PSTR("UI: Frame add shallow obj %u b, mem:%d/%d\n"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
-        JsonObject nested = section_stack.tail()->block.createNestedObject();
-        nested.operator ArduinoJson6200_F1::JsonVariant().shallowCopy(obj);
+        JsonVariant nested = section_stack.tail()->block.createNestedObject();
+        nested.shallowCopy(obj);
         return true;
     }
 

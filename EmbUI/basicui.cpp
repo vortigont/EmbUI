@@ -1,4 +1,5 @@
 #include "basicui.h"
+#include "ftpsrv.h"
 
 uint8_t lang = 0;            // default language for text resources (english)
 
@@ -27,6 +28,9 @@ void add_sections(){
 
     // обработка базовых настроек
     embui.section_handle_add(FPSTR(T_SET_HOSTNAME), set_hostname);          // hostname setup
+#ifndef EMBUI_NOFTP
+    embui.section_handle_add(FPSTR(T_SET_FTP), set_settings_ftp);           // обработка настроек FTP Client
+#endif  // #ifdef EMBUI_NOFTP
     embui.section_handle_add(FPSTR(T_SET_WIFI), set_settings_wifi);         // обработка настроек WiFi Client
     embui.section_handle_add(FPSTR(T_SET_WIFIAP), set_settings_wifiAP);     // обработка настроек WiFi AP
 #ifdef EMBUI_MQTT
@@ -68,12 +72,15 @@ void section_settings_frame(Interface *interf, JsonObject *data){
     interf->spacer();
 
     //interf->button_value(FPSTR(T_SH_SECT), 0, FPSTR(T_GNRL_SETUP));                 // кнопка перехода в общие настройки
-    interf->button_value(FPSTR(T_SH_SECT), 1, FPSTR(T_DICT[lang][TD::D_WiFi]));     // кнопка перехода в настройки сети
+    interf->button_value(FPSTR(T_SH_SECT), 1, FPSTR(T_DICT[lang][TD::D_WiFi]));         // кнопка перехода в настройки сети
     interf->button_value(FPSTR(T_SH_SECT), 2, FPSTR(T_DICT[lang][TD::D_DATETIME]));     // кнопка перехода в настройки времени
 #ifdef EMBUI_MQTT
     interf->button_value(FPSTR(T_SH_SECT), 3, FPSTR(T_EN_MQTT));     // кнопка перехода в настройки MQTT
 #endif
-    interf->button_value(FPSTR(T_SH_SECT), 4, FPSTR(T_DICT[lang][TD::D_SYSSET]));      // кнопка перехода в настройки System
+#ifndef EMBUI_NOFTP
+    interf->button_value(FPSTR(T_SH_SECT), 4, F("FTP Server"));                        // кнопка перехода в настройки FTP
+#endif
+    interf->button_value(FPSTR(T_SH_SECT), 0, FPSTR(T_DICT[lang][TD::D_SYSSET]));      // кнопка перехода в настройки System
 
     interf->spacer();
 
@@ -108,12 +115,11 @@ void show_section(Interface *interf, JsonObject *data){
             block_settings_mqtt(interf, nullptr);
             break;
     #endif  // #ifdef EMBUI_MQTT
-        case 4 :    // System setup section
-            block_settings_sys(interf, nullptr);
+        case 4 :    // FTP server setup section
+            block_settings_ftp(interf, nullptr);
             break;
         default:
-            //LOG(println, "Not found");
-            return;
+            block_settings_sys(interf, nullptr);
     }
 }
 
@@ -337,14 +343,11 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
 void set_settings_mqtt(Interface *interf, JsonObject *data){
     if (!data) return;
     // сохраняем настройки в конфиг
-    SETPARAM(FPSTR(P_m_host));
-    SETPARAM(FPSTR(P_m_port));
-    SETPARAM(FPSTR(P_m_user));
-    SETPARAM(FPSTR(P_m_pass));
-    SETPARAM(FPSTR(P_m_pref));
-    SETPARAM(FPSTR(P_m_tupd));
-    //SETPARAM(FPSTR(P_m_tupd), some_mqtt_object.semqtt_int((*data)[FPSTR(P_m_tupd)]));
-
+    var_dropnulls(P_m_host, (*data)[P_m_host]);
+    var_dropnulls(P_m_user, (*data)[P_m_user]);
+    var_dropnulls(P_m_pass, (*data)[P_m_pass]);
+    var_dropnulls(P_m_pref, (*data)[P_m_pref]);
+    var_dropnulls(P_m_tupd, (*data)[P_m_tupd]);
     embui.save();
 
     section_settings_frame(interf, data);

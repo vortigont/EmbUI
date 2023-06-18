@@ -32,6 +32,7 @@ enum TD : uint8_t {
     D_EDIT,
     D_EVENT,
     D_EXIT,
+    D_FTPSRV,
     D_FWLOAD,
     D_HOLD,
     D_Hostname,
@@ -106,6 +107,7 @@ static const char T_EN_DEBUG[] PROGMEM = "Debug";
 static const char T_EN_EDIT[] PROGMEM = "Edit";
 static const char T_EN_EVENT[] PROGMEM = "Event";
 static const char T_EN_EXIT[] PROGMEM = "Exit";
+static const char T_EN_FTPSRV[] PROGMEM = "FTP Server";
 static const char T_EN_FWLOAD[] PROGMEM = "Upload firmware/FS image";
 static const char T_EN_HOLD[] PROGMEM = "Hold";
 static const char T_EN_Hostname[] PROGMEM = "Hostname (mDNS Hostname/AP-SSID)";
@@ -246,6 +248,7 @@ static const char *const T_DICT[][DICT_SIZE] PROGMEM = {
     T_EN_EDIT,
     T_EN_EVENT,
     T_EN_EXIT,
+    T_EN_FTPSRV,
     T_EN_FWLOAD,
     T_EN_HOLD,
     T_EN_Hostname,
@@ -322,6 +325,7 @@ static const char *const T_DICT[][DICT_SIZE] PROGMEM = {
     T_RU_EDIT,
     T_RU_EVENT,
     T_RU_EXIT,
+    T_EN_FTPSRV,
     T_RU_FWLOAD,
     T_RU_HOLD,
     T_RU_Hostname,

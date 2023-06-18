@@ -5,6 +5,7 @@
 
 #include "EmbUI.h"
 #include "ui.h"
+#include "ftpsrv.h"
 
 #define POST_ACTION_DELAY   50      // delay for large posts processing in ms
 #define POST_LARGE_SIZE     1024    // large post threshold
@@ -128,6 +129,9 @@ EmbUI::~EmbUI(){
     ts.deleteTask(tHouseKeeper);
     delete tValPublisher;
     delete wifi;
+#ifndef EMBUI_NOFTP
+    ftp_stop();
+#endif
 }
 
 
@@ -148,14 +152,14 @@ void EmbUI::begin(){
     }
 
     load();                 // try to load config from file
-    create_sysvars();       // create system variables (if missing)
+    //create_sysvars();       // create system variables, if missing (this one is empty now)
     create_parameters();    // weak function, creates user-defined variables
     LOG(print, F("UI CONFIG: "));
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
 
     // restore Time settings
     TimeProcessor::getInstance().setcustomntp(paramVariant(FPSTR(P_userntp)).as<const char*>());
-    TimeProcessor::getInstance().tzsetup(param(FPSTR(P_TZSET)).substring(4).c_str());  // cut off 4 chars of html selector index
+    TimeProcessor::getInstance().tzsetup(paramVariant(FPSTR(P_TZSET)).as<String>().substring(4).c_str());  // cut off 4 chars of html selector index
     if (paramVariant(FPSTR(P_noNTPoDHCP)))
         TimeProcessor::getInstance().ntpodhcp(false);
 
@@ -180,10 +184,16 @@ void EmbUI::begin(){
     tHouseKeeper.enableDelayed();
 
 #ifdef EMBUI_MQTT
-    mqtt(param(FPSTR(P_m_pref)), param(FPSTR(P_m_host)), param(FPSTR(P_m_port)).toInt(), param(FPSTR(P_m_user)), param(FPSTR(P_m_pass)), mqtt_emptyFunction, false); // init mqtt
+    // try to connect to mqtt if mqtt hostname is defined
+    if (param(FPSTR(P_m_host)).length())
+        mqtt(param(FPSTR(P_m_pref)), param(FPSTR(P_m_host)), paramVariant(FPSTR(P_m_port)), param(FPSTR(P_m_user)), param(FPSTR(P_m_pass)), mqtt_emptyFunction, false); // init mqtt
 #endif
 #ifdef USE_SSDP
     ssdp_begin(); LOG(println, F("Start SSDP"));
+#endif
+// FTP server
+#ifndef EMBUI_NOFTP
+    if (paramVariant(FPSTR(P_ftp))) ftp_start();
 #endif
 }
 
@@ -191,7 +201,7 @@ void EmbUI::begin(){
  * @brief - process posted data for the registered action
  * looks for registered action for the section name and calls the action with post data if found
  */
-void EmbUI::post(JsonObject &data){
+void EmbUI::post(JsonObject &data, bool inject){
     section_handle_t *section = nullptr;
 
     const char *submit = data[P_action];
@@ -206,13 +216,19 @@ void EmbUI::post(JsonObject &data){
         }
     }
 
-    if (section) {
-        LOG(printf_P, PSTR("UI: POST Action: %s\n"), section->name.c_str());
-        Interface *interf = new Interface(this, &ws);
-        if (!interf) return;
+    if (section || inject) {
+        Interface interf(this, &ws);
         JsonObject odata = data[P_data].as<JsonObject>();
-        section->callback(interf, &odata);
-        delete interf;
+        if (inject && ws.count()){            // echo back injected data to WebUI
+            interf.json_frame_value();
+            interf.value(odata);              // copy values array as-is
+            interf.json_frame_flush();
+        }
+
+        if(section){                           // execute an action on registered data
+            LOG(printf_P, PSTR("UI: POST SECTION: %s\n"), section->name.c_str());
+            section->callback(&interf, &odata);
+        }
     }
 }
 
@@ -284,6 +300,10 @@ void EmbUI::handle(){
 #ifdef EMBUI_MQTT
     mqtt_handle();
 #endif // EMBUI_MQTT
+// FTP server
+#ifndef EMBUI_NOFTP
+    ftp_loop();
+#endif
 }
 
 /**
@@ -291,16 +311,8 @@ void EmbUI::handle(){
  * both run-time and persistent
  */
 void EmbUI::create_sysvars(){
-    LOG(println, F("UI: Creating system vars"));
-#ifdef EMBUI_MQTT
-    // параметры подключения к MQTT
-    var_create(FPSTR(P_m_host), "");                   // MQTT server hostname
-    var_create(FPSTR(P_m_port), "");                   // MQTT port
-    var_create(FPSTR(P_m_user), "");                   // MQTT login
-    var_create(FPSTR(P_m_pass), "");                   // MQTT pass
-    var_create(FPSTR(P_m_pref), mc);                   // MQTT topic == use ESP MAC address
-    var_create(FPSTR(P_m_tupd), TOSTRING(MQTT_PUB_PERIOD));              // интервал отправки данных по MQTT в секундах
-#endif // EMBUI_MQTT
+    LOG(println, F("UI: Creating EmbUI system vars"));
+    // this one is empty since all EmbUI vars could use defaults
 }
 
 /**
@@ -403,7 +415,7 @@ void EmbUI::_getmacid(){
 }
 
 void EmbUI::var_remove(const String &key){
-    if (!cfg[key].isNull()){
+    if (cfg.containsKey(key)){
         LOG(printf_P, PSTR("UI cfg REMOVE key:'%s'\n"), key.c_str());
         cfg.remove(key);
         autosave();

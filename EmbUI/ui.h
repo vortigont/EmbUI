@@ -442,7 +442,7 @@ class Interface {
         void div(const String &id, const String &type, const T &value, const String &label = (char*)0, const String &css = (char*)0, const JsonObject &params = JsonObject());
 
         inline void email(const String &id, const String &value, const String &label){ html_input(id, FPSTR(P_email), value, label); };
-        inline void email(const String &id, const String &label){ html_input(id, FPSTR(P_email), embui->paramVariant(id), label); };
+        inline void email(const String &id, const String &label){ html_input(id, FPSTR(P_email), embui->param(id), label); };
 
         /**
          * @brief create a file upload form
@@ -476,7 +476,7 @@ class Interface {
         void html_input(const String &id, const String &type, const T &value, const String &label, bool direct = false);
 
         /**
-         * @brief cleate an iframe on page
+         * @brief create an iframe on page
          * 
          * @param id 
          * @param value 
@@ -535,7 +535,7 @@ class Interface {
         void option(const T &value, const String &label);
 
         inline void password(const String &id, const String &value, const String &label){ html_input(id, FPSTR(P_password), value, label); };
-        inline void password(const String &id, const String &label){ html_input(id, FPSTR(P_password), embui->paramVariant(id), label); };
+        inline void password(const String &id, const String &label){ html_input(id, FPSTR(P_password), embui->param(id), label); };
 
         /**
          * @brief create live progressbar based on div+css
@@ -591,14 +591,14 @@ class Interface {
          * @param directly 
          */
         inline void text(const String &id, const String &value, const String &label){ html_input(id, FPSTR(P_text), value, label); };
-        inline void text(const String &id, const String &label){ html_input(id, FPSTR(P_text), embui->paramVariant(id), label); };
+        inline void text(const String &id, const String &label){ html_input(id, FPSTR(P_text), embui->param(id), label); };
 
         /**
          * элемент интерфейса textarea
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
         void textarea(const String &id, const String &value, const String &label);
-        inline void textarea(const String &id, const String &label){ textarea(id, embui->paramVariant(id), label); };
+        inline void textarea(const String &id, const String &label){ textarea(id, embui->param(id), label); };
 
         inline void time(const String &id, const String &value, const String &label){ html_input(id, FPSTR(P_time), value, label); };
         inline void time(const String &id, const String &label){ html_input(id, FPSTR(P_time), embui->paramVariant(id), label); };
@@ -680,8 +680,8 @@ void Interface::div(const String &id, const String &type, const T &value, const 
     if (!css.isEmpty())
         ui.obj[P_class] = css;
     if (!params.isNull()){
-        JsonObject nobj = ui.obj.createNestedObject(FPSTR(P_params));
-        nobj.operator ArduinoJson6200_F1::JsonVariant().shallowCopy(params);
+        JsonVariant nobj = ui.obj.createNestedObject(FPSTR(P_params));
+        nobj.shallowCopy(params);
     }
     json_frame_add(ui);
 };
