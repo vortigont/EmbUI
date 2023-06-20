@@ -65,7 +65,7 @@ uint8_t __attribute__((weak)) uploadProgress(size_t len, size_t total);
 void    __attribute__((weak)) create_parameters();
 
 //----------------------
-
+using asyncsrv_callback_t = std::function< bool (AsyncWebServerRequest *req)>;
 typedef std::function<void(Interface *interf, JsonObject *data)> actionCallback;
 
 /**
@@ -277,6 +277,20 @@ class EmbUI
 
     void var_dropnulls(const String &key, const char* value);
     void var_dropnulls(const String &key, JsonVariant value);
+
+    // call-backs
+
+    /**
+     * @brief set callback for 404 not found operation
+     * if set, than any 404 request will be passed to callback first before being processed by EmbUI
+     * if callback returns 'true', than EmbUI consders it has already server the request and just quits
+     * if callback returns 'flase', than usual EmbUI 404 handle will be executed
+     * NOTE: EMBUI uses 404 callback for implementing Captive Portal in AP mode
+     * do NOT override it for all requests without knowing how it works internally
+     * @param cb call back function
+     */
+    void on_notfound(asyncsrv_callback_t cb){ cb_not_found = cb; };
+
 #ifdef EMBUI_UDP
     void udp(const String &message);
     void udp();
@@ -321,6 +335,9 @@ class EmbUI
     Task tHouseKeeper;      // Maintenance task, runs every second
     Task tAutoSave;         // config autosave timer
 
+    // external handler for 404 not found 
+    asyncsrv_callback_t cb_not_found = nullptr;
+
     /**
      * call to create system-dependent variables,
      * both run-time and persistent
@@ -344,6 +361,8 @@ class EmbUI
      */
     void http_set_handlers();
 
+    // default callback for http 404 responces
+    void _notFound(AsyncWebServerRequest *request);
 
 #ifdef EMBUI_MQTT
     // MQTT Private Methods and vars

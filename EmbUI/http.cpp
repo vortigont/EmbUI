@@ -31,13 +31,17 @@ uint8_t uploadProgress(size_t len, size_t total);
 String httpCallback(const String &param, const String &value, bool isSet) { return String(); }
 
 // default 404 handler
-void notFound(AsyncWebServerRequest *request) {
+void EmbUI::_notFound(AsyncWebServerRequest *request) {
+
+    if (cb_not_found && cb_not_found(request)) return;      // process redirect via external call-back if set
+
+    // if external cb is not defined or returned false, than handle it via captive-portal or return 404
     if (!embui.paramVariant(P_NOCaptP) && WiFi.getMode() & WIFI_AP){         // return redirect to root page in Captive-Portal mode
         request->redirect("/");
         return;
     }
-
-    request->send(404, FPSTR(PGmimetxt), FPSTR(PG404));
+    request->send(404);
+    //request->send(404, FPSTR(PGmimetxt), FPSTR(PG404));
 }
 
 /**
@@ -107,7 +111,7 @@ void EmbUI::http_set_handlers(){
 
 
     // 404 handler - disabled to allow override in user code
-    //server.onNotFound(notFound);
+    server.onNotFound([this](AsyncWebServerRequest *r){_notFound(r);});
 
 
 /*

@@ -140,7 +140,7 @@ void EmbUI::begin(){
     uint8_t retry_cnt = 3;
 
     // монтируем ФС только один раз при старте
-    while(!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)){
+    while(!LittleFS.begin(true)){   // format FS if corrupted
         LOG(println, F("UI: LittleFS initialization error, retrying..."));
         --retry_cnt;
         delay(100);
