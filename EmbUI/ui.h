@@ -558,8 +558,8 @@ class Interface {
          * @brief - create "range" html field with step, min, max constraints
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
-        template <typename T>
-        void range(const String &id, T value, T min, T max, T step, const String &label, bool directly);
+        template <typename V, typename T>
+        void range(const String &id, V value, T min, T max, T step, const String &label, bool directly);
 
         /**
          * @brief - create drop-down selection list
@@ -710,8 +710,8 @@ void Interface::option(const T &value, const String &label){
     json_frame_add(ui);
 }
 
-template <typename T>
-void Interface::range(const String &id, T value, T min, T max, T step, const String &label, bool directly){
+template <typename V, typename T>
+void Interface::range(const String &id, V value, T min, T max, T step, const String &label, bool directly){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value, label);
     ui.obj[FPSTR(P_type)] = F("range");
     ui.obj[FPSTR(P_min)] = min;
