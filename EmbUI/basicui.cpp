@@ -343,11 +343,11 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
 void set_settings_mqtt(Interface *interf, JsonObject *data){
     if (!data) return;
     // сохраняем настройки в конфиг
-    var_dropnulls(P_m_host, (*data)[P_m_host]);
-    var_dropnulls(P_m_user, (*data)[P_m_user]);
-    var_dropnulls(P_m_pass, (*data)[P_m_pass]);
-    var_dropnulls(P_m_pref, (*data)[P_m_pref]);
-    var_dropnulls(P_m_tupd, (*data)[P_m_tupd]);
+    embui.var_dropnulls(P_m_host, (*data)[P_m_host]);
+    embui.var_dropnulls(P_m_user, (*data)[P_m_user]);
+    embui.var_dropnulls(P_m_pass, (*data)[P_m_pass]);
+    embui.var_dropnulls(P_m_pref, (*data)[P_m_pref]);
+    embui.var_dropnulls(P_m_tupd, (*data)[P_m_tupd]);
     embui.save();
 
     section_settings_frame(interf, data);

@@ -139,9 +139,10 @@ void EmbUI::mqtt(void (*mqttFunction) (const String &topic, const String &payloa
 }
 
 void EmbUI::mqtt_handle(){
+    if (sysData.mqtt_connect) return onMqttConnect();
+    // if not connected, try to reconnect
     String host = cfg[FPSTR(P_m_host)];
-    if (!sysData.wifi_sta || host.isEmpty()) return;
-    if (sysData.mqtt_connect) onMqttConnect();
+    if (!(WiFi.getMode() & WIFI_MODE_STA) || cfg[FPSTR(P_m_host)].as<String>().isEmpty()) return;
     mqtt_reconnect();
 }
 
@@ -156,7 +157,7 @@ void EmbUI::mqtt_reconnect(){
     static unsigned long tmout = 0;
     if (tmout + 15000 > millis()) return;
     tmout = millis();
-    if ( sysData.wifi_sta && !sysData.mqtt_connected) connectToMqtt();
+    if ( (WiFi.getMode() & WIFI_MODE_STA) && !sysData.mqtt_connected) connectToMqtt();
 }
 
 void EmbUI::onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
@@ -229,17 +230,17 @@ void EmbUI::subscribeAll(bool isOnlyGetSet){
 }
 
 void EmbUI::publish(const String &topic, const String &payload, bool retained){
-    if (!sysData.wifi_sta || !sysData.mqtt_enable) return;
+    if (!(WiFi.getMode() & WIFI_MODE_STA) || !sysData.mqtt_enable) return;
     mqttClient.publish(id(topic).c_str(), 0, retained, payload.c_str());
 }
 
 void EmbUI::publish(const String &topic, const String &payload){
-    if (!sysData.wifi_sta || !sysData.mqtt_enable) return;
+    if (!(WiFi.getMode() & WIFI_MODE_STA) || !sysData.mqtt_enable) return;
     mqttClient.publish(id(topic).c_str(), 0, false, payload.c_str());
 }
 
 void EmbUI::publishto(const String &topic, const String &payload, bool retained){
-    if (!sysData.wifi_sta || !sysData.mqtt_enable) return;
+    if (!(WiFi.getMode() & WIFI_MODE_STA) || !sysData.mqtt_enable) return;
     mqttClient.publish(topic.c_str(), 0, retained, payload.c_str());
 }
 
