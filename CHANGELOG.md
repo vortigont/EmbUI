@@ -1,5 +1,16 @@
 ## Changelog
 
+### v2.7.2 - 2023.06.21
++ add inject option to post() method
++ bump ArduinoJson version to 6.21.x
++ add UI iframe method
++ embed FTP server support
+- remove empty mqtt credentials from sysconfig
+* correct issue with text/pwd field based on missing config key
+* correct issues when overwriting null keys
+* fix using JsonVariant for shallow copy
+* fix builds with ESP32 Arduino core 2.0.8 for EmbUI and dependent libs
+
 ### v2.7.1 - 2023.01.26
 + progress bar css resources
 + use ArduinoJson shallow copy feature where applicapble
