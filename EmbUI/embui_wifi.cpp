@@ -14,9 +14,9 @@ version of EmbUI project https://github.com/DmytroKorniienko/EmbUI
 
 #define WIFI_STA_CONNECT_TIMEOUT    10                      // timer for WiFi STA connection attempt 
 //#define WIFI_SET_AP_AFTER_DISCONNECT_TIMEOUT    15      // time after WiFi client disconnects and before internal AP is brought up
-#define WIFI_STA_COOLDOWN_TIMOUT    30                      // timer for STA connect retry
+#define WIFI_STA_COOLDOWN_TIMOUT    90                      // timer for STA connect retry
 #define WIFI_AP_GRACE_PERIOD        15                      // time to delay AP enable/disable, sec
-#define WIFI_BEGIN_DELAY            3
+#define WIFI_BEGIN_DELAY            3                       // a timeout before initiating WiFi-Client connection
 #define WIFI_PSK_MIN_LENGTH         8
 
 // c-tor
