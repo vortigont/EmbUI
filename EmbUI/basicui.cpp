@@ -12,8 +12,6 @@ namespace basicui {
  * Control handlers are bound by literal name with a particular method. This method is invoked
  * by manipulating controls
  * 
- * this method owerrides weak definition in framework
- * 
  */
 void add_sections(){
     LOG(println, F("UI: Creating webui vars"));
@@ -49,7 +47,7 @@ void add_sections(){
  * This code adds "Settings" section to the MENU
  * it is up to you to properly open/close Interface menu json_section
  */
-void opt_setup(Interface *interf, JsonObject *data){
+void menuitem_options(Interface *interf, JsonObject *data){
     if (!interf) return;
     interf->option(FPSTR(T_SETTINGS), FPSTR(T_DICT[lang][TD::D_SETTINGS]));     // пункт меню "настройки"
 }
@@ -124,33 +122,6 @@ void show_section(Interface *interf, JsonObject *data){
             block_settings_sys(interf, nullptr);
     }
 }
-
-/**
- *  BasicUI - general settings
- */
-/*
-void block_settings_gnrl(Interface *interf, JsonObject *data){
-    if (!interf) return;
-
-    interf->json_frame_interface();
-
-    // Headline
-    interf->json_section_main(FPSTR(T_SET_HOSTNAME), FPSTR(T_GNRL_SETUP));
-
-    interf->json_section_line();
-    interf->comment(FPSTR(T_DICT[lang][TD::D_Hostname]));
-    interf->constant(FPSTR(T_EN_OTHER), "", embui.hostname());
-    interf->json_section_end(); // Line
-
-    interf->text(FPSTR(P_hostname), "", F("Set hostname"), false);
-    interf->button_submit(FPSTR(T_SET_HOSTNAME), FPSTR(T_DICT[lang][TD::D_SAVE]), FPSTR(P_GREEN));
-
-    interf->spacer();
-    interf->button(FPSTR(T_SETTINGS), FPSTR(T_DICT[lang][TD::D_EXIT]));
-
-    interf->json_frame_flush();
-};
-*/
 
 /**
  *  BasicUI блок интерфейса настроек WiFi
@@ -372,11 +343,11 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
 void set_settings_mqtt(Interface *interf, JsonObject *data){
     if (!data) return;
     // сохраняем настройки в конфиг
-    var_dropnulls(P_m_host, (*data)[P_m_host]);
-    var_dropnulls(P_m_user, (*data)[P_m_user]);
-    var_dropnulls(P_m_pass, (*data)[P_m_pass]);
-    var_dropnulls(P_m_pref, (*data)[P_m_pref]);
-    var_dropnulls(P_m_tupd, (*data)[P_m_tupd]);
+    embui.var_dropnulls(P_m_host, (*data)[P_m_host]);
+    embui.var_dropnulls(P_m_user, (*data)[P_m_user]);
+    embui.var_dropnulls(P_m_pass, (*data)[P_m_pass]);
+    embui.var_dropnulls(P_m_pref, (*data)[P_m_pref]);
+    embui.var_dropnulls(P_m_tupd, (*data)[P_m_tupd]);
     embui.save();
 
     section_settings_frame(interf, data);

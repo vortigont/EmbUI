@@ -3,6 +3,8 @@
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
 // and others people
 
+#pragma once
+
 // Empty string
 static const char P_EMPTY[] = "";
 
@@ -38,6 +40,7 @@ static const char P_js[] PROGMEM = "js";
 static const char P_input[] PROGMEM = "input";
 static const char P_interface[] PROGMEM = "interface";
 static const char P_label[] PROGMEM = "label";
+static const char P_manifest[] PROGMEM = "manifest";
 static const char P_max[] PROGMEM = "max";
 static const char P_menu[] PROGMEM = "menu";
 static const char P_min[] PROGMEM = "min";

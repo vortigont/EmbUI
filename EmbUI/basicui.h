@@ -63,7 +63,8 @@ namespace basicui {
    * This code adds "Settings" section to the MENU
    * it is up to you to properly open/close Interface json_section
    */
-  void opt_setup(Interface *interf, JsonObject *data);
+  void menuitem_options(Interface *interf, JsonObject *data);
+  inline void opt_setup(Interface *interf, JsonObject *data){ menuitem_options(interf, data); };       // deprecated
 
   void show_section(Interface *interf, JsonObject *data);
   void block_settings_gnrl(Interface *interf, JsonObject *data);

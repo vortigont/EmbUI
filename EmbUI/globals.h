@@ -49,4 +49,7 @@
 // compat definiton
 #define EMBUIVER                EMBUI_VERSION_STRING
 
+// API version for JS frontend
+#define EMBUI_JSAPI             2
+
 typedef std::function<void(void)> callback_function_t;
