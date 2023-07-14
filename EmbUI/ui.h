@@ -6,6 +6,7 @@
 #pragma once
 
 #include "EmbUI.h"
+#include <type_traits>
 
 // static json obj size for tiny ui elements, like checkboxes, number inputs, etc...
 #ifndef TINY_JSON_SIZE
@@ -71,23 +72,84 @@ enum class ui_param_t:uint8_t {
     value
 };
 
-template <size_t desiredCapacity = UI_DEFAULT_JSON_SIZE>
+// type traits we use for various literals
+namespace embui_traits{
+
+template<typename T>
+struct is_string : public std::disjunction<
+        std::is_same<char *, std::decay_t<T>>,
+        std::is_same<const char *, std::decay_t<T>>,
+        std::is_same<std::string, std::decay_t<T>>,
+        std::is_same<std::string_view, std::decay_t<T>>,
+        std::is_same<String, std::decay_t<T>>
+    > {};
+
+// value helper
+template<typename T>
+inline constexpr bool is_string_v = is_string<T>::value;
+
+template<typename T>
+inline constexpr bool is_string_t = is_string<T>::type;
+
+template<typename T>
+typename std::enable_if<is_string_v<T>,bool>::type
+is_empty_string(const T &label){
+    if constexpr(std::is_same_v<std::string_view, std::decay_t<decltype(label)>>)       // specialisation for std::string_view
+        return label.empty();
+    if constexpr(std::is_same_v<std::string, std::decay_t<decltype(label)>>)            // specialisation for std::string
+        return label.empty();
+    if constexpr(std::is_same_v<String, std::decay_t<decltype(label)>>)                 // specialisation for String
+        return label.isEmpty();
+    if constexpr(std::is_same_v<const char*, std::decay_t<decltype(label)>>)            // specialisation for const char*
+        return not (label && *label);
+    if constexpr(std::is_same_v<char*, std::decay_t<decltype(label)>>)                  // specialisation for char*
+        return not (label && *label);
+
+    return false;   // UB, not a known string type for us
+};
+
+}
+
+template <size_t jdoc_capacity_t = UI_DEFAULT_JSON_SIZE>
 class UIelement {
     ui_element_t _t;
 
 public:
-    StaticJsonDocument<desiredCapacity> obj;
+    StaticJsonDocument<jdoc_capacity_t> obj;
 
-    UIelement(ui_element_t t, const String &id);
+    template <typename T>
+    UIelement(ui_element_t t, const T& id) : _t(t) {
+        if (!embui_traits::is_empty_string(id))
+            obj[P_id] = id;
+
+        // check if element type is within allowed range
+        if ((uint8_t)t < UI_T_DICT_SIZE){
+            switch(t){
+                case ui_element_t::custom :     // some elements does not need html_type
+                case ui_element_t::option :
+                case ui_element_t::value :
+                    return;
+                default :                       // default is to set element type from dict
+                    obj[P_html] = UI_T_DICT[static_cast<uint8_t>(t)];
+            }
+        }
+    };
+
     UIelement(ui_element_t t) : UIelement(t, (char*)0) {};
-    template <typename T>
-    UIelement(ui_element_t t, const String &id, const T &value, const String &label) : UIelement(t, id ) {  obj[P_value] = value; if (!label.isEmpty()) obj[P_label] = label; };
+
+    template <typename T, typename V>
+    UIelement(ui_element_t t, const T &id, const V &value, const T &label) : UIelement(t, id ){
+        obj[P_value] = value;
+        if (!embui_traits::is_empty_string(label))
+            obj[P_label] = label;
+    };
 
     template <typename T>
-    void param(ui_param_t key, const T &value){ obj[UI_KEY_DICT[(uint8_t)key]] = value; };
+    void param(ui_param_t key, const T &value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
 
-    template <typename T>
-    void param(const String &key, const T &value){ obj[key] = value; };
+    template <typename K, typename V>
+        typename std::enable_if<embui_traits::is_string_v<K>,void>::type
+    param(const K &key, const V &value){ obj[key] = value; };
     
     /**
      * @brief set 'html' flag for element
@@ -248,8 +310,8 @@ class Interface {
          * attempts to retry on mem overflow
          */
         void json_frame_add(const JsonObject &obj);
-        template <size_t desiredCapacity>
-        void json_frame_add( UIelement<desiredCapacity> &ui){ json_frame_add(ui.obj.template as<JsonObject>()); }
+        template <size_t jdoc_capacity_t>
+        void json_frame_add( UIelement<jdoc_capacity_t> &ui){ json_frame_add(ui.obj.template as<JsonObject>()); }
 
         /**
          * @brief purge all current section data
@@ -629,24 +691,6 @@ class Interface {
 
 /* *** TEMPLATED CLASSES implementation follows *** */
 
-template <size_t desiredCapacity>
-UIelement<desiredCapacity>::UIelement(ui_element_t t, const String &id) : _t(t) {
-    if (!id.isEmpty())
-        obj[FPSTR(P_id)] = id;
-
-    // check if element type is withing allowed range
-    if ((uint8_t)t < UI_T_DICT_SIZE){
-        switch(t){
-            case ui_element_t::custom :     // some elements does not need html_type
-            case ui_element_t::option :
-            case ui_element_t::value :
-                return;
-            default :                       // default is to set element type from dict
-                obj[P_html] = UI_T_DICT[(uint8_t)t];
-        }
-    }
-}
-
 template <typename T>
 void Interface::button_generic(const String &id, const T &value, const String &label, const String &color, button_t type){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::button, id, value, label);
@@ -705,8 +749,7 @@ void Interface::number_constrained(const String &id, T value, const String &labe
 
 template <typename T>
 void Interface::option(const T &value, const String &label){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::option, (char*)0, value, label);
-
+    UIelement<TINY_JSON_SIZE> ui(ui_element_t::option, static_cast<const char*>(0), value, label.c_str());
     json_frame_add(ui);
 }
 
