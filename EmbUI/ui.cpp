@@ -7,14 +7,6 @@
 
 #define FRAME_ADD_RETRY 3
 
-
-void Interface::comment(const String &id, const String &label){
-    UIelement<UI_DEFAULT_JSON_SIZE * 2> ui(ui_element_t::comment, id);     // use a bit larger buffer for long texts
-    ui.obj[FPSTR(P_label)] = label;
-
-    json_frame_add(ui);
-}
-
 void Interface::file_form(const String &id, const String &action, const String &label, const String &opt){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::file, id);
     ui.obj[FPSTR(P_type)] = FPSTR(P_file);
