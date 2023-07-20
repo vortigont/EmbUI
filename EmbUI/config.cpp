@@ -28,8 +28,8 @@ void EmbUI::save(const char *_cfg, bool force){
     File configFile;
     if (_cfg == nullptr) {
         LOG(println, F("UI: Save default main config file"));
-        LittleFS.rename(FPSTR(P_cfgfile),FPSTR(P_cfgfile_bkp));
-        embuifs::serialize2file(cfg, FPSTR(P_cfgfile));
+        LittleFS.rename(P_cfgfile,P_cfgfile_bkp);
+        embuifs::serialize2file(cfg, P_cfgfile);
     } else {
         LOG(printf_P, PSTR("UI: Save %s main config file\n"), _cfg);
         embuifs::serialize2file(cfg, _cfg);
@@ -44,10 +44,10 @@ void EmbUI::load(const char *cfgfile){
         if (embuifs::deserializeFile(cfg, cfgfile))
             return;
     } else {
-        String f(FPSTR(P_cfgfile));
+        String f(P_cfgfile);
         if (!embuifs::deserializeFile(cfg, f.c_str())){
             LOG(println, F("...failed, trying with backup"));
-            f = FPSTR(P_cfgfile_bkp);
+            f = P_cfgfile_bkp;
             if (embuifs::deserializeFile(cfg, f.c_str())){
                 LOG(println, F("BackUp load OK!"));
                 return;

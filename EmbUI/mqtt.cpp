@@ -11,11 +11,11 @@ extern EmbUI embui;
 void EmbUI::connectToMqtt() {
     LOG(println, PSTR("UI: Connecting to MQTT..."));
 
-    m_pref=param(FPSTR(P_m_pref));
-    m_host=param(FPSTR(P_m_host));
-    m_port=param(FPSTR(P_m_port));
-    m_user=param(FPSTR(P_m_user));
-    m_pass=param(FPSTR(P_m_pass));
+    m_pref=param(P_m_pref);
+    m_host=param(P_m_host);
+    m_port=param(P_m_port);
+    m_user=param(P_m_user);
+    m_pass=param(P_m_pass);
     m_will=id(F("embui/pub/online"));
     
     IPAddress ip; 
@@ -62,11 +62,11 @@ void EmbUI::mqtt(const String &pref, const String &host, int port, const String 
         return;   // выходим если host не задан
     }
 
-    if(m_pref == FPSTR(P_null)) var(FPSTR(P_m_pref), pref);
-    if(m_host == FPSTR(P_null)) var(FPSTR(P_m_host), host);
-    if(m_port == FPSTR(P_null)) var(FPSTR(P_m_port), String(port));
-    if(m_user == FPSTR(P_null)) var(FPSTR(P_m_user), user);
-    if(m_pass == FPSTR(P_null)) var(FPSTR(P_m_pass), pass);
+    if(m_pref == P_null) var(P_m_pref, pref);
+    if(m_host == P_null) var(P_m_host, host);
+    if(m_port == P_null) var(P_m_port, String(port));
+    if(m_user == P_null) var(P_m_user, user);
+    if(m_pass == P_null) var(P_m_pass, pass);
 
     LOG(println, PSTR("UI: MQTT Init completed"));
 
@@ -141,8 +141,8 @@ void EmbUI::mqtt(void (*mqttFunction) (const String &topic, const String &payloa
 void EmbUI::mqtt_handle(){
     if (sysData.mqtt_connect) return onMqttConnect();
     // if not connected, try to reconnect
-    String host = cfg[FPSTR(P_m_host)];
-    if (!(WiFi.getMode() & WIFI_MODE_STA) || cfg[FPSTR(P_m_host)].as<String>().isEmpty()) return;
+    String host = cfg[P_m_host];
+    if (!(WiFi.getMode() & WIFI_MODE_STA) || cfg[P_m_host].as<String>().isEmpty()) return;
     mqtt_reconnect();
 }
 
@@ -176,7 +176,7 @@ void EmbUI::onMqttConnect(){
     LOG(println,F("UI: Connected to MQTT."));
     if(sysData.mqtt_remotecontrol){
         subscribeAll();
-        String strue = FPSTR(P_true);
+        String strue = P_true;
         mqttClient.publish(m_will.c_str(), 0, true, strue.c_str());
         httpCallback(F("sys_AUTODISCOVERY"), "", false); // реализация AUTODISCOVERY
     }
@@ -191,7 +191,7 @@ void EmbUI::onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProp
     strncpy(buffer, payload, len);
 
     String tpc(topic);
-    String m_pref = embui.param(FPSTR(P_m_pref)); 
+    String m_pref = embui.param(P_m_pref); 
     if (!m_pref.isEmpty()) tpc = tpc.substring(m_pref.length() + 1, tpc.length());
 
     if (tpc.equals(F("embui/get/config"))) {

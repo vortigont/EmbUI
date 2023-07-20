@@ -7,7 +7,7 @@ FTPServer *ftpsrv = nullptr;
 
 void ftp_start(void){
   if (!ftpsrv) ftpsrv = new FTPServer(LittleFS);
-  if (ftpsrv) ftpsrv->begin(embui.paramVariant(FPSTR(P_ftp_usr)) | String(FPSTR(P_ftp)), embui.paramVariant(FPSTR(P_ftp_pwd)) | String(P_ftp));
+  if (ftpsrv) ftpsrv->begin(embui.paramVariant(P_ftp_usr) | String(P_ftp), embui.paramVariant(P_ftp_pwd) | String(P_ftp));
 }
 
 void ftp_stop(void){
@@ -30,13 +30,13 @@ void block_settings_ftp(Interface *interf, JsonObject *data){
     interf->json_frame_interface();
 
     // Headline
-    interf->json_section_main(FPSTR(T_SET_FTP), FPSTR(T_DICT[lang][TD::D_FTPSRV]));
+    interf->json_section_main(T_SET_FTP, T_DICT[lang][TD::D_FTPSRV]);
 
-    interf->checkbox(FPSTR(P_ftp), ftp_status(), F("Enable FTP Server"));     // FTP On/off
+    interf->checkbox(P_ftp, ftp_status(), F("Enable FTP Server"));     // FTP On/off
 
-    interf->text(FPSTR(P_ftp_usr), embui.paramVariant(FPSTR(P_ftp_usr)) | String(FPSTR(P_ftp)), "FTP login");
-    interf->password(FPSTR(P_ftp_pwd), embui.paramVariant(FPSTR(P_ftp_pwd)) | String(FPSTR(P_ftp)), FPSTR(T_DICT[lang][TD::D_Password]));
-    interf->button_submit(FPSTR(T_SET_FTP), FPSTR(T_DICT[lang][TD::D_SAVE]), FPSTR(P_BLUE));
+    interf->text(P_ftp_usr, embui.paramVariant(P_ftp_usr) | String(P_ftp), "FTP login");
+    interf->password(P_ftp_pwd, embui.paramVariant(P_ftp_pwd) | String(P_ftp), T_DICT[lang][TD::D_Password]);
+    interf->button_submit(T_SET_FTP, T_DICT[lang][TD::D_SAVE], P_BLUE);
 
     // close and send frame
     interf->json_frame_flush(); // main
@@ -45,21 +45,21 @@ void block_settings_ftp(Interface *interf, JsonObject *data){
 void set_settings_ftp(Interface *interf, JsonObject *data){
     if (!data) return;
 
-    bool newstate = (*data)[FPSTR(P_ftp)];
+    bool newstate = (*data)[P_ftp];
 
-    embui.var_dropnulls(FPSTR(P_ftp), newstate);                           // ftp on/off
+    embui.var_dropnulls(P_ftp, newstate);                           // ftp on/off
 
     // set ftp login
-    if ((*data)[FPSTR(P_ftp_usr)] == FPSTR(P_ftp))
-      embui.var_remove(FPSTR(P_ftp_usr));   // do not save default login
+    if ((*data)[P_ftp_usr] == P_ftp)
+      embui.var_remove(P_ftp_usr);   // do not save default login
     else
-      embui.var_dropnulls(FPSTR(P_ftp_usr), (*data)[FPSTR(P_ftp_usr)]);
+      embui.var_dropnulls(P_ftp_usr, (*data)[P_ftp_usr]);
 
     // set ftp passwd
-    if ((*data)[FPSTR(P_ftp_pwd)] == FPSTR(P_ftp))
-      embui.var_remove(FPSTR(P_ftp_pwd));
+    if ((*data)[P_ftp_pwd] == P_ftp)
+      embui.var_remove(P_ftp_pwd);
     else
-      embui.var_dropnulls(FPSTR(P_ftp_pwd), (*data)[FPSTR(P_ftp_pwd)]);    // do not save default pwd
+      embui.var_dropnulls(P_ftp_pwd, (*data)[P_ftp_pwd]);    // do not save default pwd
 
     ftp_stop();
     LOG(println, F("UI: Stopping FTP Server"));

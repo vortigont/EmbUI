@@ -9,23 +9,23 @@
 
 void Interface::file_form(const String &id, const String &action, const String &label, const String &opt){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::file, id);
-    ui.obj[FPSTR(P_type)] = FPSTR(P_file);
-    ui.obj[FPSTR(P_action)] = action;
-    ui.obj[FPSTR(P_label)] = label;
+    ui.obj[P_type] = P_file;
+    ui.obj[P_action] = action;
+    ui.obj[P_label] = label;
     if (opt.length()) ui.obj["opt"] = opt;
     json_frame_add(ui);
 }
 
 void Interface::iframe(const String &id, const String &value){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::iframe, id);
-    ui.obj[FPSTR(P_type)] = FPSTR(P_iframe);
-    ui.obj[FPSTR(P_value)] = value;
+    ui.obj[P_type] = P_iframe;
+    ui.obj[P_value] = value;
     json_frame_add(ui);
 }
 
 void Interface::spacer(const String &label){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::spacer);
-    if (label.length()) ui.obj[FPSTR(P_label)] = label;
+    if (label.length()) ui.obj[P_label] = label;
     json_frame_add(ui);
 }
 
@@ -42,7 +42,7 @@ void Interface::textarea(const String &id, const String &value, const String &la
  */
 void Interface::json_frame(const String &type){
     json[F("pkg")] = type;
-    json[FPSTR(P_final)] = false;
+    json[P_final] = false;
 
     json_section_begin(String(micros()));
 }
@@ -57,7 +57,7 @@ void Interface::json_frame_add(const JsonObject &jobj){
         --_cnt;
         #ifdef EMBUI_DEBUG
             if (!_cnt)
-                LOG(println, FPSTR(P_ERR_obj2large));
+                LOG(println, P_ERR_obj2large);
         #endif
     } while (!json_frame_enqueue(jobj) && _cnt );
 };
@@ -97,7 +97,7 @@ bool Interface::json_frame_enqueue(const JsonObject &obj, bool shallow){
 void Interface::json_frame_flush(){
     if (!section_stack.size()) return;
     LOG(println, F("UI: json_frame_flush"));
-    json[FPSTR(P_final)] = true;
+    json[P_final] = true;
     json_section_end();
     json_frame_send();
     json_frame_clear();
@@ -108,10 +108,10 @@ void Interface::json_frame_next(){
     JsonObject obj = json.to<JsonObject>();
     for (unsigned i = 0; i < section_stack.size(); i++) {
         if (i) obj = section_stack[i - 1]->block.createNestedObject();
-        obj[FPSTR(P_section)] = section_stack[i]->name;
+        obj[P_section] = section_stack[i]->name;
         obj[F("idx")] = section_stack[i]->idx;
         LOG(printf_P, PSTR("UI: section:'%s' [#%u] idx:%u\n"), section_stack[i]->name.c_str(), i, section_stack[i]->idx);
-        section_stack[i]->block = obj.createNestedArray(FPSTR(P_block));
+        section_stack[i]->block = obj.createNestedArray(P_block);
     }
     LOG(printf_P, PSTR("json_frame_next: [#%u], mem:%u/%u\n"), section_stack.size()-1, obj.memoryUsage(), json.capacity());   // section index counts from 0
 }
@@ -136,14 +136,14 @@ void Interface::json_section_begin(const String &name, const String &label, bool
 
 void Interface::json_section_begin(const String &name, const String &label, bool main, bool hidden, bool line, JsonObject obj){
     if (name.isEmpty()) obj[P_section] = P_EMPTY; else obj[P_section] = name;
-    if (!label.isEmpty()) obj[FPSTR(P_label)] = label;
+    if (!label.isEmpty()) obj[P_label] = label;
     if (main) obj[F("main")] = true;
-    if (hidden) obj[FPSTR(P_hidden)] = true;
+    if (hidden) obj[P_hidden] = true;
     if (line) obj[F("line")] = true;
 
     section_stack_t *section = new section_stack_t;
     section->name = name;
-    section->block = obj.createNestedArray(FPSTR(P_block));
+    section->block = obj.createNestedArray(P_block);
     section->idx = 0;
     section_stack.add(section);
     LOG(printf_P, PSTR("UI: section #%u begin:'%s', %u b free\n"), section_stack.size()-1, name.isEmpty() ? P_EMPTY : name.c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0

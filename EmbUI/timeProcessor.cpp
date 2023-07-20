@@ -85,11 +85,11 @@ void TimeProcessor::tzsetup(const char* tz){
      */
     if (tz[0] == 0x3C){     // check if first char is '<'
       String _tz(tz);
-      String _tzfix(FPSTR(P_LOC));
+      String _tzfix(P_LOC);
       if (_tz.indexOf('<',1) > 0){  // there might be two <> quotes
     	//LOG(print, "2nd pos: "); LOG(println, _tz.indexOf('<',1)); 
         _tzfix += _tz.substring(_tz.indexOf('>')+1, _tz.indexOf('<',1));
-        _tzfix += FPSTR(P_LOC);
+        _tzfix += P_LOC;
       }
       _tzfix += _tz.substring(_tz.lastIndexOf('>')+1, _tz.length());
       setenv("TZ", _tzfix.c_str(), 1/*overwrite*/);
@@ -243,13 +243,13 @@ void WorldTimeAPI::getTimeHTTP()
     String result((char *)0);
     result.reserve(TIMEAPI_BUFSIZE);
     if(tzone.length()){
-        String url(FPSTR(PG_timeapi_tz_url));
+        String url(PG_timeapi_tz_url);
         url+=tzone;
         getHttpData(result, url);
     }
 
     if(!result.length()){
-        String url(FPSTR(PG_timeapi_ip_url));
+        String url(PG_timeapi_ip_url);
         if(!getHttpData(result, url))
             return;
     }

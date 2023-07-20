@@ -401,15 +401,15 @@ class EmbUI
           SSDP.setName(hostname());
           SSDP.setSerialNumber(String(chipId));
           SSDP.setURL(F("/"));
-          SSDP.setModelName(FPSTR(PGnameModel));
-          SSDP.setModelNumber(FPSTR(PGversion));
+          SSDP.setModelName(PGnameModel);
+          SSDP.setModelNumber(PGversion);
           SSDP.setModelURL(String(F("http://"))+(WiFi.status() != WL_CONNECTED ? WiFi.softAPIP().toString() : WiFi.localIP().toString()));
-          SSDP.setManufacturer(FPSTR(PGnameManuf));
-          SSDP.setManufacturerURL(FPSTR(PGurlManuf));
+          SSDP.setManufacturer(PGnameManuf);
+          SSDP.setManufacturerURL(PGurlManuf);
           SSDP.begin();
 
           (&server)->on(PSTR("/description.xml"), HTTP_GET, [&](AsyncWebServerRequest *request){
-            request->send(200, FPSTR(PGmimexml), getSSDPSchema());
+            request->send(200, PGmimexml, getSSDPSchema());
           });
     }
     
@@ -440,19 +440,19 @@ class EmbUI
         s += String(chipId);
         s +=F("</serialNumber>\r\n");
         s +=F("\t<modelName>");
-        s += FPSTR(PGnameModel);
+        s += PGnameModel;
         s +=F("</modelName>\r\n");
         s +=F("\t<modelNumber>");
-        s += FPSTR(PGversion);
+        s += PGversion;
         s +=F("</modelNumber>\r\n");
         s +=F("\t<modelURL>");
-        s += FPSTR(PGurlModel);
+        s += PGurlModel;
         s +=F("</modelURL>\r\n");
         s +=F("\t<manufacturer>");
-        s += FPSTR(PGnameManuf);
+        s += PGnameManuf;
         s +=F("</manufacturer>\r\n");
         s +=F("\t<manufacturerURL>");
-        s += FPSTR(PGurlManuf);
+        s += PGurlManuf;
         s +=F("</manufacturerURL>\r\n");
         //s +=F("\t<UDN>0543bd4e-53c2-4f33-8a25-1f75583a19a2");
         s +=F("\t<UDN>0543bd4e-53c2-4f33-8a25-1f7558");

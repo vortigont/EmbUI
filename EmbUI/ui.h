@@ -205,7 +205,6 @@ public:
 template <size_t S = UI_DEFAULT_JSON_SIZE>
 class UI_button : public UIelement<S> {
 public:
-//    using UIelement<S>::obj;
     using UIelement<S>::value;
     using UIelement<S>::color;
 

@@ -158,9 +158,9 @@ void EmbUI::begin(){
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
 
     // restore Time settings
-    TimeProcessor::getInstance().setcustomntp(paramVariant(FPSTR(P_userntp)).as<const char*>());
-    TimeProcessor::getInstance().tzsetup(paramVariant(FPSTR(P_TZSET)).as<String>().substring(4).c_str());  // cut off 4 chars of html selector index
-    if (paramVariant(FPSTR(P_noNTPoDHCP)))
+    TimeProcessor::getInstance().setcustomntp(paramVariant(P_userntp).as<const char*>());
+    TimeProcessor::getInstance().tzsetup(paramVariant(P_TZSET).as<String>().substring(4).c_str());  // cut off 4 chars of html selector index
+    if (paramVariant(P_noNTPoDHCP))
         TimeProcessor::getInstance().ntpodhcp(false);
 
     // start-up WiFi
@@ -185,15 +185,15 @@ void EmbUI::begin(){
 
 #ifdef EMBUI_MQTT
     // try to connect to mqtt if mqtt hostname is defined
-    if (param(FPSTR(P_m_host)).length())
-        mqtt(param(FPSTR(P_m_pref)), param(FPSTR(P_m_host)), paramVariant(FPSTR(P_m_port)), param(FPSTR(P_m_user)), param(FPSTR(P_m_pass)), mqtt_emptyFunction, false); // init mqtt
+    if (param(P_m_host).length())
+        mqtt(param(P_m_pref), param(P_m_host), paramVariant(P_m_port), param(P_m_user), param(P_m_pass), mqtt_emptyFunction, false); // init mqtt
 #endif
 #ifdef USE_SSDP
     ssdp_begin(); LOG(println, F("Start SSDP"));
 #endif
 // FTP server
 #ifndef EMBUI_NOFTP
-    if (paramVariant(FPSTR(P_ftp))) ftp_start();
+    if (paramVariant(P_ftp)) ftp_start();
 #endif
 }
 
@@ -384,7 +384,7 @@ void EmbUI::var_dropnulls(const String &key, JsonVariant value){
  */
 const char* EmbUI::hostname(){
 
-    JsonVariantConst h = paramVariant(FPSTR(P_hostname));
+    JsonVariantConst h = paramVariant(P_hostname);
     if (h && strlen(h.as<const char*>()))
         return h.as<const char*>();
 
@@ -399,7 +399,7 @@ const char* EmbUI::hostname(){
 }
 
 const char* EmbUI::hostname(const char* name){
-    var_dropnulls(FPSTR(P_hostname), (char*)name);
+    var_dropnulls(P_hostname, (char*)name);
     return hostname();
 };
 

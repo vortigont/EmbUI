@@ -41,7 +41,6 @@ void EmbUI::_notFound(AsyncWebServerRequest *request) {
         return;
     }
     request->send(404);
-    //request->send(404, FPSTR(PGmimetxt), FPSTR(PG404));
 }
 
 /**
@@ -64,15 +63,15 @@ void EmbUI::http_set_handlers(){
                 result = httpCallback(p->name(), p->value(), !p->value().isEmpty());
             }
         }
-        request->send(200, FPSTR(PGmimetxt), result);
+        request->send(200, PGmimetxt, result);
     });
 
 
     // returns run-time system config serialized in JSON
     server.on(PSTR("/config"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
 
-        AsyncResponseStream *response = request->beginResponseStream(FPSTR(PGmimejson));
-        response->addHeader(FPSTR(PGhdrcachec), FPSTR(PGnocache));
+        AsyncResponseStream *response = request->beginResponseStream(PGmimejson);
+        response->addHeader(PGhdrcachec, PGnocache);
 
         serializeJson(cfg, *response);
 
@@ -81,7 +80,7 @@ void EmbUI::http_set_handlers(){
 
 
     server.on(PSTR("/version"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        request->send(200, FPSTR(PGmimetxt), F("EmbUI ver: " TOSTRING(EMBUIVER)));
+        request->send(200, PGmimetxt, F("EmbUI ver: " TOSTRING(EMBUIVER)));
     });
 
     // postponed reboot (TODO: convert to CMD)
@@ -101,7 +100,7 @@ void EmbUI::http_set_handlers(){
         out += ESP.getFreeHeap();
         out += F("\nWS Client: ");
         out += ws.count();
-        request->send(200, FPSTR(PGmimetxt), out);
+        request->send(200, PGmimetxt, out);
     });
 
     // serve all static files from LittleFS root /
@@ -140,7 +139,7 @@ void EmbUI::http_set_handlers(){
             }
         }
         json += F("]");
-        request->send(200, FPSTR(PGmimejson), json);
+        request->send(200, PGmimejson, json);
     });
 */
 
@@ -148,7 +147,7 @@ void EmbUI::http_set_handlers(){
     // может пригодится позже, файлы отдаются как статика
 
     server.on(PSTR("/config.json"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        request->send(LittleFS, FPSTR(P_cfgfile), String(), true);
+        request->send(LittleFS, P_cfgfile, String(), true);
     });
 
     server.on(PSTR("/events_config.json"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
