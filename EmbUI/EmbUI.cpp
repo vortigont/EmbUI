@@ -185,7 +185,7 @@ void EmbUI::begin(){
 
 #ifdef EMBUI_MQTT
     // try to connect to mqtt if mqtt hostname is defined
-    if (param(P_m_host).length())
+    if (param(String(P_m_host)).length())
         mqtt(param(P_m_pref), param(P_m_host), paramVariant(P_m_port), param(P_m_user), param(P_m_pass), mqtt_emptyFunction, false); // init mqtt
 #endif
 #ifdef USE_SSDP
