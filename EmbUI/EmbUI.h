@@ -174,7 +174,8 @@ class EmbUI
      * this method allows accessing cfg param JsonVariantConst and use member functions, like .as<T>
      * unlike param(), this method does not Stringify config values
      */
-    JsonVariantConst paramVariant(const String &key){ return cfg[key]; }
+    template <typename T>
+    JsonVariantConst paramVariant(const T &key) const { return cfg[key]; }
 
 
     bool isparamexists(const char* key){ return cfg.containsKey(key);}
