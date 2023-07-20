@@ -89,7 +89,8 @@ struct is_string : public std::disjunction<
         std::is_same<const char *, std::decay_t<T>>,
         std::is_same<std::string, std::decay_t<T>>,
         std::is_same<std::string_view, std::decay_t<T>>,
-        std::is_same<String, std::decay_t<T>>
+        std::is_same<String, std::decay_t<T>>,
+        std::is_same<StringSumHelper, std::decay_t<T>>          // String derived helpre class
     > {};
 
 // value helper
