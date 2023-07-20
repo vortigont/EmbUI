@@ -632,8 +632,8 @@ class Interface {
         /**
          * @brief - create an option element for "select" drop-down list
          */
-        template <typename T>
-        void option(const T &value, const String &label);
+        template <typename T, typename L>
+        void option(const T &value, const L &label);
 
         inline void password(const String &id, const String &value, const String &label){ html_input(id, P_password, value, label); };
         inline void password(const String &id, const String &label){ html_input(id, P_password, embui->param(id), label); };
@@ -652,15 +652,9 @@ class Interface {
          * @brief - create "range" html field with step, min, max constraints
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
-        template <typename T>
-        inline void range(const String &id, T min, T max, T step, const String &label, bool directly = false){ range(id, embui->paramVariant(id), min, max, step, label, directly); };
-
-        /**
-         * @brief - create "range" html field with step, min, max constraints
-         * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
-         */
-        template <typename V, typename T>
-        void range(const String &id, V value, T min, T max, T step, const String &label, bool directly);
+        template <typename ID, typename V, typename T, typename L>
+            typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+        range(const ID &id, V value, T min, T max, T step, const L &label, bool onChange = false);
 
         /**
          * @brief - create drop-down selection list
@@ -805,20 +799,23 @@ void Interface::number_constrained(const String &id, T value, const String &labe
     json_frame_add(ui);
 };
 
-template <typename T>
-void Interface::option(const T &value, const String &label){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::option, static_cast<const char*>(0), value, label.c_str());
+template <typename T, typename L>
+void Interface::option(const T &value, const L &label){
+    UIelement<TINY_JSON_SIZE> ui(ui_element_t::option, static_cast<const char*>(0), value);
+    ui.label(label);
     json_frame_add(ui);
 }
 
-template <typename V, typename T>
-void Interface::range(const String &id, V value, T min, T max, T step, const String &label, bool directly){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value, label);
-    ui.obj[P_type] = F("range");
+template <typename ID, typename V, typename T, typename L>
+    typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+Interface::range(const ID &id, V value, T min, T max, T step, const L &label, bool onChange){
+    UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
+    ui.obj[P_type] = "range";
     ui.obj[P_min] = min;
     ui.obj[P_max] = max;
     ui.obj[P_step] = step;
-    if (directly) ui.obj[P_directly] = true;
+    ui.label(label);
+    if (onChange) ui.obj[P_directly] = true;
     json_frame_add(ui);
 };
 
