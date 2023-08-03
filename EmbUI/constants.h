@@ -6,78 +6,70 @@
 #pragma once
 
 // Empty string
-static const char P_EMPTY[] = "";
+#define P_EMPTY static_cast<const char*>(0)
 
 // Interface
-static const char P_action[] PROGMEM = "action";
-static const char P_block[] PROGMEM = "block";
-static const char P_button[] PROGMEM = "button";
-static const char P_color[] PROGMEM = "color";
-static const char P_chckbox[] PROGMEM = "checkbox";
-static const char P_class[] PROGMEM = "class";
-static const char P_comment[] PROGMEM = "comment";
-static const char P_const[] PROGMEM = "const";
-static const char P_data[] PROGMEM = "data";
-static const char P_date[] PROGMEM = "date";
-static const char P_datetime[] PROGMEM = "datetime-local";
-static const char P_display[] PROGMEM = "display";
-static const char P_div[] PROGMEM = "div";
-static const char P_directly[] PROGMEM = "directly";
-static const char P_email[] PROGMEM = "email";
-static const char P_false[] PROGMEM = "0";
-static const char P_file[] PROGMEM = "file";
-static const char P_final[] PROGMEM = "final";
-static const char P_form[] PROGMEM = "form";
-static const char P_frame[] PROGMEM = "frame";
-static const char P_ftp[] PROGMEM = "ftp";
-static const char P_ftp_usr[] PROGMEM = "ftp_usr";
-static const char P_ftp_pwd[] PROGMEM = "ftp_pwd";
-static const char P_hidden[] PROGMEM = "hidden";
-static const char P_html[] PROGMEM = "html";
-static const char P_id[] PROGMEM = "id";
-static const char P_iframe[] PROGMEM = "iframe";
-static const char P_js[] PROGMEM = "js";
-static const char P_input[] PROGMEM = "input";
-static const char P_interface[] PROGMEM = "interface";
-static const char P_label[] PROGMEM = "label";
-static const char P_manifest[] PROGMEM = "manifest";
-static const char P_max[] PROGMEM = "max";
-static const char P_menu[] PROGMEM = "menu";
-static const char P_min[] PROGMEM = "min";
-static const char P_null[] PROGMEM = "null";
-static const char P_number[] PROGMEM = "number";
-static const char P_options[] PROGMEM = "options";
-static const char P_params[] PROGMEM = "params";
-static const char P_password[] PROGMEM = "password";
-static const char P_pkg[] PROGMEM = "pkg";
-static const char P_progressbar[] PROGMEM = "pbar";
-static const char P_range[] PROGMEM = "range";
-static const char P_section[] PROGMEM = "section";
-static const char P_select[] PROGMEM = "select";
-static const char P_spacer[] PROGMEM = "spacer";
-static const char P_step[] PROGMEM = "step";
-static const char P_submit[] PROGMEM = "submit";
-static const char P_text[] PROGMEM = "text";
-static const char P_textarea[] PROGMEM = "textarea";
-static const char P_time[] PROGMEM = "time";
-static const char P_true[] PROGMEM = "1";
-static const char P_type[] PROGMEM = "type";
-static const char P_url[] PROGMEM = "url";
-static const char P_value[] PROGMEM = "value";
-static const char P_wifi[] PROGMEM = "wifi";
-
-
-
-
-
-
-
-
+static constexpr const char* P_action = "action";
+static constexpr const char* P_block = "block";
+static constexpr const char* P_button = "button";
+static constexpr const char* P_color = "color";
+static constexpr const char* P_chckbox = "checkbox";
+static constexpr const char* P_class = "class";
+static constexpr const char* P_comment = "comment";
+static constexpr const char* P_const = "const";
+static constexpr const char* P_data = "data";
+static constexpr const char* P_date = "date";
+static constexpr const char* P_datetime = "datetime-local";
+static constexpr const char* P_display = "display";
+static constexpr const char* P_div = "div";
+static constexpr const char* P_directly = "directly";
+static constexpr const char* P_email = "email";
+static constexpr const char* P_empty_quotes = "";
+static constexpr const char* P_file = "file";
+static constexpr const char* P_final = "final";
+static constexpr const char* P_form = "form";
+static constexpr const char* P_frame = "frame";
+static constexpr const char* P_ftp = "ftp";
+static constexpr const char* P_ftp_usr = "ftp_usr";
+static constexpr const char* P_ftp_pwd = "ftp_pwd";
+static constexpr const char* P_hidden = "hidden";
+static constexpr const char* P_html = "html";
+static constexpr const char* P_id = "id";
+static constexpr const char* P_iframe = "iframe";
+static constexpr const char* P_js = "js";
+static constexpr const char* P_input = "input";
+static constexpr const char* P_interface = "interface";
+static constexpr const char* P_label = "label";
+static constexpr const char* P_MQTT = "MQTT";
+static constexpr const char* P_manifest = "manifest";
+static constexpr const char* P_max = "max";
+static constexpr const char* P_menu = "menu";
+static constexpr const char* P_min = "min";
+static constexpr const char* P_null = "null";
+static constexpr const char* P_number = "number";
+static constexpr const char* P_options = "options";
+static constexpr const char* P_params = "params";
+static constexpr const char* P_password = "password";
+static constexpr const char* P_pkg = "pkg";
+static constexpr const char* P_progressbar = "pbar";
+static constexpr const char* P_range = "range";
+static constexpr const char* P_section = "section";
+static constexpr const char* P_select = "select";
+static constexpr const char* P_spacer = "spacer";
+static constexpr const char* P_step = "step";
+static constexpr const char* P_submit = "submit";
+static constexpr const char* P_text = "text";
+static constexpr const char* P_textarea = "textarea";
+static constexpr const char* P_time = "time";
+static constexpr const char* P_type = "type";
+static constexpr const char* P_url = "url";
+static constexpr const char* P_value = "value";
+static constexpr const char* P_wifi = "wifi";
 
 // order of elements MUST match with 'enum class ui_element_t' in ui.h
-#define UI_T_DICT_SIZE  30      // increase index in case of new elements
-static const char *const UI_T_DICT[UI_T_DICT_SIZE] PROGMEM = {
-  NULL,         // custom
+// increase index in case of new elements
+static constexpr std::array<const char *const, 25> UI_T_DICT = {
+  NULL,         // custom 0
   P_button,
   P_chckbox,
   P_color,
@@ -87,17 +79,17 @@ static const char *const UI_T_DICT[UI_T_DICT_SIZE] PROGMEM = {
   P_datetime,
   P_display,
   P_div,
-  P_email,
+  P_email,      // 10
   P_file,
   P_form,
   P_hidden,
   P_iframe,
   P_input,
-  NULL,     // 'option' (for selects)
+  NULL,         // 'option' (for selects)
   P_password,
   P_range,
   P_select,
-  P_spacer,
+  P_spacer,     // 20
   P_text,
   P_textarea,
   P_time,
@@ -106,70 +98,63 @@ static const char *const UI_T_DICT[UI_T_DICT_SIZE] PROGMEM = {
 
 
 // order of elements MUST match with 'enum class ui_param_t' in ui.h
-#define UI_KEY_DICT_SIZE  10      // increase index in case of new elements
-static const char *const UI_KEY_DICT[UI_KEY_DICT_SIZE] PROGMEM = {
+static constexpr std::array<const char *const, 5> UI_KEY_DICT {
   P_html,
   P_id,
   P_hidden,
   P_type,
   P_value,
-
 };
 
 // UI colors
-static const char P_RED[] PROGMEM = "red";
-static const char P_ORANGE[] PROGMEM = "orange";
-static const char P_YELLOW[] PROGMEM = "yellow";
-static const char P_GREEN[] PROGMEM = "green";
-static const char P_BLUE[] PROGMEM = "blue";
-static const char P_GRAY[] PROGMEM = "gray";
-static const char P_BLACK[] PROGMEM = "black";
-static const char P_WHITE[] PROGMEM = "white";
+static constexpr const char* P_RED = "red";
+static constexpr const char* P_ORANGE = "orange";
+static constexpr const char* P_YELLOW = "yellow";
+static constexpr const char* P_GREEN = "green";
+static constexpr const char* P_BLUE = "blue";
+static constexpr const char* P_GRAY = "gray";
+static constexpr const char* P_BLACK = "black";
+static constexpr const char* P_WHITE = "white";
 
 // System configuration variables
-static const char P_cfgfile[] PROGMEM = "/config.json";
-static const char P_cfgfile_bkp[] PROGMEM = "/config_bkp.json";
+static constexpr const char* P_cfgfile = "/config.json";
+static constexpr const char* P_cfgfile_bkp = "/config_bkp.json";
 
-static const char P_APonly[] PROGMEM = "APonly";        // AccessPoint-only mode
-static const char P_APpwd[] PROGMEM = "APpwd";          // AccessPoint password
-static const char P_TZSET[] PROGMEM = "TZSET";          // TimeZone rule variable
-static const char P_DTIME[] PROGMEM = "dtime";
-static const char P_NOCaptP[] PROGMEM = "ncapp";        // Captive Portal Disabled
-static const char P_hostname[] PROGMEM = "hostname";    // System hostname
-static const char P_LANGUAGE[] PROGMEM = "lang";        // UI language
-static const char P_noNTPoDHCP[] PROGMEM = "ntpod";     // Disable NTP over DHCP
-static const char P_userntp[] PROGMEM = "userntp";      // user-defined NTP server
+static constexpr const char* P_APonly = "APonly";        // AccessPoint-only mode
+static constexpr const char* P_APpwd = "APpwd";          // AccessPoint password
+static constexpr const char* P_TZSET = "TZSET";          // TimeZone rule variable
+static constexpr const char* P_DTIME = "dtime";
+static constexpr const char* P_NOCaptP = "ncapp";        // Captive Portal Disabled
+static constexpr const char* P_hostname = "hostname";    // System hostname
+static constexpr const char* P_LANGUAGE = "lang";        // UI language
+static constexpr const char* P_noNTPoDHCP = "ntpod";     // Disable NTP over DHCP
+static constexpr const char* P_userntp = "userntp";      // user-defined NTP server
 
 // WiFi vars
-static const char P_WCSSID[] PROGMEM = "wcssid";        // WiFi-Client SSID
-static const char P_WCPASS[] PROGMEM = "wcpass";        // WiFi-Client password
+static constexpr const char* P_WCSSID = "wcssid";        // WiFi-Client SSID
+static constexpr const char* P_WCPASS = "wcpass";        // WiFi-Client password
 
 // MQTT vars
-static const char P_m_host[] PROGMEM = "m_host";
-static const char P_m_pass[] PROGMEM = "m_pass";
-static const char P_m_port[] PROGMEM = "m_port";
-static const char P_m_pref[] PROGMEM = "m_pref";
-static const char P_m_user[] PROGMEM = "m_user";
-static const char P_m_tupd[] PROGMEM = "m_tupd";     // mqtt update interval
+static constexpr const char* P_m_host = "m_host";
+static constexpr const char* P_m_pass = "m_pass";
+static constexpr const char* P_m_port = "m_port";
+static constexpr const char* P_m_pref = "m_pref";
+static constexpr const char* P_m_user = "m_user";
+static constexpr const char* P_m_tupd = "m_tupd";     // mqtt update interval
 
 // http-related constants
-static const char PGgzip[] PROGMEM = "gzip";
-static const char PGhdrcachec[] PROGMEM = "Cache-Control";
-static const char PGhdrcontentenc[] PROGMEM = "Content-Encoding";
-static const char PGmimecss[] PROGMEM  = "text/css";
-static const char PGmimejson[] PROGMEM = "application/json";
-static const char PGmimexml[] PROGMEM  = "text/xml";
-static const char PGnocache[] PROGMEM = "no-cache, no-store, must-revalidate";
-static const char PG404[] PROGMEM  = "Not found";
-static const char PGimg[] PROGMEM = "img";
-
-#ifndef ESP32
-static const char PGmimetxt[] PROGMEM  = "text/plain";
-static const char PGmimehtml[] PROGMEM = "text/html; charset=utf-8";
-#endif
+static constexpr const char* PGgzip = "gzip";
+static constexpr const char* PGhdrcachec = "Cache-Control";
+static constexpr const char* PGhdrcontentenc = "Content-Encoding";
+static constexpr const char* PGmimecss  = "text/css";
+static constexpr const char* PGmimejson = "application/json";
+static constexpr const char* PGmimexml  = "text/xml";
+static constexpr const char* PGnocache = "no-cache, no-store, must-revalidate";
+static constexpr const char* PG404  = "Not found";
+static constexpr const char* PGimg = "img";
 
 // LOG Messages
-static const char P_ERR_obj2large[] PROGMEM  = "UI: ERORR - can't add object to frame, too large!";
+static constexpr const char* P_ERR_obj2large  = "UI: ERORR - can't add object to frame, too large!";
 
 #ifdef USE_SSDP
   #ifndef EXTERNAL_SSDP
@@ -180,9 +165,9 @@ static const char P_ERR_obj2large[] PROGMEM  = "UI: ERORR - can't add object to 
     #define __SSDPMANUF     ("obliterator")
   #endif
 
-  static const char PGnameModel[] PROGMEM = TOSTRING(__SSDPNAME);
-  static const char PGurlModel[] PROGMEM = TOSTRING(__SSDPURLMODEL);
-  static const char PGversion[] PROGMEM = EMBUI_VERSION_STRING;
-  static const char PGurlManuf[] PROGMEM = TOSTRING(__SSDPURLMANUF);
-  static const char PGnameManuf[] PROGMEM = TOSTRING(__SSDPMANUF);
+  static constexpr const char* PGnameModel = TOSTRING(__SSDPNAME);
+  static constexpr const char* PGurlModel = TOSTRING(__SSDPURLMODEL);
+  static constexpr const char* PGversion = EMBUI_VERSION_STRING;
+  static constexpr const char* PGurlManuf = TOSTRING(__SSDPURLMANUF);
+  static constexpr const char* PGnameManuf = TOSTRING(__SSDPMANUF);
 #endif
