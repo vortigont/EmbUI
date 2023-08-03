@@ -65,22 +65,22 @@ void section_settings_frame(Interface *interf, JsonObject *data){
     interf->json_section_main(T_SETTINGS, T_DICT[lang][TD::D_SETTINGS]);
 
     interf->select(P_LANGUAGE, String(lang), String(T_DICT[lang][TD::D_LANG]), true);
-    interf->option(0, F("Eng"));
-    interf->option(1, F("Rus"));
+    interf->option(0, "Eng");
+    interf->option(1, "Rus");
     interf->json_section_end();
 
     interf->spacer();
 
-    //interf->button_value(T_SH_SECT, 0, T_GNRL_SETUP);                 // кнопка перехода в общие настройки
-    interf->button_value(T_SH_SECT, 1, T_DICT[lang][TD::D_WiFi]);         // кнопка перехода в настройки сети
-    interf->button_value(T_SH_SECT, 2, T_DICT[lang][TD::D_DATETIME]);     // кнопка перехода в настройки времени
+    //interf->button_value(button_t::generic, T_SH_SECT, 0, T_GNRL_SETUP);                  // кнопка перехода в общие настройки
+    interf->button_value(button_t::generic, T_SH_SECT, 1, T_DICT[lang][TD::D_WiFi]);        // кнопка перехода в настройки сети
+    interf->button_value(button_t::generic, T_SH_SECT, 2, T_DICT[lang][TD::D_DATETIME]);    // кнопка перехода в настройки времени
 #ifdef EMBUI_MQTT
-    interf->button_value(T_SH_SECT, 3, T_EN_MQTT);     // кнопка перехода в настройки MQTT
+    interf->button_value(button_t::generic, T_SH_SECT, 3, P_MQTT);                          // кнопка перехода в настройки MQTT
 #endif
 #ifndef EMBUI_NOFTP
-    interf->button_value(T_SH_SECT, 4, F("FTP Server"));                        // кнопка перехода в настройки FTP
+    interf->button_value(button_t::generic, T_SH_SECT, 4, "FTP Server");           // кнопка перехода в настройки FTP
 #endif
-    interf->button_value(T_SH_SECT, 0, T_DICT[lang][TD::D_SYSSET]);      // кнопка перехода в настройки System
+    interf->button_value(button_t::generic, T_SH_SECT, 0, T_DICT[lang][TD::D_SYSSET]);      // кнопка перехода в настройки System
 
     interf->spacer();
 
@@ -134,50 +134,50 @@ void block_settings_netw(Interface *interf, JsonObject *data){
     interf->json_section_main(T_OPT_NETW, T_EN_WiFi);
 
     // Hostname setup
-    interf->json_section_hidden(T_SET_HOSTNAME, F("Device name"));
+    interf->json_section_hidden(T_SET_HOSTNAME, "Device name");
     interf->json_section_line();
     interf->comment(T_DICT[lang][TD::D_Hostname]);
     interf->constant(embui.hostname());
     interf->json_section_end(); // Line
-    interf->text(P_hostname, "", F("Redefine hostname, or clear to reset to default"));
-    interf->button_submit(T_SET_HOSTNAME, T_DICT[lang][TD::D_SAVE], P_GREEN);
+    interf->text(P_hostname, P_EMPTY, "Redefine hostname, or clear to reset to default");
+    interf->button(button_t::submit, T_SET_HOSTNAME, T_DICT[lang][TD::D_SAVE], P_GREEN);
     interf->json_section_end(); // Hostname setup
 
     // Wi-Fi Client setup block
     interf->json_section_hidden(T_SET_WIFI, T_DICT[lang][TD::D_WiFiClient]);
     interf->spacer(T_DICT[lang][TD::D_WiFiClientOpts]);
-    interf->text(P_WCSSID, WiFi.SSID(), T_DICT[lang][TD::D_WiFiSSID]);
-    interf->password(P_WCPASS, "", T_DICT[lang][TD::D_Password]);
-    interf->button_submit(T_SET_WIFI, T_DICT[lang][TD::D_CONNECT], P_GRAY);
+    interf->text(P_WCSSID, WiFi.SSID().c_str(), T_DICT[lang][TD::D_WiFiSSID]);
+    interf->password(P_WCPASS, P_EMPTY, T_DICT[lang][TD::D_Password]);
+    interf->button(button_t::submit, T_SET_WIFI, T_DICT[lang][TD::D_CONNECT], P_GRAY);
     interf->json_section_end();
 
     // Wi-Fi AP setup block
     interf->json_section_hidden(T_SET_WIFIAP, T_DICT[lang][TD::D_WiFiAP]);
     interf->spacer(T_DICT[lang][TD::D_WiFiAPOpts]);
 
-    interf->password(P_APpwd,  T_DICT[lang][TD::D_MSG_APProtect]);    // AP password
+    interf->password(P_APpwd, embui.paramVariant(P_APpwd).as<const char*>(),  T_DICT[lang][TD::D_MSG_APProtect]);          // AP password
 
     interf->json_section_line();
-    interf->comment(F("Access Point SSID (hostname)"));
+    interf->comment("Access Point SSID (hostname)");
     interf->constant(embui.hostname());
     interf->json_section_end(); // Line
 
     interf->json_section_line();
-    interf->checkbox(P_APonly, T_DICT[lang][TD::D_APOnlyMode]);       // checkbox "AP-only mode"
+    interf->checkbox_cfg(P_APonly, T_DICT[lang][TD::D_APOnlyMode]);         // checkbox "AP-only mode"
     interf->comment(T_DICT[lang][TD::D_MSG_APOnly]);
     interf->json_section_end(); // Line
 
     interf->json_section_line();
-    interf->checkbox(P_NOCaptP, "Disable WiFi Captive-Portal");                     // checkbox "Disable Captive-portal"
+    interf->checkbox_cfg(P_NOCaptP, "Disable WiFi Captive-Portal");         // checkbox "Disable Captive-portal"
     interf->comment("Do not run catch-all DNS in AP mode");
     interf->json_section_end(); // Line
 
-    interf->button_submit(T_SET_WIFIAP, T_DICT[lang][TD::D_SAVE], P_GRAY);
+    interf->button(button_t::submit, T_SET_WIFIAP, T_DICT[lang][TD::D_SAVE], P_GRAY);
 
     interf->json_section_end(); // Wi-Fi AP
 
     interf->spacer();
-    interf->button(T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::submit, T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
 
     interf->json_frame_flush();
 }
@@ -194,59 +194,60 @@ void block_settings_time(Interface *interf, JsonObject *data){
 
     // Simple Clock display
     interf->json_section_line();
-    String clk(F("Device date/time: ")); TimeProcessor::getDateTimeString(clk);
-    interf->constant(P_date, nullptr, clk);
-    interf->button_js(P_DTIME, F("Set local time"));     // run js function that post browser's date/time to device
+    String clk("Device date/time: "); TimeProcessor::getDateTimeString(clk);
+    interf->constant(P_date, P_EMPTY, clk);
+    interf->button(button_t::js, P_DTIME, "Set local time");     // run js function that post browser's date/time to device
     interf->json_section_end(); // line
 
     interf->comment(T_DICT[lang][TD::D_MSG_TZSet01]);     // комментарий-описание секции
 
     // Current TIME Zone string from config
-    interf->text(P_TZSET, T_DICT[lang][TD::D_MSG_TZONE]);
+    interf->text(P_TZSET, embui.paramVariant(P_TZSET), T_DICT[lang][TD::D_MSG_TZONE]);
 
     // NTP servers section
     interf->json_section_line();
-    interf->comment(F("NTP Servers"));
+    interf->comment("NTP Servers");
 
 #if ARDUINO <= 10805
     // ESP32's Arduino Core <=1.0.6 miss NTPoDHCP feature, see https://github.com/espressif/esp-idf/pull/7336
 #else
-    interf->checkbox(P_noNTPoDHCP, F("Disable NTP over DHCP"));
+    interf->checkbox_cfg(P_noNTPoDHCP, "Disable NTP over DHCP");
 #endif
     interf->json_section_end(); // line
 
     // a list of ntp servers
     interf->json_section_line();
-    for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
-        interf->constant(String(i), nullptr, TimeProcessor::getInstance().getserver(i));
+        for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
+            interf->constant(String(i), P_EMPTY, TimeProcessor::getInstance().getserver(i));
     interf->json_section_end(); // line
 
     // user-defined NTP server field
-    interf->text(P_userntp, T_DICT[lang][TD::D_NTP_Secondary]);
+    interf->text(P_userntp, embui.paramVariant(P_userntp), T_DICT[lang][TD::D_NTP_Secondary]);
 
     // manual date and time setup
     interf->comment(T_DICT[lang][TD::D_MSG_DATETIME]);
     interf->json_section_line();
-    interf->datetime(P_time, "", "");   // placeholder for ISO date/time string
-    interf->button_js_value(P_DTIME, P_time, F("Paste local time"));  // js function that paste browser's date into P_time field
+        interf->datetime(P_time, P_EMPTY, P_EMPTY);   // placeholder for ISO date/time string
+        interf->button(button_t::js, P_DTIME, "Paste local time");  // js function that paste browser's date into P_time field
     interf->json_section_end(); // line
 
-    interf->button_submit(T_SET_TIME, T_DICT[lang][TD::D_SAVE], P_GRAY);
+    // send form button
+    interf->button(button_t::submit, T_SET_TIME, T_DICT[lang][TD::D_SAVE], P_GRAY);
 
     interf->spacer();
 
     // exit button
-    interf->button(T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::submit, T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
 
     // close and send frame
     interf->json_frame_flush(); // main
 
     // формируем и отправляем кадр с запросом подгрузки внешнего ресурса со списком правил временных зон
     // полученные данные заместят предыдущее поле выпадающим списком с данными о всех временных зонах
-    interf->json_frame(F("xload"));
+    interf->json_frame("xload");
     interf->json_section_content();
                     //id           val                                 label    direct  URL for external data
-    interf->select(P_TZSET, embui.paramVariant(P_TZSET), (char*)0, false,  F("/js/tz.json"));
+    interf->select(P_TZSET, embui.paramVariant(P_TZSET), P_EMPTY, false,  "/js/tz.json");
     interf->json_section_end(); // select
     interf->json_frame_flush(); // xload
 
@@ -261,19 +262,19 @@ void block_settings_mqtt(Interface *interf, JsonObject *data){
     interf->json_frame_interface();
 
     // Headline
-    interf->json_section_main(T_SET_MQTT, T_EN_MQTT);
+    interf->json_section_main(T_SET_MQTT, P_MQTT);
 
     // форма настроек MQTT
-    interf->text(P_m_host, T_DICT[lang][TD::D_MQTT_Host]);
-    interf->number(P_m_port, T_DICT[lang][TD::D_MQTT_Port]);
-    interf->text(P_m_user, T_DICT[lang][TD::D_User]);
-    interf->text(P_m_pass, T_DICT[lang][TD::D_Password]);
-    interf->text(P_m_pref, T_DICT[lang][TD::D_MQTT_Topic]);
-    interf->number(P_m_tupd, T_DICT[lang][TD::D_MQTT_Interval]);
-    interf->button_submit(T_SET_MQTT, T_DICT[lang][TD::D_CONNECT], P_GRAY);
+    interf->text(P_m_host, embui.paramVariant(P_m_host).as<const char*>(), T_DICT[lang][TD::D_MQTT_Host]);
+    interf->number(P_m_port, embui.paramVariant(P_m_port).as<int>(), T_DICT[lang][TD::D_MQTT_Port]);
+    interf->text(P_m_user, embui.paramVariant(P_m_user).as<const char*>(), T_DICT[lang][TD::D_User]);
+    interf->text(P_m_pass, embui.paramVariant(P_m_pass).as<const char*>(), T_DICT[lang][TD::D_Password]);
+    interf->text(P_m_pref, embui.paramVariant(P_m_pref).as<const char*>(), T_DICT[lang][TD::D_MQTT_Topic]);
+    interf->number(P_m_tupd, embui.paramVariant(P_m_tupd).as<int>(), T_DICT[lang][TD::D_MQTT_Interval]);
+    interf->button(button_t::submit, T_DICT[lang][TD::D_CONNECT], P_GRAY);
 
     interf->spacer();
-    interf->button(T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::generic, T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
 
     interf->json_frame_flush();
 }
@@ -292,18 +293,18 @@ void block_settings_sys(Interface *interf, JsonObject *data){
     // FW update
     interf->json_section_hidden(T_DO_OTAUPD, T_DICT[lang][TD::D_UPDATEFW]);
     interf->spacer(T_DICT[lang][TD::D_FWLOAD]);
-    interf->file_form(T_DO_OTAUPD, T_DO_OTAUPD, T_DICT[lang][TD::D_UPLOADFW], F("fw"));
-    interf->file_form(T_DO_OTAUPD, T_DO_OTAUPD, T_DICT[lang][TD::D_UPLOADFS], F("fs"));
+    interf->file_form(T_DO_OTAUPD, T_DO_OTAUPD, T_DICT[lang][TD::D_UPLOADFW], "fw");
+    interf->file_form(T_DO_OTAUPD, T_DO_OTAUPD, T_DICT[lang][TD::D_UPLOADFS], "fs");
     interf->json_section_end();
 
-    interf->button(T_SET_CFGCLEAR, F("Clear sys config"), P_RED);
+    interf->button(button_t::generic, T_SET_CFGCLEAR, "Clear sys config", P_RED);
 
-    interf->button(T_REBOOT, T_DICT[lang][TD::D_REBOOT], P_RED);
+    interf->button(button_t::generic, T_REBOOT, T_DICT[lang][TD::D_REBOOT], P_RED);
 
     interf->spacer();
 
     // exit button
-    interf->button(T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::generic, T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
 
     interf->json_frame_flush(); // main
 }
@@ -405,14 +406,14 @@ void set_language(Interface *interf, JsonObject *data){
 void embuistatus(Interface *interf){
     if (!interf) return;
     interf->json_frame_value();
-    interf->value(F("pTime"), TimeProcessor::getInstance().getFormattedShortTime(), true);
-    interf->value(F("pMem"), ESP.getFreeHeap(), true);
-    interf->value(F("pUptime"), millis()/1000, true);
+    interf->value("pTime", TimeProcessor::getInstance().getFormattedShortTime(), true);
+    interf->value("pMem", ESP.getFreeHeap(), true);
+    interf->value("pUptime", millis()/1000, true);
     interf->json_frame_flush();
 }
 
 void set_reboot(Interface *interf, JsonObject *data){
-    Task *t = new Task(TASK_SECOND*5, TASK_ONCE, nullptr, &ts, false, nullptr, [](){ LOG(println, F("Rebooting...")); ESP.restart(); });
+    Task *t = new Task(TASK_SECOND*5, TASK_ONCE, nullptr, &ts, false, nullptr, [](){ LOG(println, "Rebooting..."); ESP.restart(); });
     t->enableDelayed();
     if(interf){
         interf->json_frame_interface();

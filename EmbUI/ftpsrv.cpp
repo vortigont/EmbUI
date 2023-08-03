@@ -32,11 +32,11 @@ void block_settings_ftp(Interface *interf, JsonObject *data){
     // Headline
     interf->json_section_main(T_SET_FTP, T_DICT[lang][TD::D_FTPSRV]);
 
-    interf->checkbox(P_ftp, ftp_status(), F("Enable FTP Server"));     // FTP On/off
+    interf->checkbox(P_ftp, ftp_status(), "Enable FTP Server");     // FTP On/off
 
-    interf->text(P_ftp_usr, embui.paramVariant(P_ftp_usr) | String(P_ftp), "FTP login");
-    interf->password(P_ftp_pwd, embui.paramVariant(P_ftp_pwd) | String(P_ftp), T_DICT[lang][TD::D_Password]);
-    interf->button_submit(T_SET_FTP, T_DICT[lang][TD::D_SAVE], P_BLUE);
+    interf->text(P_ftp_usr, embui.paramVariant(P_ftp_usr) ? embui.paramVariant(P_ftp_usr) : P_ftp, "FTP login");
+    interf->password(P_ftp_pwd, embui.paramVariant(P_ftp_pwd) ? embui.paramVariant(P_ftp_pwd) : P_ftp, T_DICT[lang][TD::D_Password]);
+    interf->button(button_t::submit, T_DICT[lang][TD::D_SAVE], P_BLUE);
 
     // close and send frame
     interf->json_frame_flush(); // main
@@ -62,11 +62,11 @@ void set_settings_ftp(Interface *interf, JsonObject *data){
       embui.var_dropnulls(P_ftp_pwd, (*data)[P_ftp_pwd]);    // do not save default pwd
 
     ftp_stop();
-    LOG(println, F("UI: Stopping FTP Server"));
+    LOG(println, "UI: Stopping FTP Server");
 
     if ( newstate ){
       ftp_start();
-      LOG(println, F("UI: Starting FTP Server"));
+      LOG(println, "UI: Starting FTP Server");
     }
 
     if (interf) basicui::section_settings_frame(interf, nullptr);          // go to "Options" page

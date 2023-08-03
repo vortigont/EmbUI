@@ -176,7 +176,7 @@ void EmbUI::onMqttConnect(){
     LOG(println,F("UI: Connected to MQTT."));
     if(sysData.mqtt_remotecontrol){
         subscribeAll();
-        String strue = P_true;
+        String strue(1);    // true, blin!
         mqttClient.publish(m_will.c_str(), 0, true, strue.c_str());
         httpCallback(F("sys_AUTODISCOVERY"), "", false); // реализация AUTODISCOVERY
     }

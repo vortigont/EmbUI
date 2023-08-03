@@ -17,22 +17,22 @@ enum LANG : uint8_t {
 extern uint8_t lang;
 
 // UI blocks
-static const char T_SETTINGS[] PROGMEM = "settings";
-static const char T_OPT_NETW[] PROGMEM = "netwrk";
+static constexpr const char* T_SETTINGS = "settings";
+static constexpr const char* T_OPT_NETW = "netwrk";
 
 // UI handlers
-static const char T_DO_OTAUPD[] PROGMEM = "update";
-static const char T_SET_FTP[] PROGMEM = "set_ftp";
-static const char T_SET_WIFI[] PROGMEM = "set_wifi";
-static const char T_SET_WIFIAP[] PROGMEM = "set_wifiAP";
-static const char T_SET_MQTT[] PROGMEM = "set_mqtt";
-static const char T_SET_TIME[] PROGMEM = "set_time";
-static const char T_SET_HOSTNAME[] PROGMEM = "shname";
-static const char T_SET_CFGCLEAR[] PROGMEM = "s_cfgcl";
+static constexpr const char* T_DO_OTAUPD = "update";
+static constexpr const char* T_SET_FTP = "set_ftp";
+static constexpr const char* T_SET_WIFI = "set_wifi";
+static constexpr const char* T_SET_WIFIAP = "set_wifiAP";
+static constexpr const char* T_SET_MQTT = "set_mqtt";
+static constexpr const char* T_SET_TIME = "set_time";
+static constexpr const char* T_SET_HOSTNAME = "shname";
+static constexpr const char* T_SET_CFGCLEAR = "s_cfgcl";
 
 
-static const char T_SH_SECT[] PROGMEM = "sh_sec";
-static const char T_REBOOT[] PROGMEM = "reboot";
+static constexpr const char* T_SH_SECT = "sh_sec";
+static constexpr const char* T_REBOOT = "reboot";
 
 // Strings
 
