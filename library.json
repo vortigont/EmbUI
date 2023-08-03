@@ -61,8 +61,10 @@
     ],
     "build": {
         "srcDir": "EmbUI",
-	    "libLDFMode": "chain",
-	    "libCompatMode": "strict"
+        "libLDFMode": "chain",
+        "libCompatMode": "strict",
+        "flags": "-std=gnu++17",
+        "unflags": "-std=gnu++11"
     },
     "examples": [
         {
