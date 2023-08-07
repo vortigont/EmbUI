@@ -875,7 +875,7 @@ Interface::json_section_begin(const ID name, const L label, bool main, bool hidd
 template  <typename ID, typename L>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
 Interface::json_section_begin(const ID name, const L label, bool main, bool hidden, bool line, JsonObject obj){
-    if (!embui_traits::is_empty_string(name)) obj[P_section] = P_EMPTY; else obj[P_section] = name;
+    if (embui_traits::is_empty_string(name)) obj[P_section] = P_EMPTY; else obj[P_section] = name;
     if (!embui_traits::is_empty_string(label)) obj[P_label] = label;
     if (main) obj["main"] = true;
     if (hidden) obj[P_hidden] = true;
