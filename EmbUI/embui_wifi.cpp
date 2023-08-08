@@ -92,7 +92,7 @@ void WiFiController::setupAP(bool force){
     if (emb->param(P_APpwd) && strlen(emb->param(P_APpwd)) < WIFI_PSK_MIN_LENGTH)
         emb->var_remove(P_APpwd);
 
-    LOG(printf_P, PSTR("UI WiFi: set AP params to SSID:'%s', pwd:'%s'\n"), emb->hostname(), emb->paramVariant(P_APpwd) ? emb->paramVariant(P_APpwd).as<const char*>() : P_EMPTY);
+    LOG(printf_P, PSTR("UI WiFi: set AP params to SSID:'%s', pwd:'%s'\n"), emb->hostname(), emb->paramVariant(P_APpwd) ? emb->paramVariant(P_APpwd).as<const char*>() : P_empty_quotes);
 
     WiFi.softAP(emb->hostname(), emb->paramVariant(P_APpwd).as<const char*>());
     if (!emb->paramVariant(P_NOCaptP))          // start DNS server in "captive portal mode"
