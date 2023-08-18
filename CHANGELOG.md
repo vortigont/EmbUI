@@ -1,5 +1,19 @@
 ## Changelog
 
+### v2.8.0 - 2023.08.18
++ from now on building EmbUI requires c++17 for type traits
+* reworked Interface class method templates
+  - methods are no longer use implicit conversion to String&
+  - added value/type checks for specific UI elements
+  - use type traits for dirrefete string/literal type checks
+  - removed some overloads for methods using values from system "config"
++ refactor UIelement class to templated class instantiating from various literal types
++ UIelement templates based on literal type traits
++ empty literals validation via type traits
+* reworked button methods based on derived UIelement class
+- removed 8266 legacy code - FPSTR macro's
+
+
 ### v2.7.2 - 2023.06.21
 + add inject option to post() method
 + bump ArduinoJson version to 6.21.x
