@@ -813,11 +813,11 @@ void Interface::constant(const ID id, const L label, const V value){
 template <typename ID, typename V, typename L = const char*>
 void Interface::display(const ID id, const V value, const L label, const L css, const JsonObject &params ){
     String cssclass(css);   // make css selector like 'class "css" "id"', id used as a secondary distinguisher 
-    if (css.isEmpty())
+    if (!embui_traits::is_empty_string(css))
         cssclass = P_display;   // "display is the default css selector"
-    cssclass += (char)0x20;
+    cssclass += (char)0x20;     // space
     cssclass += id;
-    div(id, P_html, value, label, cssclass, params);
+    div(id, P_html, value, label, cssclass.c_str(), params);
 };
 
 template <typename ID, typename V, typename L = const char*>
