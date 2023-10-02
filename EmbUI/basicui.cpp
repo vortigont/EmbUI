@@ -195,7 +195,7 @@ void block_settings_time(Interface *interf, JsonObject *data){
     // Simple Clock display
     interf->json_section_line();
     String clk("Device date/time: "); TimeProcessor::getDateTimeString(clk);
-    interf->constant(P_date, P_EMPTY, clk);
+    interf->constant(P_date, clk);
     interf->button(button_t::js, P_DTIME, "Set local time");     // run js function that post browser's date/time to device
     interf->json_section_end(); // line
 
