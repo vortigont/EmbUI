@@ -1,5 +1,13 @@
 ## Changelog
 
+### v2.8.1 - 2023.10.04
+* fix issues with Interface::display() Interface::div
+*  basicui: fix NTP servers button labels
+* basicui: fix Simple Clock display value on const button
+* protect section LOG message from crash if section has empty name
+* fix Interface::constant, element was using wrong parameter as button text
+
+
 ### v2.8.0 - 2023.08.18
 + from now on building EmbUI requires c++17 for type traits
 * reworked Interface class method templates
