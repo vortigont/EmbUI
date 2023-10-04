@@ -591,7 +591,7 @@ class Interface {
          * @param params - additional parameters (reserved for future use to be used in template processor)
          */
         template <typename ID, typename V, typename L = const char*>
-        void display(const ID id, const V value, const L label = P_EMPTY, const L css = P_EMPTY, const JsonObject &params = JsonObject() );
+        void display(const ID id, V&& value, const L label = P_EMPTY, String css = P_EMPTY, const JsonObject params = JsonObject() );
 
         /**
          * @brief - Creates html div element based on a templated configuration and arbitrary parameters
@@ -603,8 +603,8 @@ class Interface {
          * @param label - value usage depends on template
          * @param params - dict with arbitrary params, usage depends on template
          */
-        template <typename ID, typename V, typename L = const char*>
-        void div(const ID id, const ID type, const V value, const L label = P_EMPTY, const L css = P_EMPTY, const JsonVariantConst &params = JsonVariantConst());
+        template <typename ID, typename V, typename L = const char*, typename CSS = const char*>
+        void div(const ID id, const ID type, const V value, const L label = P_EMPTY, const CSS css = P_EMPTY, const JsonVariantConst params = JsonVariantConst());
 
         template <typename ID, typename V, typename L>
             typename std::enable_if<embui_traits::is_string_v<V>,void>::type
@@ -815,17 +815,16 @@ void Interface::constant(const ID id, const L label, const V value){
 
 
 template <typename ID, typename V, typename L = const char*>
-void Interface::display(const ID id, const V value, const L label, const L css, const JsonObject &params ){
-    String cssclass(css);   // make css selector like 'class "css" "id"', id used as a secondary distinguisher 
-    if (css.isEmpty())
+void Interface::display(const ID id, V&& value, const L label, String cssclass, const JsonObject params ){
+    if (cssclass.isEmpty())	// make css selector like 'class "css" "id"', id used as a secondary distinguisher 
         cssclass = P_display;   // "display is the default css selector"
     cssclass += (char)0x20;
     cssclass += id;
-    div(id, P_html, value, label, cssclass, params);
+    div(id, P_html, std::forward<V>(value), label, cssclass, params);
 };
 
-template <typename ID, typename V, typename L = const char*>
-void Interface::div(const ID id, const ID type, const V value, const L label, const L css, const JsonVariantConst &params){
+template <typename ID, typename V, typename L = const char*, typename CSS = const char*>
+void Interface::div(const ID id, const ID type, const V value, const L label, const CSS css, const JsonVariantConst params){
     UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::div, id, value);
     ui.obj[P_type] = type;
     ui.label(label);
@@ -861,25 +860,20 @@ template  <typename ID>
 Interface::json_frame(const ID type){
     json[P_pkg] = type;
     json[P_final] = false;
-    json_section_begin(String(millis()));
+    json_section_begin(P_EMPTY);
 }
 
 template  <typename ID, typename L>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
 Interface::json_section_begin(const ID name, const L label, bool main, bool hidden, bool line){
-    JsonObject obj;
-    if (section_stack.size()) {
-        obj = section_stack.tail()->block.createNestedObject();
-    } else {
-        obj = json.as<JsonObject>();
-    }
+    JsonObject obj(section_stack.size() ? section_stack.tail()->block.createNestedObject() : json.as<JsonObject>());
     json_section_begin(name, label, main, hidden, line, obj);
 }
 
 template  <typename ID, typename L>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
 Interface::json_section_begin(const ID name, const L label, bool main, bool hidden, bool line, JsonObject obj){
-    if (embui_traits::is_empty_string(name)) obj[P_section] = P_EMPTY; else obj[P_section] = name;
+    obj[P_section] = embui_traits::is_empty_string(name) ? String(millis()) : name;
     if (!embui_traits::is_empty_string(label)) obj[P_label] = label;
     if (main) obj["main"] = true;
     if (hidden) obj[P_hidden] = true;
