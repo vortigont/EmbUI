@@ -36,7 +36,7 @@ void block_settings_ftp(Interface *interf, JsonObject *data){
 
     interf->text(P_ftp_usr, embui.paramVariant(P_ftp_usr) ? embui.paramVariant(P_ftp_usr) : P_ftp, "FTP login");
     interf->password(P_ftp_pwd, embui.paramVariant(P_ftp_pwd) ? embui.paramVariant(P_ftp_pwd) : P_ftp, T_DICT[lang][TD::D_Password]);
-    interf->button(button_t::submit, T_DICT[lang][TD::D_SAVE], P_BLUE);
+    interf->button(button_t::submit, T_SET_FTP, T_DICT[lang][TD::D_SAVE], P_BLUE);
 
     // close and send frame
     interf->json_frame_flush(); // main
