@@ -265,13 +265,14 @@ void block_settings_mqtt(Interface *interf, JsonObject *data){
     interf->json_section_main(T_SET_MQTT, P_MQTT);
 
     // форма настроек MQTT
+    interf->checkbox_cfg(P_mqtt_on, "Enable MQTT Client");
     interf->text(P_m_host, embui.paramVariant(P_m_host).as<const char*>(), T_DICT[lang][TD::D_MQTT_Host]);
     interf->number(P_m_port, embui.paramVariant(P_m_port).as<int>(), T_DICT[lang][TD::D_MQTT_Port]);
     interf->text(P_m_user, embui.paramVariant(P_m_user).as<const char*>(), T_DICT[lang][TD::D_User]);
     interf->text(P_m_pass, embui.paramVariant(P_m_pass).as<const char*>(), T_DICT[lang][TD::D_Password]);
-    interf->text(P_m_pref, embui.paramVariant(P_m_pref).as<const char*>(), T_DICT[lang][TD::D_MQTT_Topic]);
+    interf->text(P_mqtt_topic, embui.paramVariant(P_mqtt_topic).as<const char*>(), T_DICT[lang][TD::D_MQTT_Topic]);
     interf->number(P_m_tupd, embui.paramVariant(P_m_tupd).as<int>(), T_DICT[lang][TD::D_MQTT_Interval]);
-    interf->button(button_t::submit, T_DICT[lang][TD::D_CONNECT], P_GRAY);
+    interf->button(button_t::submit, T_SET_MQTT, T_DICT[lang][TD::D_CONNECT]);
 
     interf->spacer();
     interf->button(button_t::generic, T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
@@ -344,12 +345,20 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
 void set_settings_mqtt(Interface *interf, JsonObject *data){
     if (!data) return;
     // сохраняем настройки в конфиг
+    embui.var_dropnulls(P_mqtt_on, (*data)[P_mqtt_on]);
     embui.var_dropnulls(P_m_host, (*data)[P_m_host]);
+    embui.var_dropnulls(P_m_port, (*data)[P_m_port]);
     embui.var_dropnulls(P_m_user, (*data)[P_m_user]);
     embui.var_dropnulls(P_m_pass, (*data)[P_m_pass]);
-    embui.var_dropnulls(P_m_pref, (*data)[P_m_pref]);
+    embui.var_dropnulls(P_mqtt_topic, (*data)[P_mqtt_topic]);
     embui.var_dropnulls(P_m_tupd, (*data)[P_m_tupd]);
     embui.save();
+
+    // reconnect/disconnect MQTT
+    if ((*data)[P_mqtt_on])
+        embui.mqtt_start();
+    else
+        embui.mqtt_stop();
 
     section_settings_frame(interf, data);
 }
@@ -406,9 +415,28 @@ void set_language(Interface *interf, JsonObject *data){
 void embuistatus(Interface *interf){
     if (!interf) return;
     interf->json_frame_value();
-    interf->value("pTime", TimeProcessor::getInstance().getFormattedShortTime(), true);
-    interf->value("pMem", ESP.getFreeHeap(), true);
-    interf->value("pUptime", millis()/1000, true);
+
+    // system time
+    interf->value(P_pTime, TimeProcessor::getInstance().getFormattedShortTime(), true);
+
+    // memory
+    char buff[20];
+    if(psramFound()){
+        std::snprintf(buff, 20, "%uk/%uk", ESP.getFreeHeap()/1024, ESP.getFreePsram()/1024);
+    } else {
+        std::snprintf(buff, 20, "%ok", ESP.getFreeHeap()/1024);
+    }
+    interf->value(P_pMem, buff, true);
+
+    // uptime
+    uint32_t seconds = esp_timer_get_time() / 1000000;
+    std::snprintf(buff, 20, "%ud%02u:%02u:%02u", seconds/86400, (seconds/3600)%24, (seconds/60)%60, seconds%60);
+    interf->value(P_pUptime, buff, true);
+
+    // RSSI
+    std::snprintf(buff, 20, "%u%% (%ddBm)", constrain(map(WiFi.RSSI(), -85, -40, 0, 100),0,100), WiFi.RSSI());
+    interf->value(P_pRSSI, buff, true);
+
     interf->json_frame_flush();
 }
 
