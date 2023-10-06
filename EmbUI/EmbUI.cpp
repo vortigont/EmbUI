@@ -128,6 +128,7 @@ EmbUI::~EmbUI(){
     ts.deleteTask(tAutoSave);
     ts.deleteTask(tHouseKeeper);
     delete tValPublisher;
+    delete tMqttReconnector;
     delete wifi;
 #ifndef EMBUI_NOFTP
     ftp_stop();
@@ -184,9 +185,8 @@ void EmbUI::begin(){
     tHouseKeeper.enableDelayed();
 
 #ifdef EMBUI_MQTT
-    // try to connect to mqtt if mqtt hostname is defined
-    if (param(String(P_m_host)).length())
-        mqtt(param(P_m_pref), param(P_m_host), paramVariant(P_m_port), param(P_m_user), param(P_m_pass), mqtt_emptyFunction, false); // init mqtt
+    mqtt_start();       // connect to MQTT with saved credentials
+    //mqtt(param(P_mqtt_topic), param(P_m_host), paramVariant(P_m_port), param(P_m_user), param(P_m_pass), mqtt_emptyFunction, false); // init mqtt
 #endif
 #ifdef USE_SSDP
     ssdp_begin(); LOG(println, F("Start SSDP"));
@@ -297,9 +297,6 @@ String EmbUI::param(const String &key)
 
 void EmbUI::handle(){
     ts.execute();           // run task scheduler
-#ifdef EMBUI_MQTT
-    mqtt_handle();
-#endif // EMBUI_MQTT
 // FTP server
 #ifndef EMBUI_NOFTP
     ftp_loop();
@@ -326,11 +323,10 @@ void EmbUI::setPubInterval(uint16_t _t){
         return;
     }
 
-    if(tValPublisher){
+    if(tValPublisher)
         tValPublisher->setInterval(_t * TASK_SECOND);
-    } else {
+    else
         tValPublisher = new Task(_t * TASK_SECOND, TASK_FOREVER, [this](){ send_pub(); }, &ts, true );
-    }
 }
 
 /**

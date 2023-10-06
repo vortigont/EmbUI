@@ -266,12 +266,14 @@ void block_settings_mqtt(Interface *interf, JsonObject *data){
 
     // форма настроек MQTT
     interf->checkbox_cfg(P_mqtt_on, "Enable MQTT Client");
-    interf->text(P_m_host, embui.paramVariant(P_m_host).as<const char*>(), T_DICT[lang][TD::D_MQTT_Host]);
-    interf->number(P_m_port, embui.paramVariant(P_m_port).as<int>(), T_DICT[lang][TD::D_MQTT_Port]);
-    interf->text(P_m_user, embui.paramVariant(P_m_user).as<const char*>(), T_DICT[lang][TD::D_User]);
-    interf->text(P_m_pass, embui.paramVariant(P_m_pass).as<const char*>(), T_DICT[lang][TD::D_Password]);
+    interf->text(P_mqtt_host, embui.paramVariant(P_mqtt_host).as<const char*>(), T_DICT[lang][TD::D_MQTT_Host]);
+    interf->number(P_mqtt_port, embui.paramVariant(P_mqtt_port).as<int>(), T_DICT[lang][TD::D_MQTT_Port]);
+    interf->text(P_mqtt_user, embui.paramVariant(P_mqtt_user).as<const char*>(), T_DICT[lang][TD::D_User]);
+    interf->text(P_mqtt_pass, embui.paramVariant(P_mqtt_pass).as<const char*>(), T_DICT[lang][TD::D_Password]);
     interf->text(P_mqtt_topic, embui.paramVariant(P_mqtt_topic).as<const char*>(), T_DICT[lang][TD::D_MQTT_Topic]);
-    interf->number(P_m_tupd, embui.paramVariant(P_m_tupd).as<int>(), T_DICT[lang][TD::D_MQTT_Interval]);
+    int t = embui.paramVariant(P_mqtt_ka).as<int>();
+    if (!t) t = 30;     // default mqtt interval
+    interf->number(P_mqtt_ka, embui.paramVariant(P_mqtt_ka).as<int>(), T_DICT[lang][TD::D_MQTT_Interval]);
     interf->button(button_t::submit, T_SET_MQTT, T_DICT[lang][TD::D_CONNECT]);
 
     interf->spacer();
@@ -346,12 +348,12 @@ void set_settings_mqtt(Interface *interf, JsonObject *data){
     if (!data) return;
     // сохраняем настройки в конфиг
     embui.var_dropnulls(P_mqtt_on, (*data)[P_mqtt_on]);
-    embui.var_dropnulls(P_m_host, (*data)[P_m_host]);
-    embui.var_dropnulls(P_m_port, (*data)[P_m_port]);
-    embui.var_dropnulls(P_m_user, (*data)[P_m_user]);
-    embui.var_dropnulls(P_m_pass, (*data)[P_m_pass]);
+    embui.var_dropnulls(P_mqtt_host, (*data)[P_mqtt_host]);
+    embui.var_dropnulls(P_mqtt_port, (*data)[P_mqtt_port]);
+    embui.var_dropnulls(P_mqtt_user, (*data)[P_mqtt_user]);
+    embui.var_dropnulls(P_mqtt_pass, (*data)[P_mqtt_pass]);
     embui.var_dropnulls(P_mqtt_topic, (*data)[P_mqtt_topic]);
-    embui.var_dropnulls(P_m_tupd, (*data)[P_m_tupd]);
+    embui.var_dropnulls(P_mqtt_ka, (*data)[P_mqtt_ka]);
     embui.save();
 
     // reconnect/disconnect MQTT
