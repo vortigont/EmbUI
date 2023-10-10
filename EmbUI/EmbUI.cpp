@@ -249,7 +249,7 @@ void EmbUI::section_handle_remove(const String &name)
     }
 }
 
-void EmbUI::section_handle_add(const String &name, actionCallback response)
+void EmbUI::section_handle_add(const String &name, actionCallback_t response)
 {
     std::shared_ptr<section_handle_t> section(new section_handle_t(name, response));
     section_handle.add(section);
