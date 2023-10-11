@@ -33,9 +33,7 @@ void add_sections(){
 #endif  // #ifdef EMBUI_NOFTP
     embui.section_handle_add(T_SET_WIFI, set_settings_wifi);         // обработка настроек WiFi Client
     embui.section_handle_add(T_SET_WIFIAP, set_settings_wifiAP);     // обработка настроек WiFi AP
-#ifdef EMBUI_MQTT
     embui.section_handle_add(T_SET_MQTT, set_settings_mqtt);         // обработка настроек MQTT
-#endif  // #ifdef EMBUI_MQTT
     embui.section_handle_add(T_SET_TIME, set_settings_time);         // установки даты/времени
     embui.section_handle_add(P_LANGUAGE, set_language);              // смена языка интерфейса
     embui.section_handle_add(T_REBOOT, set_reboot);                  // ESP reboot action
@@ -74,9 +72,8 @@ void section_settings_frame(Interface *interf, JsonObject *data){
     //interf->button_value(button_t::generic, T_SH_SECT, 0, T_GNRL_SETUP);                  // кнопка перехода в общие настройки
     interf->button_value(button_t::generic, T_SH_SECT, 1, T_DICT[lang][TD::D_WiFi]);        // кнопка перехода в настройки сети
     interf->button_value(button_t::generic, T_SH_SECT, 2, T_DICT[lang][TD::D_DATETIME]);    // кнопка перехода в настройки времени
-#ifdef EMBUI_MQTT
     interf->button_value(button_t::generic, T_SH_SECT, 3, P_MQTT);                          // кнопка перехода в настройки MQTT
-#endif
+
 #ifndef EMBUI_NOFTP
     interf->button_value(button_t::generic, T_SH_SECT, 4, "FTP Server");           // кнопка перехода в настройки FTP
 #endif
@@ -110,11 +107,9 @@ void show_section(Interface *interf, JsonObject *data){
         case 2 :    // time setup section
             block_settings_time(interf, nullptr);
             break;
-    #ifdef EMBUI_MQTT
         case 3 :    // MQTT setup section
             block_settings_mqtt(interf, nullptr);
             break;
-    #endif  // #ifdef EMBUI_MQTT
         case 4 :    // FTP server setup section
             block_settings_ftp(interf, nullptr);
             break;
@@ -253,7 +248,6 @@ void block_settings_time(Interface *interf, JsonObject *data){
 
 }
 
-#ifdef EMBUI_MQTT
 /**
  *  BasicUI блок интерфейса настроек MQTT
  */
@@ -281,7 +275,6 @@ void block_settings_mqtt(Interface *interf, JsonObject *data){
 
     interf->json_frame_flush();
 }
-#endif  // #ifdef EMBUI_MQTT
 
 /**
  *  BasicUI блок настройки system
@@ -340,7 +333,6 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
     if (interf) section_settings_frame(interf, nullptr);                // go to "Options" page
 }
 
-#ifdef EMBUI_MQTT
 /**
  * Обработчик настроек MQTT
  */
@@ -358,13 +350,12 @@ void set_settings_mqtt(Interface *interf, JsonObject *data){
 
     // reconnect/disconnect MQTT
     if ((*data)[P_mqtt_on])
-        embui.mqtt_start();
+        embui.mqttStart();
     else
-        embui.mqtt_stop();
+        embui.mqttStop();
 
     section_settings_frame(interf, data);
 }
-#endif  // #ifdef EMBUI_MQTT
 
 /**
  * Обработчик настроек даты/времени
@@ -415,7 +406,6 @@ void set_language(Interface *interf, JsonObject *data){
 }
 
 void embuistatus(Interface *interf){
-    if (!interf) return;
     interf->json_frame_value();
 
     // system time
@@ -423,11 +413,11 @@ void embuistatus(Interface *interf){
 
     // memory
     char buff[20];
-    if(psramFound()){
+    if(psramFound())
         std::snprintf(buff, 20, "%uk/%uk", ESP.getFreeHeap()/1024, ESP.getFreePsram()/1024);
-    } else {
+    else
         std::snprintf(buff, 20, "%ok", ESP.getFreeHeap()/1024);
-    }
+
     interf->value(P_pMem, buff, true);
 
     // uptime
@@ -436,7 +426,8 @@ void embuistatus(Interface *interf){
     interf->value(P_pUptime, buff, true);
 
     // RSSI
-    std::snprintf(buff, 20, "%u%% (%ddBm)", constrain(map(WiFi.RSSI(), -85, -40, 0, 100),0,100), WiFi.RSSI());
+    auto rssi = WiFi.RSSI();
+    std::snprintf(buff, 20, "%u%% (%ddBm)", constrain(map(rssi, -85, -40, 0, 100),0,100), rssi);
     interf->value(P_pRSSI, buff, true);
 
     interf->json_frame_flush();

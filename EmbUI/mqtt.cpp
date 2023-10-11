@@ -3,10 +3,7 @@
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
 // and others people
 
-#ifdef EMBUI_MQTT
-
 #include "EmbUI.h"
-extern EmbUI embui;
 
 void EmbUI::_mqttConnTask(bool state){
     if (!state){
@@ -20,7 +17,7 @@ void EmbUI::_mqttConnTask(bool state){
     } else {
         tMqttReconnector = new Task(15 * TASK_SECOND, TASK_FOREVER, [this](){
             if (!(WiFi.getMode() & WIFI_MODE_STA)) return;
-            _connectToMqtt();
+            if (mqttClient) _connectToMqtt();
         }, &ts, true );
         tMqttReconnector->enable();
     }
@@ -44,37 +41,45 @@ void EmbUI::_connectToMqtt() {
     mqtt_pass = paramVariant(P_mqtt_pass).as<const char*>();
     //mqtt_lwt=id(F("embui/pub/online"));
 
-    if (mqttClient.connected())
-        mqttClient.disconnect();
+    //if (mqttClient->connected())
+        mqttClient->disconnect(true);
 
     IPAddress ip; 
 
     if(ip.fromString(mqtt_host))
-        mqttClient.setServer(ip, mqtt_port);
+        mqttClient->setServer(ip, mqtt_port);
     else
-        mqttClient.setServer(mqtt_host.c_str(), mqtt_port);
+        mqttClient->setServer(mqtt_host.c_str(), mqtt_port);
 
-    mqttClient.setKeepAlive(mqtt_ka);
-    mqttClient.setCredentials(mqtt_user.c_str(), mqtt_pass.c_str());
+    mqttClient->setKeepAlive(mqtt_ka);
+    mqttClient->setCredentials(mqtt_user.c_str(), mqtt_pass.c_str());
     //setWill(mqtt_lwt.c_str(), 0, true, "0").
-    mqttClient.connect();
+    mqttClient->connect();
 }
 
-void EmbUI::mqtt_start(){
+void EmbUI::mqttStart(){
     if (cfg[P_mqtt_on] != true || !cfg.containsKey(P_mqtt_host)){
         LOG(println, "UI: MQTT disabled or no host set");
         return;   // выходим если host не задан
     }
 
     LOG(println, "Starting MQTT Client");
-    mqttClient.onConnect([this](bool sessionPresent){ _onMqttConnect(sessionPresent); });
-    mqttClient.onDisconnect([this](AsyncMqttClientDisconnectReason reason){_onMqttDisconnect(reason);});
-    mqttClient.onMessage( [this](char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total){_onMqttMessage(topic, payload, properties, len, index, total);} );
-    //mqttClient.onSubscribe(onMqttSubscribe);
-    //mqttClient.onUnsubscribe(onMqttUnsubscribe);
-    //mqttClient.onPublish(onMqttPublish);
+    if (!mqttClient)
+        mqttClient = std::make_unique<AsyncMqttClient>();
+
+    mqttClient->onConnect([this](bool sessionPresent){ _onMqttConnect(sessionPresent); });
+    mqttClient->onDisconnect([this](AsyncMqttClientDisconnectReason reason){_onMqttDisconnect(reason);});
+    //mqttClient->onMessage( [this](char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total){_onMqttMessage(topic, payload, properties, len, index, total);} );
+    //mqttClient->onSubscribe(onMqttSubscribe);
+    //mqttClient->onUnsubscribe(onMqttUnsubscribe);
+    //mqttClient->onPublish(onMqttPublish);
 
     mqttReconnect();
+}
+
+void EmbUI::mqttStop(){
+    _mqttConnTask(false);
+    mqttClient.release();
 }
 
 void EmbUI::mqttReconnect(){ // принудительный реконнект, при смене чего-либо в UI
@@ -91,11 +96,19 @@ void EmbUI::_onMqttConnect(bool sessionPresent){
 /*
     if(sysData.mqtt_remotecontrol){
         subscribeAll();
-        // mqttClient.publish(mqtt_lwt.c_str(), 0, true, "1");  // publish Last Will testament
+        // mqttClient->publish(mqtt_lwt.c_str(), 0, true, "1");  // publish Last Will testament
         //httpCallback(F("sys_AUTODISCOVERY"), "", false); // реализация AUTODISCOVERY
     }
 */
     _mqttConnTask(false);
+
+    String t(mqttPrefix());
+    t += P_sys;    // make topic string "~/sys/"
+
+    publish((t + "hostname").c_str(), hostname(), true);
+    publish((t + "ip").c_str(), WiFi.localIP().toString().c_str(), true);
+    publish((t + P_uiver).c_str(), EMBUI_VERSION_STRING, true);
+    publish((t + P_uijsapi).c_str(), EMBUI_JSAPI, true);
 }
 
 void EmbUI::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
@@ -150,25 +163,34 @@ void EmbUI::subscribeAll(bool setonly){
         t += (char)0x23;  //"#"
         LOG(println, "#");
     }
-    mqttClient.subscribe(t.c_str(), 0);
+    mqttClient->subscribe(t.c_str(), 0);
 }
 */
 void EmbUI::publish(const char* topic, const char* payload, bool retained){
-    /*
+    //
     LOG(print, "MQTT pub: topic:");
     LOG(print, topic);
     LOG(print, " payload:");
     LOG(println, payload);
-    */
-    mqttClient.publish(topic, 0, retained, payload);
+    //
+    if (mqttClient) mqttClient->publish(topic, 0, retained, payload);
 }
 
-void EmbUI::publish(const String& topic, const String& payload, bool retained){
-    publish(topic.c_str(), payload.c_str(), retained);
+void EmbUI::_mqtt_pub_sys_status(){
+    String t(embui.mqttPrefix());
+    t += P_sys;    // make topic string "~/sys/"
+
+    if(psramFound())
+        publish((t + "spiram_free").c_str(), ESP.getFreePsram()/1024);
+
+    publish((t + "heap_free").c_str(), ESP.getFreeHeap()/1024);
+    publish((t + "uptime").c_str(), esp_timer_get_time() / 1000000);
+    publish((t + "rssi").c_str(), WiFi.RSSI());
 }
+
+
 /*
 void EmbUI::subscribe(const char* topic, uint8_t qos){
-    mqttClient.subscribe(topic, 0);
+    mqttClient->subscribe(topic, 0);
 }
 */
-#endif  // EMBUI_MQTT

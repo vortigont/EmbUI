@@ -6,7 +6,7 @@
 #pragma once
 
 #include "EmbUI.h"
-#include <type_traits>
+#include "traits.hpp"
 
 // static json obj size for tiny ui elements, like checkboxes, number inputs, etc...
 #ifndef TINY_JSON_SIZE
@@ -79,72 +79,6 @@ enum class button_t:uint8_t {
     js,
     href
 };
-
-// type traits we use for various literals
-namespace embui_traits{
-
-template<typename T>
-struct is_string : public std::disjunction<
-        std::is_same<char *, std::decay_t<T>>,
-        std::is_same<const char *, std::decay_t<T>>,
-        std::is_same<std::string, std::decay_t<T>>,
-        std::is_same<std::string_view, std::decay_t<T>>,
-        std::is_same<String, std::decay_t<T>>,
-        std::is_same<StringSumHelper, std::decay_t<T>>          // String derived helper class
-    > {};
-
-// value helper
-template<typename T>
-inline constexpr bool is_string_v = is_string<T>::value;
-
-template<typename T>
-inline constexpr bool is_string_t = is_string<T>::type;
-
-template<typename T>
-struct is_string_obj : public std::disjunction<
-        std::is_same<std::string, std::decay_t<T>>,
-        std::is_same<String, std::decay_t<T>>,
-        std::is_same<StringSumHelper, std::decay_t<T>>          // String derived helper class
-    > {};
-
-// value helper
-template<typename T>
-inline constexpr bool is_string_obj_v = is_string_obj<T>::value;
-
-template<typename T>
-struct is_string_ptr : public std::disjunction<
-        std::is_same<char *, std::decay_t<T>>,
-        std::is_same<const char *, std::decay_t<T>>,
-        std::is_same<std::string_view, std::decay_t<T>>
-    > {};
-
-// value helper
-template<typename T>
-inline constexpr bool is_string_ptr_v = is_string_ptr<T>::value;
-
-template<typename T>
-typename std::enable_if<is_string_obj_v<T>,bool>::type
-is_empty_string(const T &label){
-    if constexpr(std::is_same_v<std::string, std::decay_t<decltype(label)>>)            // specialisation for std::string
-        return label.empty();
-    if constexpr(std::is_same_v<String, std::decay_t<decltype(label)>>)                 // specialisation for String
-        return label.isEmpty();
-    return false;   // UB, not a known string type for us
-};
-
-template<typename T>
-typename std::enable_if<is_string_ptr_v<T>,bool>::type
-is_empty_string(const T label){
-    if constexpr(std::is_same_v<std::string_view, std::decay_t<decltype(label)>>)       // specialisation for std::string_view
-        return label.empty();
-    if constexpr(std::is_same_v<const char*, std::decay_t<decltype(label)>>)            // specialisation for const char*
-        return not (label && *label);
-    if constexpr(std::is_same_v<char*, std::decay_t<decltype(label)>>)                  // specialisation for char*
-        return not (label && *label);
-    return false;   // UB, not a known string type for us
-};
-
-}
 
 template <size_t capacity = UI_DEFAULT_JSON_SIZE>
 class UIelement {
@@ -892,10 +826,10 @@ template  <typename ID, typename L = const char*>
 Interface::json_section_manifest(const ID appname, unsigned appjsapi, const L appversion){
     json_section_begin("manifest", P_EMPTY, false, false, false);
     JsonObject obj = section_stack.tail()->block.createNestedObject();
-    obj["uijsapi"] = EMBUI_JSAPI;
-    obj["uiver"] = EMBUI_VERSION_STRING;
-    obj["app"] = appname;
-    obj["appjsapi"] = appjsapi;
+    obj[P_uijsapi] = EMBUI_JSAPI;
+    obj[P_uiver] = EMBUI_VERSION_STRING;
+    obj[P_app] = appname;
+    obj[P_appjsapi] = appjsapi;
     if (!embui_traits::is_empty_string(appversion)) obj["appver"] = appversion;
     obj["mc"] = embui->macid();
 }

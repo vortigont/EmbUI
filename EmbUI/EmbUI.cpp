@@ -10,17 +10,15 @@
 #define POST_ACTION_DELAY   50      // delay for large posts processing in ms
 #define POST_LARGE_SIZE     1024    // large post threshold
 
+// instance of embui object
+EmbUI embui;
+
+
 union MacID
 {
     uint64_t u64;
     uint8_t mc[8];
 };
-
-#ifdef EMBUI_MQTT
-void mqtt_emptyFunction(const String &, const String &);
-#endif // EMBUI_MQTT
-
-EmbUI embui;
 
 /**
  * Those functions are weak, and by default do nothing
@@ -184,10 +182,8 @@ void EmbUI::begin(){
     ts.addTask(tHouseKeeper);
     tHouseKeeper.enableDelayed();
 
-#ifdef EMBUI_MQTT
-    mqtt_start();       // connect to MQTT with saved credentials
-    //mqtt(param(P_mqtt_topic), param(P_m_host), paramVariant(P_m_port), param(P_m_user), param(P_m_pass), mqtt_emptyFunction, false); // init mqtt
-#endif
+    // create and start MQTT client if properly configured
+    mqttStart();
 #ifdef USE_SSDP
     ssdp_begin(); LOG(println, F("Start SSDP"));
 #endif
@@ -233,6 +229,7 @@ void EmbUI::post(JsonObject &data, bool inject){
 }
 
 void EmbUI::send_pub(){
+    if (mqttAvailable()) _mqtt_pub_sys_status();
     if (!ws.count()) return;
     Interface interf(this, &ws, SMALL_JSON_SIZE);
     pubCallback(&interf);

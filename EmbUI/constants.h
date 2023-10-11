@@ -10,6 +10,8 @@
 
 // Interface
 static constexpr const char* P_action = "action";
+static constexpr const char* P_app = "app";
+static constexpr const char* P_appjsapi = "appjsapi";
 static constexpr const char* P_block = "block";
 static constexpr const char* P_button = "button";
 static constexpr const char* P_color = "color";
@@ -57,17 +59,21 @@ static constexpr const char* P_pMem = "pMem";
 static constexpr const char* P_pRSSI = "pRSSI";
 static constexpr const char* P_pTime = "pTime";
 static constexpr const char* P_pUptime = "pUptime";
+static constexpr const char* P_pub = "pub/";                              // mqtt 'pub/' suffix
 static constexpr const char* P_range = "range";
 static constexpr const char* P_section = "section";
 static constexpr const char* P_select = "select";
 static constexpr const char* P_spacer = "spacer";
 static constexpr const char* P_step = "step";
+static constexpr const char* P_sys = "sys/";                              // mqtt 'sys/' suffix
 static constexpr const char* P_submit = "submit";
 static constexpr const char* P_text = "text";
 static constexpr const char* P_textarea = "textarea";
 static constexpr const char* P_time = "time";
 static constexpr const char* P_type = "type";
+static constexpr const char* P_uijsapi = "uijsapi";
 static constexpr const char* P_url = "url";
+static constexpr const char* P_uiver = "uiver";
 static constexpr const char* P_value = "value";
 static constexpr const char* P_wifi = "wifi";
 

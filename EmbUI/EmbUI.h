@@ -6,23 +6,17 @@
 #pragma once
 
 #include "globals.h"
-
-#include <FS.h>
 #include "embuifs.hpp"
-#define U_FS   U_SPIFFS
-
-#include "embuifs.hpp"
-#include <ESPAsyncWebServer.h>
 #include "LList.h"
 #include "ts.h"
 #include "timeProcessor.h"
-#include <functional>
-
-#ifdef EMBUI_MQTT
-#include <AsyncMqttClient.h>
-#endif
-
 #include "embui_wifi.hpp"
+
+#include <FS.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncMqttClient.h>
+
+#define U_FS   U_SPIFFS
 
 #ifndef EMBUI_PUB_PERIOD
 #define EMBUI_PUB_PERIOD              10      // Values Publication period, s
@@ -36,7 +30,7 @@
 
 // Default Hostname/AP prefix
 #ifndef EMBUI_IDPREFIX
-#define EMBUI_IDPREFIX "EmbUI"
+#define EMBUI_IDPREFIX                "EmbUI"
 #endif
 
 // size of a JsonDocument to hold EmbUI config 
@@ -44,7 +38,7 @@
 #define EMBUI_CFGSIZE (2048)
 #endif
 
-#define EMBUI_CFGSIZE_MIN_FREE        50        // capacity threshold before compaction
+#define EMBUI_CFGSIZE_MIN_FREE        50        // capacity threshold before compaction (bytes)
 
 // maximum number of websocket client connections
 #ifndef EMBUI_MAX_WS_CLIENTS
@@ -88,24 +82,20 @@ class EmbUI
             bool cfgCorrupt:1;      // todo: no use? remove it!
             bool fsDirty:1;         // FS is dirty/unmountable
             uint8_t asave:4;        // 4-bit autosave timer (with AUTOSAVE_MULTIPLIER applied)
-        #ifdef EMBUI_MQTT
             bool disabled_0:1;          // ex. mqtt_connected
             bool disabled_1:1;          // ex. mqtt_connect
             bool disabled_3:1;          // ex. mqtt_remotecontrol
             bool disabled_2:1;
-        #endif  // #ifdef EMBUI_MQTT
         };
 
         _BITFIELDS() {
             cfgCorrupt = false;
             fsDirty = false;
             asave = EMBUI_AUTOSAVE_TIMEOUT; // defaul timeout 2*10 sec
-        #ifdef EMBUI_MQTT
             //disabled_0 = false;
             //disabled_1 = false;
             //disabled_3 = false;
             //disabled_2 = false;
-        #endif  // #ifdef EMBUI_MQTT
         }
     } BITFIELDS;
 
@@ -293,48 +283,32 @@ class EmbUI
 #endif // EMBUI_UDP
 
 
-#ifdef EMBUI_MQTT
-    // MQTT
+    // *** MQTT ***
+
     /**
-     * @brief MQTT client object
+     * @brief MQTT client object pointer
      * make it public, so user app could interact it easily, set own callback, publish messages
      * I only provide helper methods to get EmbUI topic prefixes, etc...
-     * 
+     * NOTE: pointer created/destructed on demand, i.e. only if mqtt is enabled in embui configuration and contains valid
+     * hostname/port settings.
+     * A care should be taken to check if object is not null when calling it's methods
      */
-    AsyncMqttClient mqttClient;
+    std::unique_ptr<AsyncMqttClient> mqttClient;
 
-
-    void pub_mqtt(const String &key, const String &value);
-    void subscribeAll(bool setonly=true);
+    //void subscribeAll(bool setonly=true);
 
     /**
-     * @brief start MQTT client
+     * @brief returns true is MQTT object exist and have a valid connection
      * 
+     * @return true 
+     * @return false 
      */
-    void mqtt_start();
+    bool mqttAvailable(){ return mqttClient && mqttClient->connected(); }
 
     /**
-     * @brief stop MQTT client
+     * @brief reset and reestablish mqtt connection
      * 
      */
-    void mqtt_stop(){ _mqttConnTask(false); }
-
-    /*
-    void mqtt_reconnect();
-    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol);
-    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload));
-    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload));
-    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol);
-    void mqtt(const String &host, int port, const String &user, const String &pass, bool remotecontrol);
-    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, bool remotecontrol);
-    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol);
-    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) ());
-    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) ());
-    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol);
-    void mqtt(void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol);
-    */
-    //void mqttSetCallbacks(AsyncMqttClientInternals::OnMessageUserCallback onMessage, AsyncMqttClientInternals::OnConnectUserCallback onConnect);
-
     void mqttReconnect();
 
     /**
@@ -345,19 +319,50 @@ class EmbUI
     const String& mqttPrefix() const { return mqtt_topic; }
 
     /**
+     * @brief start MQTT client
+     * 
+     */
+    void mqttStart();
+
+    /**
+     * @brief stop MQTT client
+     * and release unique pointer
+     */
+    void mqttStop();
+
+    /**
      * @brief subsribe to topic
      * 
      * @param topic 
      * @param qos 
-     */
     void subscribe(const char* topic, uint8_t qos=0);
+     */
 
+    /**
+     * @brief publish data to MQTT ~ topic
+     * a data will be published to a topic with prefix that is set in MQTT properties for EMbUI
+     * it's just a shortcut function. For more flexible topic control and message options
+     * a user code could use native mqttClient member and mqttPrefix() call to get home prefix
+     * 
+     * @param topic - suffix to append to home topic (embui/$id)
+     * @param payload - string payload data
+     * @param retained - keep the message flag
+     */
     void publish(const char* topic, const char* payload, bool retained = false);
-    void publish(const String &topic, const String &payload, bool retained = false);
 
-    //void publish(const String &topic, const String &payload, bool retained);
-    //void publishto(const String &topic, const String &payload, bool retained);
-#endif
+    /**
+     * @brief publish data to MQTT ~ topic
+     * templated method that accepts data types from which String is constructible
+     * 
+     * @tparam T - topic suffix
+     * @tparam P - payload
+     * @param topic 
+     * @param payload 
+     * @param retained 
+     */
+    template <typename T, typename P>
+    void publish(const T &topic, const P &payload, bool retained = false);
+
 
 /* ********** PRIVATE members *********** */
   private:
@@ -398,8 +403,8 @@ class EmbUI
     // default callback for http 404 responces
     void _notFound(AsyncWebServerRequest *request);
 
-#ifdef EMBUI_MQTT
-    // MQTT Private Methods and members
+    // *** MQTT Private Methods and members ***
+
     // need to keep literal params in obj and pass value by reference
     String mqtt_topic;
     String mqtt_host;               // server host or IP
@@ -411,11 +416,6 @@ class EmbUI
 
     // Task that will make reconnect attempts to mqtt
     Task *tMqttReconnector = nullptr;
-
-    // User definable MQTT callbacks
-    //AsyncMqttClientInternals::OnConnectUserCallback _mqtt_OnConnectUserCallback = nullptr;
-    //AsyncMqttClientInternals::OnMessageUserCallback _mqtt_OnMessageUserCallback = nullptr;
-    //AsyncMqttClientInternals::OnDisconnectUserCallback _mqtt_OnDisconnectUserCallback = nullptr;
 
     /**
      * @brief enable/disable reconnecting task
@@ -452,10 +452,16 @@ class EmbUI
      */
     void _onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total);
 
+    /**
+     * @brief publish system metrics to mqtt 
+     * will publish live values for mem, wifi signal, etc
+     * must be called periodicaly
+     */
+    void _mqtt_pub_sys_status();
+
     //void _onMqttSubscribe(uint16_t packetId, uint8_t qos);
     //void _onMqttUnsubscribe(uint16_t packetId);
     //void _onMqttPublish(uint16_t packetId);
-#endif
 
 #ifdef USE_SSDP
     void ssdp_begin() {
@@ -642,4 +648,12 @@ void EmbUI::var_dropnulls(const String &key, const T& value){
     }
 */
     value ? var(key, value, true ) : var_remove(key);
+}
+
+template <typename T, typename P>
+void EmbUI::publish(const T &topic, const P &payload, bool retained){
+    if constexpr(std::is_same_v<const char *, std::decay_t<T>>)
+        return publish(topic, String(payload).c_str(), retained);
+
+    publish(String(topic).c_str(), String(payload).c_str(), retained);
 }

@@ -75,12 +75,16 @@ namespace basicui {
   void section_settings_frame(Interface *interf, JsonObject *data);
   void set_settings_wifi(Interface *interf, JsonObject *data);
   void set_settings_wifiAP(Interface *interf, JsonObject *data);
-#ifdef EMBUI_MQTT
   void set_settings_mqtt(Interface *interf, JsonObject *data);
-#endif
   void set_settings_time(Interface *interf, JsonObject *data);
   void set_language(Interface *interf, JsonObject *data);
   void embuistatus(Interface *interf);
+
+  /**
+   * @brief publish to webui live system info
+   * i.e. free ram, uptime, etc... 
+   */
+  void embuistatus();
   void set_reboot(Interface *interf, JsonObject *data);
   void set_hostname(Interface *interf, JsonObject *data);
   void set_datetime(Interface *interf, JsonObject *data);

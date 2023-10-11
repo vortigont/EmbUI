@@ -112,7 +112,6 @@ public:
      * 
      */
     inline bool aponly(){ return (wconn == wifi_recon_t::ap_only); };
-
 };
 
 #include "EmbUI.h"

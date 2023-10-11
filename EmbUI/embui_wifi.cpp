@@ -145,7 +145,7 @@ void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
     	}
 
         LOG(printf, "SSID:'%s', IP: ", WiFi.SSID().c_str());  // IPAddress(info.got_ip.ip_info.ip.addr)
-        LOG(println, IPAddress(iface.ip.addr));
+        LOG(println, WiFi.localIP().toString().c_str());
 
         // if we are in ap_grace_enable state (i.e. reconnecting) - cancell it
         if (wconn == wifi_recon_t::ap_grace_enable){
