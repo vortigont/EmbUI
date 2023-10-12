@@ -102,10 +102,8 @@ void EmbUI::_onMqttConnect(bool sessionPresent){
 */
     _mqttConnTask(false);
 
-    String t(mqttPrefix());
-    t += P_sys;    // make topic string "~/sys/"
-
-    publish((t + "hostname").c_str(), hostname(), true);
+    String t(P_sys);
+    publish((t + P_hostname).c_str(), hostname(), true);
     publish((t + "ip").c_str(), WiFi.localIP().toString().c_str(), true);
     publish((t + P_uiver).c_str(), EMBUI_VERSION_STRING, true);
     publish((t + P_uijsapi).c_str(), EMBUI_JSAPI, true);
@@ -167,19 +165,20 @@ void EmbUI::subscribeAll(bool setonly){
 }
 */
 void EmbUI::publish(const char* topic, const char* payload, bool retained){
+    if (!mqttClient) return;
+    String t(mqttPrefix());
+    t += topic;    // make topic string "~/sys/"
     //
     LOG(print, "MQTT pub: topic:");
     LOG(print, topic);
     LOG(print, " payload:");
     LOG(println, payload);
     //
-    if (mqttClient) mqttClient->publish(topic, 0, retained, payload);
+    mqttClient->publish(t.c_str(), 0, retained, payload);
 }
 
 void EmbUI::_mqtt_pub_sys_status(){
-    String t(embui.mqttPrefix());
-    t += P_sys;    // make topic string "~/sys/"
-
+    String t(P_sys);
     if(psramFound())
         publish((t + "spiram_free").c_str(), ESP.getFreePsram()/1024);
 
