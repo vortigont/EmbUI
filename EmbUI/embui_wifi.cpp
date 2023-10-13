@@ -71,11 +71,18 @@ void WiFiController::setup_mDns(){
         MDNS.end();
         return;
     }
-
-    MDNS.addService(F("http"), F("tcp"), 80);
-    //MDNS.addService(F("ftp"), F("tcp"), 21);
-    //MDNS.addService(F("txt"), F("udp"), 4243);
     LOG(printf_P, PSTR("UI mDNS: responder started: %s.local\n"), emb->hostname());
+
+    if (!MDNS.addService("http", P_tcp, 80)) { LOG(println, "mDNS failed to add tcp:80 service"); };
+
+    if (emb->paramVariant(P_ftp))
+        MDNS.addService(P_ftp, P_tcp, 21);
+
+    //MDNS.addService(F("txt"), F("udp"), 4243);
+
+    // run callback
+    if (mdns_cb)
+        mdns_cb();
 }
 
 /**

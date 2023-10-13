@@ -23,6 +23,8 @@ version of EmbUI project https://github.com/DmytroKorniienko/EmbUI
 #include <DNSServerAsync.h>
 #include "ts.h"
 
+using mdns_callback_t = std::function< void (void)>;
+
 class EmbUI;
 
 class WiFiController {
@@ -72,6 +74,14 @@ class WiFiController {
 public:
     WiFiController(EmbUI *ui, bool aponly = false);
     ~WiFiController();
+
+    /**
+     * @brief mDNS init callback
+     * callback is called on mDNS initialization to povide
+     * proper order for service registrations
+     * 
+     */
+    mdns_callback_t mdns_cb = nullptr;
 
     /**
      * @brief DNSServer provides Captive-Portal capability in AP mode
