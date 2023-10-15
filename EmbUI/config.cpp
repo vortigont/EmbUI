@@ -18,13 +18,6 @@
 #endif
 
 void EmbUI::save(const char *_cfg, bool force){
-
-    if ( sysData.fsDirty && !force ){
-        LOG(println, F("UI: FS corrupt flag is set, won't write, u may try to reboot/reflash"));
-        return;
-    }
-
-
     File configFile;
     if (_cfg == nullptr) {
         LOG(println, F("UI: Save default main config file"));

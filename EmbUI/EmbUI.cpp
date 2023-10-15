@@ -118,7 +118,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), server(80), ws(F(EMBUI_WEBSOCK_URI)){
         _getmacid();
 
-        tAutoSave.set(sysData.asave * EMBUI_AUTOSAVE_MULTIPLIER * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
+        tAutoSave.set(EMBUI_AUTOSAVE_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
         ts.addTask(tAutoSave);
 }
 
@@ -145,7 +145,6 @@ void EmbUI::begin(){
         delay(100);
         if (!retry_cnt){
             LOG(println, F("FS dirty, I Give up!"));
-            sysData.fsDirty = true;
             return;
         }
     }

@@ -22,10 +22,8 @@
 #define EMBUI_PUB_PERIOD              10      // Values Publication period, s
 #endif
 
-#define EMBUI_AUTOSAVE_TIMEOUT        2       // configuration autosave timer, sec    (4 bit value, multiplied by AUTOSAVE_MULTIPLIER)
-
-#ifndef EMBUI_AUTOSAVE_MULTIPLIER
-#define EMBUI_AUTOSAVE_MULTIPLIER     (10U)   // множитель таймера автосохранения конфиг файла
+#ifndef EMBUI_AUTOSAVE_TIMEOUT
+#define EMBUI_AUTOSAVE_TIMEOUT        30        // configuration autosave timer, sec
 #endif
 
 // Default Hostname/AP prefix
@@ -77,28 +75,6 @@ struct section_handle_t{
 
 class EmbUI
 {
-    typedef union _BITFIELDS {
-        struct {
-            bool cfgCorrupt:1;      // todo: no use? remove it!
-            bool fsDirty:1;         // FS is dirty/unmountable
-            uint8_t asave:4;        // 4-bit autosave timer (with AUTOSAVE_MULTIPLIER applied)
-            bool disabled_0:1;          // ex. mqtt_connected
-            bool disabled_1:1;          // ex. mqtt_connect
-            bool disabled_3:1;          // ex. mqtt_remotecontrol
-            bool disabled_2:1;
-        };
-
-        _BITFIELDS() {
-            cfgCorrupt = false;
-            fsDirty = false;
-            asave = EMBUI_AUTOSAVE_TIMEOUT; // defaul timeout 2*10 sec
-            //disabled_0 = false;
-            //disabled_1 = false;
-            //disabled_3 = false;
-            //disabled_2 = false;
-        }
-    } BITFIELDS;
-
     DynamicJsonDocument cfg;                        // system config
     LList<std::shared_ptr<section_handle_t>> section_handle;        // action handlers
 
@@ -110,7 +86,6 @@ class EmbUI
     EmbUI(const EmbUI&) = delete;
     EmbUI& operator=(const EmbUI&) = delete;
 
-    BITFIELDS sysData;
     AsyncWebServer server;
     AsyncWebSocket ws;
     WiFiController *wifi;
