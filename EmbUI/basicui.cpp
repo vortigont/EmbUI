@@ -259,7 +259,7 @@ void block_settings_mqtt(Interface *interf, JsonObject *data){
     interf->json_section_main(T_SET_MQTT, P_MQTT);
 
     // форма настроек MQTT
-    interf->checkbox_cfg(P_mqtt_on, "Enable MQTT Client");
+    interf->checkbox_cfg(P_mqtt_enable, "Enable MQTT Client");
     interf->text(P_mqtt_host, embui.paramVariant(P_mqtt_host).as<const char*>(), T_DICT[lang][TD::D_MQTT_Host]);
     interf->number(P_mqtt_port, embui.paramVariant(P_mqtt_port).as<int>(), T_DICT[lang][TD::D_MQTT_Port]);
     interf->text(P_mqtt_user, embui.paramVariant(P_mqtt_user).as<const char*>(), T_DICT[lang][TD::D_User]);
@@ -339,7 +339,7 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data){
 void set_settings_mqtt(Interface *interf, JsonObject *data){
     if (!data) return;
     // сохраняем настройки в конфиг
-    embui.var_dropnulls(P_mqtt_on, (*data)[P_mqtt_on]);
+    embui.var_dropnulls(P_mqtt_enable, (*data)[P_mqtt_enable]);
     embui.var_dropnulls(P_mqtt_host, (*data)[P_mqtt_host]);
     embui.var_dropnulls(P_mqtt_port, (*data)[P_mqtt_port]);
     embui.var_dropnulls(P_mqtt_user, (*data)[P_mqtt_user]);
@@ -349,7 +349,7 @@ void set_settings_mqtt(Interface *interf, JsonObject *data){
     embui.save();
 
     // reconnect/disconnect MQTT
-    if ((*data)[P_mqtt_on])
+    if ((*data)[P_mqtt_enable])
         embui.mqttStart();
     else
         embui.mqttStop();

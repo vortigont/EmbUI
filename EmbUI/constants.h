@@ -146,6 +146,7 @@ static constexpr const char* P_WCSSID = "wcssid";        // WiFi-Client SSID
 static constexpr const char* P_WCPASS = "wcpass";        // WiFi-Client password
 
 // MQTT vars
+static constexpr const char* P_mqtt_enable = "mqtt_ena";
 static constexpr const char* P_mqtt_host = "mqtt_host";
 static constexpr const char* P_mqtt_pass = "mqtt_pass";
 static constexpr const char* P_mqtt_port = "mqtt_port";
