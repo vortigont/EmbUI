@@ -23,22 +23,17 @@ union MacID
 };
 
 /**
- * Those functions are weak, and by default do nothing
- * it is up to user to redefine it for proper WS event handling
- */
-void section_main_frame(Interface *interf, JsonObject *data, const char* action) {}
-void pubCallback(Interface *interf){}
-
-/**
  * WebSocket events handler
  *
  */
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len){
     if(type == WS_EVT_CONNECT){
         LOG(printf_P, PSTR("CONNECT ws:%s id:%u\n"), server->url(), client->id());
-
-        { Interface interf(&embui, client);
-        section_main_frame(&interf, nullptr, NULL); }
+        {
+            Interface interf(&embui, client);
+            if (!embui.action.exec(&interf, nullptr, A_mainpage))   // call user defined mainpage callback
+                basicui::page_main(&interf, nullptr, NULL);         // if no callback was registered, then show default stub page
+        }
         embui.send_pub();
         return;
     }
@@ -117,7 +112,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
 
 // EmbUI constructor
-EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), server(80), ws(F(EMBUI_WEBSOCK_URI)){
+EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), server(80), ws(EMBUI_WEBSOCK_URI){
         _getmacid();
 
         tAutoSave.set(EMBUI_AUTOSAVE_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
@@ -151,9 +146,8 @@ void EmbUI::begin(){
         }
     }
 
-    load();                 // try to load config from file
-    //create_sysvars();       // create system variables, if missing (this one is empty now)
-    create_parameters();    // weak function, creates user-defined variables
+    load();                 // load embui's config from json file
+
     LOG(print, F("UI CONFIG: "));
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
 
@@ -211,14 +205,15 @@ void EmbUI::post(JsonObject &data, bool inject){
         interf.json_frame_flush();
     }
 
-    action.exec(interf, odata, data[P_action]);
+    action.exec(&interf, &odata, data[P_action].as<const char*>());
 }
 
 void EmbUI::send_pub(){
     if (mqttAvailable()) _mqtt_pub_sys_status();
     if (!ws.count()) return;
     Interface interf(this, &ws, SMALL_JSON_SIZE);
-    pubCallback(&interf);
+    basicui::embuistatus(&interf);
+    action.exec(&interf, nullptr, A_publish);   // call user-callback for publishing task
 }
 /**
  * Возвращает указатель на строку со значением параметра из конфига
@@ -264,15 +259,6 @@ void EmbUI::handle(){
 #ifndef EMBUI_NOFTP
     ftp_loop();
 #endif
-}
-
-/**
- * call to create system-dependent variables,
- * both run-time and persistent
- */
-void EmbUI::create_sysvars(){
-    LOG(println, F("UI: Creating EmbUI system vars"));
-    // this one is empty since all EmbUI vars could use defaults
 }
 
 /**
@@ -383,7 +369,7 @@ void ActionHandler::remove(const char* id){
     actions.remove_if([&id](const section_handler_t &arg) { return std::string_view(arg.action).compare(id) == 0; });
 }
 
-size_t ActionHandler::exec(Interface &interf, JsonObject &data, const char* action){
+size_t ActionHandler::exec(Interface *interf, JsonObject *data, const char* action){
     size_t cnt{0};
     if (!action) return cnt;      // return if action is empty string
     std::string_view a(action);
@@ -400,9 +386,19 @@ size_t ActionHandler::exec(Interface &interf, JsonObject &data, const char* acti
 
         // execute action callback
         LOG(print, "UI: exec handler: "); LOG(println, item.data());
-        i.cb(&interf, &data, action);
+        i.cb(interf, data, action);
         ++cnt;
     }
 
     return cnt;
+}
+
+void ActionHandler::set_mainpage_cb(actionCallback_t callback){
+    remove(A_mainpage);
+    add(A_mainpage, callback);
+}
+
+void ActionHandler::set_settings_cb(actionCallback_t callback){
+    remove(A_block_usr_settings);
+    add(A_block_usr_settings, callback);
 }

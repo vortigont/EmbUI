@@ -51,11 +51,11 @@ class Interface;
 
 
 // Weak Callback functions (user code might override it)
-void    __attribute__((weak)) section_main_frame(Interface *interf, JsonObject *data, const char* action);
-void    __attribute__((weak)) pubCallback(Interface *interf);
+//void    __attribute__((weak)) section_main_frame(Interface *interf, JsonObject *data, const char* action);
+//void    __attribute__((weak)) pubCallback(Interface *interf);
 String  __attribute__((weak)) httpCallback(const String &param, const String &value, bool isset);
-uint8_t __attribute__((weak)) uploadProgress(size_t len, size_t total);
-void    __attribute__((weak)) create_parameters();
+//uint8_t __attribute__((weak)) uploadProgress(size_t len, size_t total);
+//void    __attribute__((weak)) create_parameters();
 
 //---------------------- Callbak functions
 using asyncsrv_callback_t = std::function< bool (AsyncWebServerRequest *req)>;
@@ -123,7 +123,27 @@ public:
      * 
      * @return number of callbacks executed, 0 - if no callback were registered for such action
      */
-    size_t exec(Interface &interf, JsonObject &data, const char* action);
+    size_t exec(Interface *interf, JsonObject *data, const char* action);
+
+    /**
+     * @brief Set mainpage callback with predefined id - 'mainpage' 
+     * defines callback for function that will build main index page for WebUI,
+     * will be called on connecting a new websocket client.
+     * If not set by user, then a default page will be displayed with system settings
+     * 
+     * @param callback function to call
+     */
+    void set_mainpage_cb(actionCallback_t callback);
+
+    /**
+     * @brief Set the settings object
+     * 
+     * @param callback 
+     */
+    void set_settings_cb(actionCallback_t callback);
+
+    void set_publish_cb(actionCallback_t callback);
+
 };
 
 class EmbUI
@@ -388,13 +408,6 @@ class EmbUI
 
     // external handler for 404 not found 
     asyncsrv_callback_t cb_not_found = nullptr;
-
-    /**
-     * call to create system-dependent variables,
-     * both run-time and persistent
-     */ 
-    void create_sysvars();
-
 
 
     /*** WiFi-related methods ***/

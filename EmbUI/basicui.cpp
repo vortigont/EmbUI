@@ -1,5 +1,6 @@
 #include "basicui.h"
 #include "ftpsrv.h"
+#include "EmbUI.h"
 
 uint8_t lang = 0;            // default language for text resources (english)
 
@@ -17,7 +18,7 @@ void register_handlers(){
      * UI action handlers
      */ 
     // вывод BasicUI секций
-    embui.action.add(T_SETTINGS, section_settings_frame);    // generate "settings" UI section
+    embui.action.add(T_SETTINGS, page_system_settings);    // generate "settings" UI section
     embui.action.add(T_SH_SECT,  show_section);              // display UI section template
 
     // обработка базовых настроек
@@ -35,12 +36,27 @@ void register_handlers(){
     embui.action.add(T_SET_CFGCLEAR, set_cfgclear);          // clear sysconfig
 }
 
+void page_main(Interface *interf, JsonObject *data, const char* action){
+
+    interf->json_frame_interface();
+    interf->json_section_manifest("BasicUI", 0, "v1");       // app name/version manifest
+    interf->json_section_end();
+
+    // create menu
+    interf->json_section_menu();
+        menuitem_settings(interf, data, action);
+    interf->json_section_end();
+
+    interf->json_frame_flush();
+
+    page_system_settings(interf, data, action);
+}
+
 /**
  * This code adds "Settings" section to the MENU
  * it is up to you to properly open/close Interface menu json_section
  */
-void menuitem_options(Interface *interf, JsonObject *data, const char* action){
-    if (!interf) return;
+void menuitem_settings(Interface *interf, JsonObject *data, const char* action){
     interf->option(T_SETTINGS, T_DICT[lang][TD::D_SETTINGS]);     // пункт меню "настройки"
 }
 
@@ -50,15 +66,15 @@ void menuitem_options(Interface *interf, JsonObject *data, const char* action){
  * других блоков/обработчиков
  * 
  */
-void section_settings_frame(Interface *interf, JsonObject *data, const char* action){
+void page_system_settings(Interface *interf, JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
     interf->json_section_main(T_SETTINGS, T_DICT[lang][TD::D_SETTINGS]);
 
     interf->select(P_LANGUAGE, String(lang), String(T_DICT[lang][TD::D_LANG]), true);
-    interf->option(0, "Eng");
-    interf->option(1, "Rus");
+        interf->option(0, "Eng");
+        interf->option(1, "Rus");
     interf->json_section_end();
 
     interf->spacer();
@@ -76,7 +92,7 @@ void section_settings_frame(Interface *interf, JsonObject *data, const char* act
     interf->spacer();
 
     // call for user_defined function that may add more elements to the "settings page"
-    user_settings_frame(interf, data, NULL);
+    embui.action.exec(interf, nullptr, A_block_usr_settings);
 
     interf->json_frame_flush();
 }
@@ -308,7 +324,7 @@ void set_settings_wifi(Interface *interf, JsonObject *data, const char* action){
     embui.var_remove(P_APonly);              // remove "force AP mode" parameter when attempting connection to external AP
     embui.wifi->connect((*data)[P_WCSSID].as<const char*>(), (*data)[P_WCPASS].as<const char*>());
 
-    section_settings_frame(interf, nullptr, NULL);           // display "settings" page
+    page_system_settings(interf, nullptr, NULL);           // display "settings" page
 }
 
 /**
@@ -324,7 +340,7 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data, const char* action
     embui.wifi->aponly((*data)[P_APonly]);
     //embui.wifi->setupAP(true);        // no need to apply settings now?
 
-    if (interf) section_settings_frame(interf, nullptr, NULL);                // go to "Options" page
+    if (interf) page_system_settings(interf, nullptr, NULL);                // go to "Options" page
 }
 
 /**
@@ -348,7 +364,7 @@ void set_settings_mqtt(Interface *interf, JsonObject *data, const char* action){
     else
         embui.mqttStop();
 
-    section_settings_frame(interf, data, NULL);
+    page_system_settings(interf, data, NULL);
 }
 
 /**
@@ -377,7 +393,7 @@ void set_settings_time(Interface *interf, JsonObject *data, const char* action){
     if ((*data)[P_time])
         set_datetime(nullptr, data, NULL);
 
-    section_settings_frame(interf, data, NULL);   // redirect to 'settings' page
+    page_system_settings(interf, data, NULL);   // redirect to 'settings' page
 }
 
 /**
@@ -396,7 +412,7 @@ void set_language(Interface *interf, JsonObject *data, const char* action){
 
     embui.var_dropnulls(P_LANGUAGE, (*data)[P_LANGUAGE]);
     lang = (*data)[P_LANGUAGE];
-    section_settings_frame(interf, data, NULL);
+    page_system_settings(interf, data, NULL);
 }
 
 void embuistatus(Interface *interf){
@@ -445,7 +461,7 @@ void set_hostname(Interface *interf, JsonObject *data, const char* action){
     if (!data) return;
 
     embui.hostname((*data)[P_hostname].as<const char*>());
-    section_settings_frame(interf, data, NULL);           // переходим в раздел "настройки"
+    page_system_settings(interf, data, NULL);           // переходим в раздел "настройки"
 }
 
 /**
@@ -453,10 +469,7 @@ void set_hostname(Interface *interf, JsonObject *data, const char* action){
  */
 void set_cfgclear(Interface *interf, JsonObject *data, const char* action){
     embui.cfgclear();
-    if (interf) section_settings_frame(interf, nullptr, NULL);
+    if (interf) page_system_settings(interf, nullptr, NULL);
 }
 
 }   // end of "namespace basicui"
-
-// stub function - переопределяется в пользовательском коде при необходимости добавить доп. пункты в меню настройки
-void user_settings_frame(Interface *interf, JsonObject *data, const char* action){};

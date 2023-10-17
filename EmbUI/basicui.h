@@ -34,14 +34,6 @@ static constexpr const char* T_SET_CFGCLEAR = "s_cfgcl";
 static constexpr const char* T_SH_SECT = "sh_sec";
 static constexpr const char* T_REBOOT = "reboot";
 
-// Strings
-
-/*
-    перенакрываемая функция для добавления пользовательских пунктов в меню "Настройки"
-    вызывается в конце section_settings_frame()
-*/
-void __attribute__((weak)) user_settings_frame(Interface *interf, JsonObject *data, const char* action);
-
 /*
     A namespace with functions to handle basic EmbUI WebUI interface
 */
@@ -57,7 +49,7 @@ namespace basicui {
    * This code adds "Settings" section to the MENU
    * it is up to you to properly open/close Interface json_section
    */
-  void menuitem_options(Interface *interf, JsonObject *data, const char* action);
+  void menuitem_settings(Interface *interf, JsonObject *data, const char* action);
 
   void show_section(Interface *interf, JsonObject *data, const char* action);
   void block_settings_gnrl(Interface *interf, JsonObject *data, const char* action);
@@ -65,7 +57,17 @@ namespace basicui {
   void block_settings_mqtt(Interface *interf, JsonObject *data, const char* action);
   void block_settings_time(Interface *interf, JsonObject *data, const char* action);
   void block_settings_sys(Interface *interf, JsonObject *data, const char* action);
-  void section_settings_frame(Interface *interf, JsonObject *data, const char* action);
+
+  /**
+   * @brief Build WebUI "Settings" page
+   * it will create system settings page and call action for user callback to append user block to the settings page
+   * 
+   * 
+   * @param interf 
+   * @param data 
+   * @param action 
+   */
+  void page_system_settings(Interface *interf, JsonObject *data, const char* action);
   void set_settings_wifi(Interface *interf, JsonObject *data, const char* action);
   void set_settings_wifiAP(Interface *interf, JsonObject *data, const char* action);
   void set_settings_mqtt(Interface *interf, JsonObject *data, const char* action);
@@ -82,6 +84,10 @@ namespace basicui {
   void set_hostname(Interface *interf, JsonObject *data, const char* action);
   void set_datetime(Interface *interf, JsonObject *data, const char* action);
   void set_cfgclear(Interface *interf, JsonObject *data, const char* action);
-    //uint8_t uploadProgress(size_t len, size_t total);
 
+  /**
+   * @brief default main_page with a simple "settings" menu entry
+   * 
+   */
+  void page_main(Interface *interf, JsonObject *data, const char* action);
 }   // end of "namespace basicui"

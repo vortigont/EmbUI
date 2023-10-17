@@ -58,13 +58,11 @@ static constexpr const char* P_pMem = "pMem";
 static constexpr const char* P_pRSSI = "pRSSI";
 static constexpr const char* P_pTime = "pTime";
 static constexpr const char* P_pUptime = "pUptime";
-static constexpr const char* P_pub = "pub/";                              // mqtt 'pub/' suffix
 static constexpr const char* P_range = "range";
 static constexpr const char* P_section = "section";
 static constexpr const char* P_select = "select";
 static constexpr const char* P_spacer = "spacer";
 static constexpr const char* P_step = "step";
-static constexpr const char* P_sys = "sys/";                              // mqtt 'sys/' suffix
 static constexpr const char* P_submit = "submit";
 static constexpr const char* P_tcp = "tcp";
 static constexpr const char* P_text = "text";
@@ -145,14 +143,21 @@ static constexpr const char* P_userntp = "userntp";      // user-defined NTP ser
 static constexpr const char* P_WCSSID = "wcssid";        // WiFi-Client SSID
 static constexpr const char* P_WCPASS = "wcpass";        // WiFi-Client password
 
-// MQTT vars
+// MQTT related vars, topic names, etc
 static constexpr const char* P_mqtt_enable = "mqtt_ena";
 static constexpr const char* P_mqtt_host = "mqtt_host";
 static constexpr const char* P_mqtt_pass = "mqtt_pass";
 static constexpr const char* P_mqtt_port = "mqtt_port";
 static constexpr const char* P_mqtt_topic = "mqtt_topic";
 static constexpr const char* P_mqtt_user = "mqtt_user";
-static constexpr const char* P_mqtt_ka = "mqtt_ka";     // mqtt keep-alive interval
+static constexpr const char* P_mqtt_ka = "mqtt_ka";       // mqtt keep-alive interval
+static constexpr const char* P_sys = "sys/";              // mqtt 'sys/' suffix
+static constexpr const char* P_pub = "pub/";              // mqtt 'pub/' suffix
+
+// Action ID's
+static constexpr const char* A_mainpage = "mainpage";
+static constexpr const char* A_block_usr_settings = "blk_usrsettings";
+static constexpr const char* A_publish = "publish";
 
 // http-related constants
 static constexpr const char* PGgzip = "gzip";
