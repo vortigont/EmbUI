@@ -3,8 +3,10 @@
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
 // and others people
 
+#include <string_view>
 #include "EmbUI.h"
 #include "ui.h"
+#include "basicui.h"
 #include "ftpsrv.h"
 
 #define POST_ACTION_DELAY   50      // delay for large posts processing in ms
@@ -24,7 +26,7 @@ union MacID
  * Those functions are weak, and by default do nothing
  * it is up to user to redefine it for proper WS event handling
  */
-void section_main_frame(Interface *interf, JsonObject *data) {}
+void section_main_frame(Interface *interf, JsonObject *data, const char* action) {}
 void pubCallback(Interface *interf){}
 
 /**
@@ -33,10 +35,10 @@ void pubCallback(Interface *interf){}
  */
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len){
     if(type == WS_EVT_CONNECT){
-        LOG(printf_P, PSTR("UI: ws[%s][%u] connect MEM: %u\n"), server->url(), client->id(), ESP.getFreeHeap());
+        LOG(printf_P, PSTR("CONNECT ws:%s id:%u\n"), server->url(), client->id());
 
         { Interface interf(&embui, client);
-        section_main_frame(&interf, nullptr); }
+        section_main_frame(&interf, nullptr, NULL); }
         embui.send_pub();
         return;
     }
@@ -173,6 +175,9 @@ void EmbUI::begin(){
     http_set_handlers();
     server.begin();
 
+    // register system menu handlers
+    basicui::register_handlers();
+
     setPubInterval(EMBUI_PUB_PERIOD);
 
     tHouseKeeper.set(TASK_SECOND, TASK_FOREVER, [this](){
@@ -197,34 +202,16 @@ void EmbUI::begin(){
  * looks for registered action for the section name and calls the action with post data if found
  */
 void EmbUI::post(JsonObject &data, bool inject){
-    section_handle_t *section = nullptr;
+    JsonObject odata = data[P_data].as<JsonObject>();
+    Interface interf(this, &ws);
 
-    const char *submit = data[P_action];
-
-    if ( submit ){  // if it was a form post, than only 'action' key is checked for matching section, not all data keys
-        section = sectionlookup(submit);
-    } else {        // otherwise scan all possible keys in data object (deprecated, kept for compatibility only)
-        JsonObject odata = data[P_data].as<JsonObject>();
-        for (JsonPair kv : odata){
-            section = sectionlookup(kv.key().c_str());
-            if (section) break;
-        }
+    if (inject && ws.count()){            // echo back injected data to WebUI
+        interf.json_frame_value();
+        interf.value(odata);              // copy values array as-is
+        interf.json_frame_flush();
     }
 
-    if (section || inject) {
-        Interface interf(this, &ws);
-        JsonObject odata = data[P_data].as<JsonObject>();
-        if (inject && ws.count()){            // echo back injected data to WebUI
-            interf.json_frame_value();
-            interf.value(odata);              // copy values array as-is
-            interf.json_frame_flush();
-        }
-
-        if(section){                           // execute an action on registered data
-            LOG(printf_P, PSTR("UI: POST SECTION: %s\n"), section->name.c_str());
-            section->callback(&interf, &odata);
-        }
-    }
+    action.exec(interf, odata, data[P_action]);
 }
 
 void EmbUI::send_pub(){
@@ -233,26 +220,6 @@ void EmbUI::send_pub(){
     Interface interf(this, &ws, SMALL_JSON_SIZE);
     pubCallback(&interf);
 }
-
-void EmbUI::section_handle_remove(const String &name)
-{
-    for(unsigned i=0; i<section_handle.size(); i++){
-        if(section_handle.get(i)->name==name){
-            section_handle.unlink(i);
-            LOG(printf_P, PSTR("UI UNREGISTER: %s\n"), name.c_str());
-            break;
-        }
-    }
-}
-
-void EmbUI::section_handle_add(const String &name, actionCallback_t response)
-{
-    std::shared_ptr<section_handle_t> section(new section_handle_t(name, response));
-    section_handle.add(section);
-
-    LOG(printf_P, PSTR("UI REGISTER: %s\n"), name.c_str());
-}
-
 /**
  * Возвращает указатель на строку со значением параметра из конфига
  * В случае отсутствующего параметра возвращает пустой указатель
@@ -338,23 +305,6 @@ void EmbUI::autosave(bool force){
     }
 };
 
-// find callback section matching specified name
-section_handle_t*  EmbUI::sectionlookup(const char *id){
-    unsigned _l = strlen(id);
-    for (const auto& i : section_handle){
-        if (_l < i->name.length())  // skip sections with longer names, obviously a mismatch
-            continue;
-
-        const char *sname = i->name.c_str();
-        const char *mall = strchr(sname, '*');      // look for 'id*' template sections
-        unsigned len = mall? mall - sname - 1 : _l;
-        if (strncmp(sname, id, len) == 0) {
-            return i.get();
-        }
-    };
-    return nullptr;
-}
-
 void EmbUI::var_dropnulls(const String &key, const char* value){
     (value && *value) ? var(key, (char*)value, true ) : var_remove(key);    // deep copy
 };
@@ -412,4 +362,47 @@ void EmbUI::var_remove(const String &key){
         cfg.remove(key);
         autosave();
     }
+}
+
+
+void ActionHandler::add(const char* id, actionCallback_t callback){
+    actions.emplace_back(id, callback);
+    LOG(print, "Action REGISTER: "); LOG(println, id);
+}
+
+void ActionHandler::replace(const char* id, actionCallback_t callback){
+    auto i = std::find_if(actions.begin(), actions.end(), [&id](const section_handler_t &arg) { return std::string_view(arg.action).compare(id) == 0; } );
+
+    if ( i == actions.end() )
+        return add(id, callback);
+    
+    i->cb = callback;
+}
+
+void ActionHandler::remove(const char* id){
+    actions.remove_if([&id](const section_handler_t &arg) { return std::string_view(arg.action).compare(id) == 0; });
+}
+
+size_t ActionHandler::exec(Interface &interf, JsonObject &data, const char* action){
+    size_t cnt{0};
+    if (!action) return cnt;      // return if action is empty string
+    std::string_view a(action);
+
+    for (const auto& i : actions){
+        std::string_view item(i.action);
+        if (a.length() < item.length()) continue;  // skip handlers with longer names, obviously a mismatch
+
+        //.ends_with (since C++20)
+        if (std::char_traits<char>::eq(item.back(), 0x2a))       // 0x2a  == '*'
+            if (a.compare(0, item.length()-1, item) != 0)  continue;
+ 
+        if (a.compare(item) != 0) continue;
+
+        // execute action callback
+        LOG(print, "UI: exec handler: "); LOG(println, item.data());
+        i.cb(&interf, &data, action);
+        ++cnt;
+    }
+
+    return cnt;
 }

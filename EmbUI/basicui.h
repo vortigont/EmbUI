@@ -40,7 +40,7 @@ static constexpr const char* T_REBOOT = "reboot";
     перенакрываемая функция для добавления пользовательских пунктов в меню "Настройки"
     вызывается в конце section_settings_frame()
 */
-void __attribute__((weak)) user_settings_frame(Interface *interf, JsonObject *data);
+void __attribute__((weak)) user_settings_frame(Interface *interf, JsonObject *data, const char* action);
 
 /*
     A namespace with functions to handle basic EmbUI WebUI interface
@@ -48,36 +48,29 @@ void __attribute__((weak)) user_settings_frame(Interface *interf, JsonObject *da
 namespace basicui {
 
   /**
-   * Define configuration variables and controls handlers
-   * 
-   * Variables has literal names and are kept within json-configuration file on flash
-   * Control handlers are bound by literal name with a particular method. This method is invoked
-   * by manipulating controls
-   * 
-   * this method owerrides weak definition in framework
+   * register handlers for system actions and setup pages
    * 
    */
-  void add_sections();
+  void register_handlers();
 
   /**
    * This code adds "Settings" section to the MENU
    * it is up to you to properly open/close Interface json_section
    */
-  void menuitem_options(Interface *interf, JsonObject *data);
-  inline void opt_setup(Interface *interf, JsonObject *data){ menuitem_options(interf, data); };       // deprecated
+  void menuitem_options(Interface *interf, JsonObject *data, const char* action);
 
-  void show_section(Interface *interf, JsonObject *data);
-  void block_settings_gnrl(Interface *interf, JsonObject *data);
-  void block_settings_netw(Interface *interf, JsonObject *data);
-  void block_settings_mqtt(Interface *interf, JsonObject *data);
-  void block_settings_time(Interface *interf, JsonObject *data);
-  void block_settings_sys(Interface *interf, JsonObject *data);
-  void section_settings_frame(Interface *interf, JsonObject *data);
-  void set_settings_wifi(Interface *interf, JsonObject *data);
-  void set_settings_wifiAP(Interface *interf, JsonObject *data);
-  void set_settings_mqtt(Interface *interf, JsonObject *data);
-  void set_settings_time(Interface *interf, JsonObject *data);
-  void set_language(Interface *interf, JsonObject *data);
+  void show_section(Interface *interf, JsonObject *data, const char* action);
+  void block_settings_gnrl(Interface *interf, JsonObject *data, const char* action);
+  void block_settings_netw(Interface *interf, JsonObject *data, const char* action);
+  void block_settings_mqtt(Interface *interf, JsonObject *data, const char* action);
+  void block_settings_time(Interface *interf, JsonObject *data, const char* action);
+  void block_settings_sys(Interface *interf, JsonObject *data, const char* action);
+  void section_settings_frame(Interface *interf, JsonObject *data, const char* action);
+  void set_settings_wifi(Interface *interf, JsonObject *data, const char* action);
+  void set_settings_wifiAP(Interface *interf, JsonObject *data, const char* action);
+  void set_settings_mqtt(Interface *interf, JsonObject *data, const char* action);
+  void set_settings_time(Interface *interf, JsonObject *data, const char* action);
+  void set_language(Interface *interf, JsonObject *data, const char* action);
   void embuistatus(Interface *interf);
 
   /**
@@ -85,10 +78,10 @@ namespace basicui {
    * i.e. free ram, uptime, etc... 
    */
   void embuistatus();
-  void set_reboot(Interface *interf, JsonObject *data);
-  void set_hostname(Interface *interf, JsonObject *data);
-  void set_datetime(Interface *interf, JsonObject *data);
-  void set_cfgclear(Interface *interf, JsonObject *data);
+  void set_reboot(Interface *interf, JsonObject *data, const char* action);
+  void set_hostname(Interface *interf, JsonObject *data, const char* action);
+  void set_datetime(Interface *interf, JsonObject *data, const char* action);
+  void set_cfgclear(Interface *interf, JsonObject *data, const char* action);
     //uint8_t uploadProgress(size_t len, size_t total);
 
 }   // end of "namespace basicui"

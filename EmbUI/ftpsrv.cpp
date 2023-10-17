@@ -25,7 +25,7 @@ bool ftp_status(){ return ftpsrv; };
 
 namespace basicui {
 
-void block_settings_ftp(Interface *interf, JsonObject *data){
+void block_settings_ftp(Interface *interf, JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -42,7 +42,7 @@ void block_settings_ftp(Interface *interf, JsonObject *data){
     interf->json_frame_flush(); // main
 }
 
-void set_settings_ftp(Interface *interf, JsonObject *data){
+void set_settings_ftp(Interface *interf, JsonObject *data, const char* action){
     if (!data) return;
 
     bool newstate = (*data)[P_ftp];
@@ -69,7 +69,7 @@ void set_settings_ftp(Interface *interf, JsonObject *data){
       LOG(println, "UI: Starting FTP Server");
     }
 
-    if (interf) basicui::section_settings_frame(interf, nullptr);          // go to "Options" page
+    if (interf) basicui::section_settings_frame(interf, nullptr, NULL);          // go to "Options" page
 }
 
 } // namespace basicui

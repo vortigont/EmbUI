@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <list>
 #include "globals.h"
 #include "embuifs.hpp"
 #include "LList.h"
@@ -50,7 +51,7 @@ class Interface;
 
 
 // Weak Callback functions (user code might override it)
-void    __attribute__((weak)) section_main_frame(Interface *interf, JsonObject *data);
+void    __attribute__((weak)) section_main_frame(Interface *interf, JsonObject *data, const char* action);
 void    __attribute__((weak)) pubCallback(Interface *interf);
 String  __attribute__((weak)) httpCallback(const String &param, const String &value, bool isset);
 uint8_t __attribute__((weak)) uploadProgress(size_t len, size_t total);
@@ -58,26 +59,76 @@ void    __attribute__((weak)) create_parameters();
 
 //---------------------- Callbak functions
 using asyncsrv_callback_t = std::function< bool (AsyncWebServerRequest *req)>;
-using actionCallback_t = std::function< void (Interface *interf, JsonObject *data)>;
+using actionCallback_t = std::function< void (Interface *interf, JsonObject *data, const char* action)>;
 
 
 /**
- * @brief a struct that keeps action handlers and their name+id
- * used to run callbacks on actions from UI
+ * @brief a struct that keeps action callback handlers
+ * used to keep callbacks on post'ed actions with data from UI
  * 
  */
-struct section_handle_t{
-    String name;
-    actionCallback_t callback;
-    section_handle_t(const String& n, actionCallback_t& cb) : name(n), callback(cb){};
+struct section_handler_t {
+    // action id
+    const char* action;
+    // callback function
+    actionCallback_t cb;
+
+    section_handler_t(const char* id, actionCallback_t callback) : action(id), cb(callback){};
 };
 
+/**
+ * @brief a class that manages action handlers
+ * add/remove/search, etc...
+ * 
+ */
+class ActionHandler {
+    // a list of action handlers
+    std::list<section_handler_t> actions;
+
+public:
+    /**
+     * @brief add ui action handler
+     * 
+     * @param id action name (note: pointer MUST be valid for the whole lifetime of ActionHandler instance,
+     *              the string it points to won't be deep-copied )
+     * @param response callback function
+     * 
+     */
+    void add(const char* id, actionCallback_t callback);
+
+    /**
+     * @brief replace callback for specified id
+     * if action with specified id does not exist in the list, a new action callback will be added ( like via add() )
+     * 
+     * @param id 
+     * @param callback 
+     */
+    void replace(const char* id, actionCallback_t callback);
+
+    /**
+     * @brief remove all handlers matching id
+     * 
+     * @param id handlers to remove
+     */
+    void remove(const char* id);
+
+    /**
+     * @brief remove all registered actions
+     * 
+     */
+    void clear(){ actions.clear(); };
+
+    /**
+     * @brief lookup and execute registered callbacks for the specified action
+     * 
+     * @return number of callbacks executed, 0 - if no callback were registered for such action
+     */
+    size_t exec(Interface &interf, JsonObject &data, const char* action);
+};
 
 class EmbUI
 {
     DynamicJsonDocument cfg;                        // system config
-    LList<std::shared_ptr<section_handle_t>> section_handle;        // action handlers
-
 
   public:
     EmbUI();
@@ -89,6 +140,8 @@ class EmbUI
     AsyncWebServer server;
     AsyncWebSocket ws;
     WiFiController *wifi;
+
+    ActionHandler action;
 
     /**
      * @brief EmbUI initialization
@@ -103,22 +156,6 @@ class EmbUI
      * 
      */
     void handle();
-
-    /**
-     * @brief add ui section handler
-     * 
-     * @param name section name
-     * @param response callback function
-     */
-    void section_handle_add(const String &name, actionCallback_t response);
-
-    /**
-     * @brief remove section handler
-     * 
-     * @param name section name
-     */
-    void section_handle_remove(const String &name);
-
 
     /**
      * @brief obtain cfg parameter as String
@@ -358,8 +395,6 @@ class EmbUI
      */ 
     void create_sysvars();
 
-    // find callback section matching specified name
-    section_handle_t* sectionlookup(const char *id);
 
 
     /*** WiFi-related methods ***/
@@ -564,7 +599,7 @@ extern EmbUI embui;
 
 #define CALL_INTF_OBJ(call) { \
     Interface *interf = embui.ws.count()? new Interface(&embui, &embui.ws, SMALL_JSON_SIZE*1.5) : nullptr; \
-    call(interf, &obj); \
+    call(interf, &obj, NULL); \
     if (interf) { \
         interf->json_frame_value(); \
         for (JsonPair kv : obj) { \
