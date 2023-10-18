@@ -5,6 +5,8 @@
 
 #include "EmbUI.h"
 
+#define MQTT_RECONNECT_PERIOD    15
+
 void EmbUI::_mqttConnTask(bool state){
     if (!state){
         delete tMqttReconnector;
@@ -15,11 +17,10 @@ void EmbUI::_mqttConnTask(bool state){
     if(tMqttReconnector){
         tValPublisher->restart();
     } else {
-        tMqttReconnector = new Task(15 * TASK_SECOND, TASK_FOREVER, [this](){
+        tMqttReconnector = new Task(MQTT_RECONNECT_PERIOD * TASK_SECOND, TASK_FOREVER, [this](){
             if (!(WiFi.getMode() & WIFI_MODE_STA)) return;
             if (mqttClient) _connectToMqtt();
         }, &ts, true );
-        tMqttReconnector->enable();
     }
 }
 
@@ -79,7 +80,7 @@ void EmbUI::mqttStart(){
 
 void EmbUI::mqttStop(){
     _mqttConnTask(false);
-    mqttClient.release();
+    delete mqttClient.release();
 }
 
 void EmbUI::mqttReconnect(){ // принудительный реконнект, при смене чего-либо в UI
