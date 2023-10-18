@@ -22,7 +22,7 @@ void ota_handler(AsyncWebServerRequest *request, String filename, size_t index, 
 /*
  * OTA update progress calculator
  */
-uint8_t uploadProgress(size_t len, size_t total);
+//uint8_t uploadProgress(size_t len, size_t total);
 
 /**
  * @brief Default HTTP callback function
@@ -159,7 +159,7 @@ void EmbUI::http_set_handlers(){
 
 /*
  * OTA update progress calculator
- */
+
 uint8_t uploadProgress(size_t len, size_t total){
     static int prev = 0;
     int parts = total / 25;  // logger chunks (each 4%)
@@ -171,4 +171,4 @@ uint8_t uploadProgress(size_t len, size_t total){
     }
     return progress;
 }
-
+ */
