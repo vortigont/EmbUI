@@ -12,6 +12,7 @@
 #include "ts.h"
 #include "timeProcessor.h"
 #include "embui_wifi.hpp"
+#include "traits.hpp"
 
 #include <FS.h>
 #include <ESPAsyncWebServer.h>
@@ -258,8 +259,8 @@ class EmbUI
      * Note: by default if key has not been registerred on init it won't be created
      * beware of dangling pointers here passing non-static char*, use JsonVariant or String instead 
      */
-    template <typename T>
-    void var(const String &key, const T& value, bool force = false);
+    template <typename V>
+    void var(const char* key, const V& value, bool force = false);
 
     /**
      * @brief - create config varialbe if it does not exist yet
@@ -268,12 +269,12 @@ class EmbUI
      * it's value won't be replaced
      */
     template <typename T>
-    inline void var_create(const String &key, const T& value){ if(!cfg.containsKey(key)){var(key, value, true );} }
+    inline void var_create(const char* key, const T& value){ if(!cfg.containsKey(key)){var(key, value, true );} }
 
     /**
      * @brief - remove key from config
      */
-    void var_remove(const String &key);
+    void var_remove(const char* key);
 
     /**
      * @brief create/update cfg key only with non-null value
@@ -291,10 +292,8 @@ class EmbUI
      * @param value - keys' value
      */
     template <typename T>
-    void var_dropnulls(const String &key, const T& value);
+    void var_dropnulls(const char *key, const T& value);
 
-    void var_dropnulls(const String &key, const char* value);
-    void var_dropnulls(const String &key, JsonVariant value);
 
     // call-backs
 
@@ -626,51 +625,50 @@ extern EmbUI embui;
 /* ======================================== */
 /* Templated methods implementation follows */
 /* ======================================== */
-
-template <typename T>
-void EmbUI::var(const String &key, const T& value, bool force){
+template <typename V>
+void EmbUI::var(const char* key, const V& value, bool force){
+    LOG(print, "UI Key:");
     if (!force && !cfg.containsKey(key)) {
-        LOG(printf_P, PSTR("UI ERR: KEY (%s) is NOT initialized!\n"), key.c_str());
+        LOG(print, key);
+        LOG(println, " is NOT initialized!\n");
         return;
     }
 
     // do not update key if new value is the same as existing one
     if (cfg[key] == value){
-        LOG(printf_P, PSTR("UI: skip same value for KEY:'%s'\n"), key.c_str());
+        LOG(println, " skip same value");
         return;
     }
 
     if ((cfg.capacity() - cfg.memoryUsage()) < EMBUI_CFGSIZE_MIN_FREE){
         // cfg is out of mem, try to compact it
         cfg.garbageCollect();
-        LOG(printf_P, PSTR("UI: cfg garbage cleanup: %u free out of %u\n"), cfg.capacity() - cfg.memoryUsage(), cfg.capacity());
     }
 
-    if (cfg[key].set(value)){
-        LOG(printf_P, PSTR("UI cfg WRITE key:'%s' val:'%s...', cfg mem free: %d\n"), key.c_str(), cfg[key].as<String>().substring(0, 5).c_str(), cfg.capacity() - cfg.memoryUsage());
+    if (cfg[key] = value){
+        LOG(printf, " WRITE val:'%s...', mem free: %d\n", cfg[key].template as<String>().substring(0, 10).c_str(), cfg.capacity() - cfg.memoryUsage());
         autosave();
         return;
     }
 
-    LOG(printf_P, PSTR("UI ERR: KEY (%s), cfg out of mem!\n"), key.c_str());
+    LOG(println, " cfg out of mem!\n");
 }
 
 
 template <typename T>
-void EmbUI::var_dropnulls(const String &key, const T& value){
-/*
-// C++17, cant't build for esp32
-    if constexpr (std::is_same_v<T, const char*>){  // check if pointed str is not empty ""
-        (value && *value) ? var(key, (char*)value, true ) : var_remove(key);    // deep copy
-        return;
-    }
+void EmbUI::var_dropnulls(const char* key, const T& value){
+    if constexpr (embui_traits::is_string_v<decltype(value)>)
+      if (embui_traits::is_empty_string(value)) return var_remove(key);
+
+    if constexpr (std::is_arithmetic_v<T>)
+      if (value == 0) return var_remove(key);
+
     if constexpr (std::is_same_v<T, JsonVariant>){  // JVars that points to strings must be treaded differently
-        JsonVariant _v = value;
-        _v.is<const char*>() ? var_dropnulls(key, _v.as<const char*>()) : var_remove(key);
-        return;
+        if (value.template is<const char*>()) return var_dropnulls(key, value.template as<const char*>());
     }
-*/
-    value ? var(key, value, true ) : var_remove(key);
+
+    // deduce further???
+    var(key, value, true ); // save value as-is
 }
 
 template <typename T, typename P>

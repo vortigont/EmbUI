@@ -6,7 +6,7 @@ name: PlatformIO CI
 
 on:
   push:
-    branches: [ main, feat, v2.6, 2.6tst, stage ]
+#    branches: [ main, feat, v2.6, 2.6tst, stage ]
   pull_request:
     branches: [ main ]
     paths:
@@ -54,4 +54,6 @@ jobs:
       env: 
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
       run: |
-        pio ci -c ${{ matrix.example }}/platformio.ini
+        cd ${{ matrix.example }} && platformio run
+        #platformio run -c ${{ matrix.example }}/platformio.ini
+        #pio ci -c ${{ matrix.example }}/platformio.ini

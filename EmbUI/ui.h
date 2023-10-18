@@ -185,55 +185,55 @@ public:
     };
 };
 
-class frameSend {
+class FrameSend {
     public:
-        virtual ~frameSend(){};
-        virtual void send(const String &data){};
-        virtual void send(const JsonObject& data){};
-        virtual void flush(){}
+        virtual ~FrameSend(){};
+        virtual void send(const String &data) = 0;
+        virtual void send(const JsonObject& data) = 0;
+        virtual void flush(){};
 };
 
-class frameSendAll: public frameSend {
+class FrameSendAll: public FrameSend {
     private:
         AsyncWebSocket *ws;
     public:
-        frameSendAll(AsyncWebSocket *server) : ws(server){}
-        ~frameSendAll() { ws = nullptr; }
-        void send(const String &data){ if (!data.isEmpty()) ws->textAll(data); };
-        void send(const JsonObject& data);
+        FrameSendAll(AsyncWebSocket *server) : ws(server){}
+        ~FrameSendAll() { ws = nullptr; }
+        void send(const String &data) override { if (!data.isEmpty()) ws->textAll(data); };
+        void send(const JsonObject& data) override;
 };
 
-class frameSendClient: public frameSend {
+class FrameSendClient: public FrameSend {
     private:
         AsyncWebSocketClient *cl;
     public:
-        frameSendClient(AsyncWebSocketClient *client) : cl(client){}
-        ~frameSendClient() { cl = nullptr; }
-        void send(const String &data){ if (!data.isEmpty()) cl->text(data); };
+        FrameSendClient(AsyncWebSocketClient *client) : cl(client){}
+        ~FrameSendClient() { cl = nullptr; }
+        void send(const String &data) override { if (!data.isEmpty()) cl->text(data); };
         /**
          * @brief - serialize and send json obj directly to the ws buffer
          */
-        void send(const JsonObject& data);
+        void send(const JsonObject& data) override;
 };
 
-class frameSendHttp: public frameSend {
+class FrameSendHttp: public FrameSend {
     private:
         AsyncWebServerRequest *req;
         AsyncResponseStream *stream;
     public:
-        frameSendHttp(AsyncWebServerRequest *request) : req(request) {
+        FrameSendHttp(AsyncWebServerRequest *request) : req(request) {
             stream = req->beginResponseStream(PGmimejson);
             stream->addHeader(PGhdrcachec, PGnocache);
         }
-        ~frameSendHttp() { /* delete stream; */ req = nullptr; }
-        void send(const String &data){
+        ~FrameSendHttp() { /* delete stream; */ req = nullptr; }
+        void send(const String &data) override {
             if (!data.length()) return;
             stream->print(data);
         };
         /**
          * @brief - serialize and send json obj directly to the ws buffer
          */
-        void send(const JsonObject& data){
+        void send(const JsonObject& data) override {
             serializeJson(data, *stream);
         };
         void flush(){
@@ -252,7 +252,7 @@ class Interface {
     EmbUI *embui;
     DynamicJsonDocument json;
     LList<section_stack_t*> section_stack;
-    frameSend *send_hndl;
+    FrameSend *send_hndl;
 
     /**
      * @brief append supplied json data to the current Interface frame
@@ -289,13 +289,13 @@ class Interface {
 
     public:
         Interface(EmbUI *j, AsyncWebSocket *server, size_t size = IFACE_DYN_JSON_SIZE): embui(j), json(size) {
-            send_hndl = new frameSendAll(server);
+            send_hndl = new FrameSendAll(server);
         }
         Interface(EmbUI *j, AsyncWebSocketClient *client, size_t size = IFACE_DYN_JSON_SIZE): embui(j), json(size) {
-            send_hndl = new frameSendClient(client);
+            send_hndl = new FrameSendClient(client);
         }
         Interface(EmbUI *j, AsyncWebServerRequest *request, size_t size = IFACE_DYN_JSON_SIZE): embui(j), json(size) {
-            send_hndl = new frameSendHttp(request);
+            send_hndl = new FrameSendHttp(request);
         }
         ~Interface(){
             json_frame_clear();

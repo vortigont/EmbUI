@@ -100,7 +100,7 @@ void Interface::json_section_end(){
 /**
  * @brief - serialize and send json obj directly to the ws buffer
  */
-void frameSendAll::send(const JsonObject& data){
+void FrameSendAll::send(const JsonObject& data){
     size_t length = measureJson(data);
     auto buffer = ws->makeBuffer(length);
     if (!buffer)
@@ -118,7 +118,7 @@ void frameSendAll::send(const JsonObject& data){
 /**
  * @brief - serialize and send json obj directly to the ws buffer
  */
-void frameSendClient::send(const JsonObject& data){
+void FrameSendClient::send(const JsonObject& data){
     size_t length = measureJson(data);
     auto buffer = cl->server()->makeBuffer(length);
     if (!buffer)
