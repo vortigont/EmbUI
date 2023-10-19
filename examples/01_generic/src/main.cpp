@@ -3,6 +3,7 @@
 #include "main.h"
 #include "EmbUI.h"
 #include "uistrings.h"   // non-localized text-strings
+#include "interface.h"
 
 /**
  * построение интерфейса осуществляется в файлах 'interface.*'
@@ -18,6 +19,9 @@ void setup() {
 
   // Start EmbUI framework
   embui.begin();
+
+  // register our actions
+  create_parameters();
 
   LOG(println, "restore LED state from configuration param");
   digitalWrite( LED_BUILTIN, !embui.paramVariant(FPSTR(V_LED)) );

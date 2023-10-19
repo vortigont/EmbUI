@@ -24,40 +24,6 @@ Task tDisplayUpdater(SENSOR_UPDATE_RATE * TASK_SECOND, TASK_FOREVER, &sensorPubl
 
 
 /**
- * переопределяем метод из фреймворка, регистрирующий необходимы нам в проекте переменные и методы обработки
- * 
- */
-void create_parameters(){
-    LOG(println, "UI: Creating application vars");
-
-   /**
-    * регистрируем статические секции для web-интерфейса с системными настройками,
-    * сюда входит:
-    *  - WiFi-manager
-    *  - установка часового пояса/правил перехода сезонного времени
-    *  - установка текущей даты/времени вручную
-    *  - базовые настройки MQTT
-    *  - OTA обновление прошивки и образа файловой системы
-    */
-    basicui::add_sections();
-
-    /**
-     * регистрируем свои переменные
-     */
-    embui.var_create(V_LED, true);    // LED default status is on
-
-    /**
-     * добавляем свои обрабочки на вывод UI-секций
-     * и действий над данными
-     */
-    embui.section_handle_add(T_DEMO, block_demopage);                // generate "Demo" UI section
-
-    // обработчики
-    embui.section_handle_add(V_LED, action_blink);               // обработка рычажка светодиода
-    embui.section_handle_add(V_UPDRATE, setRate);                // sensor data publisher rate change
-};
-
-/**
  * Headlile section
  * this is an overriden weak method that builds our WebUI interface from the top
  * ==
@@ -65,22 +31,22 @@ void create_parameters(){
  * переопределенный метод фреймфорка, который начинает строить корень нашего Web-интерфейса
  * 
  */
-void section_main_frame(Interface *interf, JsonObject *data){
+void section_main_frame(Interface *interf, JsonObject *data, const char* action){
 
   interf->json_frame_interface();
 
   interf->json_section_manifest("EmbUI Example", 0, "v1.0");      // app name/jsapi/version manifest
   interf->json_section_end();                                     // manifest section MUST be closed!
 
-  block_menu(interf, data);                         // Строим UI блок с меню выбора других секций
+  block_menu(interf, data, NULL);                         // Строим UI блок с меню выбора других секций
 
   if(!(WiFi.getMode() & WIFI_MODE_STA)){            // if WiFI is no connected to external AP, than show page with WiFi setup
     interf->json_frame_flush();                     // MUST Close previous interface frame, because basicui::block_settings_netw will open and send it's own frame
 
     LOG(println, "UI: Opening network setup page");
-    basicui::block_settings_netw(interf, data);
+    basicui::block_settings_netw(interf, data, NULL);
   } else {
-    block_demopage(interf, data);                   // Строим блок с demo переключателями
+    block_demopage(interf, data, NULL);                   // Строим блок с demo переключателями
     interf->json_frame_flush();                     // Close and send interface section
   }
 
@@ -91,7 +57,7 @@ void section_main_frame(Interface *interf, JsonObject *data){
  * This code builds UI section with menu block on the left
  * 
  */
-void block_menu(Interface *interf, JsonObject *data){
+void block_menu(Interface *interf, JsonObject *data, const char* action){
     if (!interf) return;
     // создаем меню
     interf->json_section_menu();
@@ -106,7 +72,7 @@ void block_menu(Interface *interf, JsonObject *data){
      * это автоматически даст доступ ко всем связанным секциям с интерфейсом для системных настроек
      * 
      */
-    basicui::opt_setup(interf, data);       // пункт меню "настройки"
+    basicui::menuitem_settings(interf, data, NULL);       // пункт меню "настройки"
     interf->json_section_end();
 }
 
@@ -114,7 +80,7 @@ void block_menu(Interface *interf, JsonObject *data){
  * Demo controls
  * 
  */
-void block_demopage(Interface *interf, JsonObject *data){
+void block_demopage(Interface *interf, JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -173,7 +139,7 @@ void block_demopage(Interface *interf, JsonObject *data){
  * @brief interactive handler for LED switchbox
  * every change of a checkbox triggers this action
  */
-void action_blink(Interface *interf, JsonObject *data){
+void action_blink(Interface *interf, JsonObject *data, const char* action){
   if (!data) return;  // process only data
 
   SETPARAM(V_LED);  // save new LED state to the config
@@ -243,7 +209,7 @@ void sensorPublisher() {
 /**
  * Change sensor update rate callback
  */
-void setRate(Interface *interf, JsonObject *data) {
+void setRate(Interface *interf, JsonObject *data, const char* action) {
   if (!data) return;
 
   if (!(*data)[V_UPDRATE]){    // disable update on interval '0'
@@ -254,3 +220,30 @@ void setRate(Interface *interf, JsonObject *data) {
   }
 
 }
+
+/**
+ * функция регистрации переменных и активностей
+ * 
+ */
+void create_parameters(){
+    LOG(println, "UI: Creating application vars");
+
+    /**
+     * регистрируем свои переменные
+     */
+    embui.var_create(V_LED, true);    // LED default status is on
+
+    // регистрируем обработчики активностей
+    embui.action.set_mainpage_cb(section_main_frame);                            // заглавная страница веб-интерфейса
+
+    /**
+     * добавляем свои обрабочки на вывод UI-секций
+     * и действий над данными
+     */
+    embui.action.add(T_DEMO, block_demopage);                // generate "Demo" UI section
+
+    // обработчики
+    embui.action.add(V_LED, action_blink);               // обработка рычажка светодиода
+    embui.action.add(V_UPDRATE, setRate);                // sensor data publisher rate change
+};
+

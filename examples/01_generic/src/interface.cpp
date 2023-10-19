@@ -1,4 +1,4 @@
-#include "main.h"
+//#include "main.h"
 
 #include "EmbUI.h"
 #include "interface.h"
@@ -14,43 +14,6 @@
 #include "basicui.h"
 
 /**
- * переопределяем метод из фреймворка, регистрирующий необходимы нам в проекте переменные и методы обработки
- * 
- */
-void create_parameters(){
-    LOG(println, F("UI: Creating application vars"));
-
-   /**
-    * регистрируем статические секции для web-интерфейса с системными настройками,
-    * сюда входит:
-    *  - WiFi-manager
-    *  - установка часового пояса/правил перехода сезонного времени
-    *  - установка текущей даты/времени вручную
-    *  - базовые настройки MQTT
-    *  - OTA обновление прошивки и образа файловой системы
-    */
-    basicui::add_sections();
-
-    /**
-     * регистрируем свои переменные
-     */
-    embui.var_create(V_LED, true);              // LED default status is on
-    embui.var_create(V_VAR1, "ipsum lorum");    // заводим текстовую переменную V_VAR1 со значением по умолчанию "ipsum lorum"
-
-    /**
-     * добавляем свои обрабочки на вывод UI-секций
-     * и действий над данными
-     */
-    embui.section_handle_add(FPSTR(T_DEMO), block_demopage);                // generate "Demo" UI section
-
-    // обработчики
-    embui.section_handle_add(FPSTR(T_SET_DEMO), action_demopage);           // обработка данных из секции "Demo"
-
-    embui.section_handle_add(FPSTR(V_LED), action_blink);                   // обработка рычажка светодиода
-
-};
-
-/**
  * Headline section
  * this is an overriden weak method that builds our WebUI interface from the top
  * ==
@@ -58,7 +21,7 @@ void create_parameters(){
  * переопределенный метод фреймфорка, который начинает строить корень нашего Web-интерфейса
  * 
  */
-void section_main_frame(Interface *interf, JsonObject *data){
+void section_main_frame(Interface *interf, JsonObject *data, const char* action){
   if (!interf) return;
 
   interf->json_frame_interface();                                 // open interface frame
@@ -66,15 +29,15 @@ void section_main_frame(Interface *interf, JsonObject *data){
   interf->json_section_manifest("EmbUI Example", 0, "v1.0");      // app name/jsapi/version manifest
   interf->json_section_end();                                     // manifest section MUST be closed!
 
-  block_menu(interf, data);                         // Строим UI блок с меню выбора других секций
+  block_menu(interf, data, NULL);                         // Строим UI блок с меню выбора других секций
 
   if(!(WiFi.getMode() & WIFI_MODE_STA)){            // if WiFI is no connected to external AP, than show page with WiFi setup
     interf->json_frame_flush();                     // MUST Close previous interface frame, because basicui::block_settings_netw will open and send it's own frame
 
     LOG(println, "UI: Opening network setup page");
-    basicui::block_settings_netw(interf, data);
+    basicui::block_settings_netw(interf, data, NULL);
   } else {
-    block_demopage(interf, data);                   // Строим блок с demo переключателями
+    block_demopage(interf, data, NULL);                   // Строим блок с demo переключателями
     interf->json_frame_flush();                     // Close and send interface section
   }
 
@@ -85,7 +48,7 @@ void section_main_frame(Interface *interf, JsonObject *data){
  * This code builds UI section with menu block on the left
  * 
  */
-void block_menu(Interface *interf, JsonObject *data){
+void block_menu(Interface *interf, JsonObject *data, const char* action){
     if (!interf) return;
     // создаем меню
     interf->json_section_menu();
@@ -100,7 +63,7 @@ void block_menu(Interface *interf, JsonObject *data){
      * это автоматически даст доступ ко всем связанным секциям с интерфейсом для системных настроек
      * 
      */
-    basicui::opt_setup(interf, data);       // пункт меню "настройки"
+    basicui::menuitem_settings(interf, data, NULL);       // пункт меню "настройки"
     interf->json_section_end();
 }
 
@@ -108,7 +71,7 @@ void block_menu(Interface *interf, JsonObject *data){
  * Demo controls
  * 
  */
-void block_demopage(Interface *interf, JsonObject *data){
+void block_demopage(Interface *interf, JsonObject *data, const char* action){
     // Headline
     // параметр FPSTR(T_SET_DEMO) определяет зарегистрированный обработчик данных для секции
     interf->json_section_main(T_SET_DEMO, "Some demo controls");
@@ -132,7 +95,7 @@ void block_demopage(Interface *interf, JsonObject *data){
  * @brief action handler for demo form data
  * 
  */
-void action_demopage(Interface *interf, JsonObject *data){
+void action_demopage(Interface *interf, JsonObject *data, const char* action){
     if (!data) return;
 
     LOG(println, "processing section demo");
@@ -156,7 +119,7 @@ void action_demopage(Interface *interf, JsonObject *data){
  * @brief interactive handler for LED switchbox
  * 
  */
-void action_blink(Interface *interf, JsonObject *data){
+void action_blink(Interface *interf, JsonObject *data, const char* action){
   if (!data) return;  // здесь обрабатывает только данные
 
   SETPARAM(V_LED);  // save new LED state to the config
@@ -167,8 +130,29 @@ void action_blink(Interface *interf, JsonObject *data){
 }
 
 /**
- * обработчик статуса (периодического опроса контроллера веб-приложением)
+ * функция регистрации переменных и активностей
+ * 
  */
-void pubCallback(Interface *interf){
-    basicui::embuistatus(interf);
-}
+void create_parameters(){
+    LOG(println, F("UI: Creating application vars"));
+
+    /**
+     * регистрируем свои переменные
+     */
+    embui.var_create(V_LED, true);              // LED default status is on
+    embui.var_create(V_VAR1, "ipsum lorum");    // заводим текстовую переменную V_VAR1 со значением по умолчанию "ipsum lorum"
+
+    // регистрируем обработчики активностей
+    embui.action.set_mainpage_cb(section_main_frame);                            // заглавная страница веб-интерфейса
+
+    /**
+     * добавляем свои обрабочки на вывод UI-секций
+     * и действий над данными
+     */
+    embui.action.add(T_DEMO, block_demopage);                // generate "Demo" UI section
+
+    // обработчики
+    embui.action.add(T_SET_DEMO, action_demopage);           // обработка данных из секции "Demo"
+
+    embui.action.add(V_LED, action_blink);                   // обработка рычажка светодиода
+};
