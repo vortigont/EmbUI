@@ -39,6 +39,7 @@ enum TD : uint8_t {
     D_LARROW,
     D_Load,
     D_More,
+    D_MQTT_Cmt,
     D_MQTT_Host,
     D_MQTT_Interval,
     D_MQTT_Port,
@@ -113,10 +114,11 @@ static const char T_EN_Hostname[] PROGMEM = "Hostname (mDNS Hostname/AP-SSID)";
 static const char T_EN_LARROW[] PROGMEM = "<<<";
 static const char T_EN_Load[] PROGMEM = "Load";
 static const char T_EN_More[] PROGMEM = "More...";
-static const char T_EN_MQTT_Host[] PROGMEM = "MQTT host";
+static const char T_EN_MQTT_Cmt[] PROGMEM = "MQTT topic prefix could be set to custom value. '$id' macro will be replaced with device ID, i.e. 'mydev/$id/'. Set empty string to reset to default prefix.";
+static const char T_EN_MQTT_Host[] PROGMEM = "MQTT server";
 static const char T_EN_MQTT_Interval[] PROGMEM = "MQTT update interval, sec.";
 static const char T_EN_MQTT_Port[] PROGMEM = "MQTT port";
-static const char T_EN_MQTT_Prefix[] PROGMEM = "MQTT topic prefix";
+static const char T_EN_MQTT_Prefix[] PROGMEM = "Override MQTT topic prefix";
 static const char T_EN_MSG_APOnly[] PROGMEM = "In AP-only EmbUI always works as an Access Point and never attempt any WiFi-client connections";
 static const char T_EN_MSG_APProtect[] PROGMEM = "Protect AP with a password (8 chars min)";
 static const char T_EN_MSG_DATETIME[] PROGMEM = "Optional ISO Date/Time, YYYY-MM-DDThh:mm:ss";
@@ -253,6 +255,7 @@ static const char *const T_DICT[][DICT_SIZE] PROGMEM = {
     T_EN_LARROW,
     T_EN_Load,
     T_EN_More,
+    T_EN_MQTT_Cmt,
     T_EN_MQTT_Host,
     T_EN_MQTT_Interval,
     T_EN_MQTT_Port,
@@ -329,6 +332,7 @@ static const char *const T_DICT[][DICT_SIZE] PROGMEM = {
     T_EN_LARROW,
     T_RU_LOAD,
     T_RU_More,
+    T_EN_MQTT_Cmt,
     T_EN_MQTT_Host,
     T_RU_MQTT_Interval,
     T_EN_MQTT_Port,

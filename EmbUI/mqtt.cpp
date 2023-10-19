@@ -31,7 +31,7 @@ void EmbUI::_connectToMqtt() {
         mqtt_topic = cfg[P_mqtt_topic].as<const char*>();
         mqtt_topic.replace("$id", mc);
     } else {
-        mqtt_topic = "embui/";
+        mqtt_topic = "EmbUI/";
         mqtt_topic += mc;
         mqtt_topic += (char)0x2f; // "/"
     }
@@ -168,13 +168,13 @@ void EmbUI::subscribeAll(bool setonly){
 void EmbUI::publish(const char* topic, const char* payload, bool retained){
     if (!mqttClient) return;
     String t(mqttPrefix());
-    t += topic;    // make topic string "~/sys/"
-    //
+    t += topic;    // make topic string "~/{$topic}/"
+    /*
     LOG(print, "MQTT pub: topic:");
     LOG(print, topic);
     LOG(print, " payload:");
     LOG(println, payload);
-    //
+    */
     mqttClient->publish(t.c_str(), 0, retained, payload);
 }
 

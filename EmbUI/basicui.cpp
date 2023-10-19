@@ -270,15 +270,33 @@ void block_settings_mqtt(Interface *interf, JsonObject *data, const char* action
 
     // форма настроек MQTT
     interf->checkbox_cfg(P_mqtt_enable, "Enable MQTT Client");
-    interf->text(P_mqtt_host, embui.paramVariant(P_mqtt_host).as<const char*>(), T_DICT[lang][TD::D_MQTT_Host]);
-    interf->number(P_mqtt_port, embui.paramVariant(P_mqtt_port).as<int>(), T_DICT[lang][TD::D_MQTT_Port]);
-    interf->text(P_mqtt_user, embui.paramVariant(P_mqtt_user).as<const char*>(), T_DICT[lang][TD::D_User]);
-    interf->text(P_mqtt_pass, embui.paramVariant(P_mqtt_pass).as<const char*>(), T_DICT[lang][TD::D_Password]);
-    interf->text(P_mqtt_topic, embui.paramVariant(P_mqtt_topic).as<const char*>(), T_DICT[lang][TD::D_MQTT_Topic]);
-    int t = embui.paramVariant(P_mqtt_ka).as<int>();
+    interf->json_section_line();
+        interf->text(P_mqtt_host, embui.paramVariant(P_mqtt_host).as<const char*>(), T_DICT[lang][TD::D_MQTT_Host]);
+        interf->number(P_mqtt_port, embui.paramVariant(P_mqtt_port).as<int>(), T_DICT[lang][TD::D_MQTT_Port]);
+    interf->json_section_end();
+
+    interf->json_section_line();
+        interf->text(P_mqtt_user, embui.paramVariant(P_mqtt_user).as<const char*>(), T_DICT[lang][TD::D_User]);
+        interf->text(P_mqtt_pass, embui.paramVariant(P_mqtt_pass).as<const char*>(), T_DICT[lang][TD::D_Password]);
+    interf->json_section_end(); // select
+
+    interf->json_section_line();
+        // comment about mqtt prefix 
+        interf->comment(T_DICT[lang][TD::D_MQTT_Cmt]);
+        // current MQTT prefix
+        interf->constant(P_EMPTY, embui.mqttPrefix().c_str());
+    interf->json_section_end();
+
+    int t = embui.paramVariant(P_mqtt_ka);
     if (!t) t = 30;     // default mqtt interval
-    interf->number(P_mqtt_ka, embui.paramVariant(P_mqtt_ka).as<int>(), T_DICT[lang][TD::D_MQTT_Interval]);
-    interf->button(button_t::submit, T_SET_MQTT, T_DICT[lang][TD::D_CONNECT]);
+
+    interf->json_section_line();
+        // mqtt prefix
+        interf->text(P_mqtt_topic, embui.paramVariant(P_mqtt_topic).as<const char*>(), T_DICT[lang][TD::D_MQTT_Topic]);
+        interf->number(P_mqtt_ka, t, T_DICT[lang][TD::D_MQTT_Interval]);
+    interf->json_section_end();
+
+    interf->button(button_t::submit, T_SET_MQTT, T_DICT[lang][TD::D_SAVE]);
 
     interf->spacer();
     interf->button(button_t::generic, T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
