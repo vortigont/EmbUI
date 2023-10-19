@@ -628,8 +628,8 @@ extern EmbUI embui;
 template <typename V>
 void EmbUI::var(const char* key, const V& value, bool force){
     LOG(print, "UI Key:");
+    LOG(print, key);
     if (!force && !cfg.containsKey(key)) {
-        LOG(print, key);
         LOG(println, " is NOT initialized!\n");
         return;
     }
