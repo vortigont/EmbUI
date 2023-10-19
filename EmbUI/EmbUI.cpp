@@ -366,14 +366,15 @@ size_t ActionHandler::exec(Interface *interf, JsonObject *data, const char* acti
         std::string_view item(i.action);
         if (a.length() < item.length()) continue;  // skip handlers with longer names, obviously a mismatch
 
-        //.ends_with (since C++20)
-        if (std::char_traits<char>::eq(item.back(), 0x2a))       // 0x2a  == '*'
-            if (a.compare(0, item.length()-1, item) != 0)  continue;
- 
-        if (a.compare(item) != 0) continue;
+        // check if action has a wildcard suffix "*"
+        if (std::char_traits<char>::eq(item.back(), 0x2a)){       // 0x2a  == '*'
+            if (a.compare(0, item.length()-1, item, 0, item.length()-1) != 0)  continue;
+        } else {
+            if (a.compare(item) != 0) continue;     // full string compare
+        }
 
         // execute action callback
-        LOG(print, "UI: exec handler: "); LOG(println, item.data());
+        LOG(printf, "UI: exec act:%s hndlr:%s\n", action, item.data());
         i.cb(interf, data, action);
         ++cnt;
     }
