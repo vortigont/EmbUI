@@ -627,8 +627,7 @@ extern EmbUI embui;
 /* ======================================== */
 template <typename V>
 void EmbUI::var(const char* key, const V& value, bool force){
-    LOG(print, "UI Key:");
-    LOG(print, key);
+    LOG(print, "UI Key:"); LOG(print, key);
     if (!force && !cfg.containsKey(key)) {
         LOG(println, " is NOT initialized!\n");
         return;
@@ -645,13 +644,13 @@ void EmbUI::var(const char* key, const V& value, bool force){
         cfg.garbageCollect();
     }
 
-    if (cfg[key] = value){
+    if (cfg[key].add(value)){
         LOG(printf, " WRITE val:'%s...', mem free: %d\n", cfg[key].template as<String>().substring(0, 10).c_str(), cfg.capacity() - cfg.memoryUsage());
         autosave();
         return;
     }
 
-    LOG(println, " cfg out of mem!\n");
+    LOG(println, " cfg out of mem!");
 }
 
 
