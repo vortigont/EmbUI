@@ -246,7 +246,7 @@ class Interface {
     struct section_stack_t{
       JsonArray block;
       String name;
-      int idx;
+      int idx{0};
     };
 
     EmbUI *embui;
@@ -284,7 +284,7 @@ class Interface {
      */
     template  <typename ID, typename L>
         typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
-    json_section_begin(const ID name, const L label, bool main, bool hidden, bool line, JsonObject obj);
+    json_section_begin(const ID name, const L label, bool main, bool hidden, bool line, JsonObject &obj);
 
 
     public:
@@ -427,7 +427,8 @@ class Interface {
         json_section_extend(const ID &name){
             section_stack.tail()->idx--;
             // open new nested section
-            json_section_begin(name, P_EMPTY, false, false, false, section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element
+            JsonObject o( section_stack.tail()->block[section_stack.tail()->block.size()-1].createNestedObject());    // find last array element
+            json_section_begin(name, P_EMPTY, false, false, false, o);
         };
 
         /**
@@ -806,19 +807,23 @@ Interface::json_section_begin(const ID name, const L label, bool main, bool hidd
 
 template  <typename ID, typename L>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
-Interface::json_section_begin(const ID name, const L label, bool main, bool hidden, bool line, JsonObject obj){
-    obj[P_section] = embui_traits::is_empty_string(name) ? String(millis()) : name;
+Interface::json_section_begin(const ID name, const L label, bool main, bool hidden, bool line, JsonObject &obj){
+    if (embui_traits::is_empty_string(name))
+        obj[P_section] = String (millis()); // need a deep-copy
+    else
+        obj[P_section] = name;
+
     if (!embui_traits::is_empty_string(label)) obj[P_label] = label;
     if (main) obj["main"] = true;
     if (hidden) obj[P_hidden] = true;
     if (line) obj["line"] = true;
 
     section_stack_t *section = new section_stack_t;
-    section->name = name;
+    section->name = obj[P_section].as<const char*>();
     section->block = obj.createNestedArray(P_block);
-    section->idx = 0;
+
+    LOG(printf, "UI: section begin #%u '%s', %ub free\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0, so I print in fo BEFORE adding section to stack
     section_stack.add(section);
-    LOG(printf_P, PSTR("UI: section #%u begin:'%s', %u b free\n"), section_stack.size()-1, embui_traits::is_empty_string(name) ? P_empty_quotes : String(name).c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0
 }
 
 template  <typename ID, typename L = const char*>

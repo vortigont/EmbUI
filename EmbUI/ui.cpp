@@ -93,7 +93,7 @@ void Interface::json_section_end(){
     if (section_stack.size()) {
         section_stack.tail()->idx++;
     }
-    LOG(printf_P, PSTR("UI: section #%u end:'%s', RAM: %u\n"), section_stack.size(), section->name.isEmpty() ? P_empty_quotes : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
+    LOG(printf, "UI: section end #%u '%s', heap: %u\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
     delete section;
 }
 
