@@ -42,7 +42,7 @@ private:
 
     const char* ntp1 = NTP1ADDRESS;
     const char* ntp2 = NTP2ADDRESS;
-    std::unique_ptr<char[]> ntpCustom;   // pointer for custom ntp hostname
+    std::string* userntp = nullptr;          // user defined NTP server
 
     /**
      * обратный вызов при подключении к WiFi точке доступа
@@ -77,8 +77,7 @@ public:
      * Функция установки системного времени, принимает в качестве аргумента указатель на строку в формате
      * "YYYY-MM-DDThh:mm:ss"
      */
-    static void setTime(const String &timestr);
-    static inline void setTime(const char *timestr){ setTime(String (timestr)); };
+    static time_t setTime(const char* datetimestr);
 
     /**
      * установки системной временной зоны/правил сезонного времени.
@@ -153,7 +152,7 @@ public:
      * функция допечатывает в переданную строку заданный таймстамп в дату/время в формате "9999-99-99T99:99"
      * @param _tstamp - преобразовать заданный таймстамп, если не задан используется текущее локальное время
      */
-    static void getDateTimeString(String &buf, const time_t _tstamp = 0);
+    static void getDateTimeString(String &buf, const time_t tstamp = 0);
 
     /**
      * returns pointer to current unixtime

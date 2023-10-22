@@ -14,7 +14,7 @@
 #endif
 
 // stub zone for a  <+-nn> names
-static const char P_LOC[] PROGMEM = "LOC";
+static const char P_LOC[] = "LOC";
 
 // static member must be defined outside the class
 callback_function_t TimeProcessor::timecb = nullptr;
@@ -26,7 +26,7 @@ TimeProcessor::TimeProcessor()
     sntp_servermode_dhcp(1);    // enable NTPoDHCP
 #endif
 
-    configTzTime(TZONE, ntp1, ntp2, ntpCustom.get());
+    configTzTime(TZONE, ntp1, ntp2, userntp ? userntp->data() : NULL);
     sntp_stop();    // отключаем ntp пока нет подключения к AP
 
     // hook up WiFi events handler
@@ -36,30 +36,25 @@ TimeProcessor::TimeProcessor()
 String TimeProcessor::getFormattedShortTime()
 {
     char buffer[6];
-    sprintf_P(buffer,PSTR("%02u:%02u"), localtime(now())->tm_hour, localtime(now())->tm_min);
+    sprintf(buffer, "%02u:%02u", localtime(now())->tm_hour, localtime(now())->tm_min);
     return String(buffer);
 }
 
 /**
  * Set current system time from a string "YYYY-MM-DDThh:mm:ss"    [19]
  */
-void TimeProcessor::setTime(const String &timestr){
+time_t TimeProcessor::setTime(const char *datetimestr){
+    if (!datetimestr) return 0;
     //"YYYY-MM-DDThh:mm:ss"    [19]
-    if (timestr.length()<DATETIME_STRLEN)
-        return;
+    LOG(print, "Set datetime to: "); LOG(println, datetimestr);
 
-    struct tm t;
-    tm *tm=&t;
+    struct tm tmStruct;
+    strptime(datetimestr, "YYYY-MM-DDThh:mm:ss", &tmStruct);
 
-    tm->tm_year = timestr.substring(0,4).toInt() - TM_BASE_YEAR;
-    tm->tm_mon = timestr.substring(5,7).toInt()-1;
-    tm->tm_mday = timestr.substring(8,10).toInt();
-    tm->tm_hour= timestr.substring(11,13).toInt();
-    tm->tm_min = timestr.substring(14,16).toInt();
-    tm->tm_sec = timestr.substring(17,19).toInt();
-
-    timeval tv = { mktime(tm), 0 };
+    time_t time = mktime(&tmStruct);
+    timeval tv = { time, 0 };
     settimeofday(&tv, NULL);
+    return time;
 }
 
 
@@ -110,8 +105,8 @@ void TimeProcessor::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info){
     switch (event){
     case SYSTEM_EVENT_STA_GOT_IP:
         sntp_setservername(1, (char*)ntp2);
-        if (ntpCustom.get())
-            sntp_setservername(CUSTOM_NTP_INDEX, ntpCustom.get());
+        if (userntp)
+            sntp_setservername(CUSTOM_NTP_INDEX, userntp->data());
         sntp_init();
         LOG(println, F("UI TIME: Starting sntp sync"));
         break;
@@ -133,10 +128,10 @@ void TimeProcessor::timeavailable(struct timeval *t){
  * функция допечатывает в переданную строку передайнный таймстамп даты/времени в формате "9999-99-99T99:99"
  * @param _tstamp - преобразовать заданный таймстамп, если не задан используется текущее локальное время
  */
-void TimeProcessor::getDateTimeString(String &buf, const time_t _tstamp){
+void TimeProcessor::getDateTimeString(String &buf, const time_t tstamp){
   char tmpBuf[DATETIME_STRLEN];
-  const tm* tm = localtime(  _tstamp ? &_tstamp : now());
-  sprintf_P(tmpBuf,PSTR("%04u-%02u-%02uT%02u:%02u"), tm->tm_year + TM_BASE_YEAR, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min);
+  const tm* tm = localtime( tstamp ? &tstamp : now());
+  sprintf(tmpBuf, "%04u-%02u-%02uT%02u:%02u", tm->tm_year + TM_BASE_YEAR, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min);
   buf.concat(tmpBuf);
 }
 
@@ -162,13 +157,13 @@ long int TimeProcessor::getOffset(){
 }
 
 void TimeProcessor::setcustomntp(const char* ntp){
-    if (!ntp || !*ntp)
-        return;
-
-    ntpCustom.reset(strcpy(new char[strlen(ntp) + 1], ntp));
-
-    sntp_setservername(CUSTOM_NTP_INDEX, ntpCustom.get());
-    LOG(printf_P, PSTR("Set custom NTP to: %s\n"), ntpCustom.get());
+    if (!ntp) return;
+    if (!userntp)
+        userntp = new std::string(ntp);
+    else
+        *userntp = ntp;
+    sntp_setservername(CUSTOM_NTP_INDEX, userntp->data());
+    LOG(printf, "Set custom NTP to: %s\n", userntp->data());
 }
 
 /**
@@ -200,8 +195,8 @@ void TimeProcessor::ntpodhcp(bool enable){
         LOG(println, F("TIME: Disabling NTP over DHCP"));
         sntp_setservername(0, (char*)ntp1);
         sntp_setservername(1, (char*)ntp2);
-        if (ntpCustom.get())
-            sntp_setservername(CUSTOM_NTP_INDEX, ntpCustom.get());
+        if (userntp)
+            sntp_setservername(CUSTOM_NTP_INDEX, userntp->data());
     }
 };
 
