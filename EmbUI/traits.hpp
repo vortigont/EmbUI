@@ -3,6 +3,13 @@
 #pragma once
 #include <type_traits>
 
+// cast enum to int
+template <class E>
+constexpr std::common_type_t<int, std::underlying_type_t<E>>
+e2int(E e) {
+    return static_cast<std::common_type_t<int, std::underlying_type_t<E>>>(e);
+}
+
 namespace embui_traits{
 
 template<typename T>

@@ -4,11 +4,35 @@
 // and others people
 
 #pragma once
+#include "i18n.h"           // localized GUI text-strings
 
 // Empty string
 #define P_EMPTY static_cast<const char*>(0)
 
-// Interface
+// UI blocks generator actions (IDs)
+static constexpr const char* UI_SETTINGS = "ui_settings";
+static constexpr const char* UI_NETWORK = "ui_network";
+
+// setter actions (IDs)
+static constexpr const char* SET_FTP = "set_ftp";
+static constexpr const char* SET_WIFI = "set_wifi";
+static constexpr const char* SET_WIFIAP = "set_wifiAP";
+static constexpr const char* SET_MQTT = "set_mqtt";
+static constexpr const char* SET_TIMEOPTIONS = "set_timeoptions";
+static constexpr const char* SET_HOSTNAME = "set_hostname";
+static constexpr const char* SET_DATETIME = "set_datetime";
+static constexpr const char* SET_LANGUAGE = "set_language";
+static constexpr const char* SET_CFGCLEAR = "set_cfgclr";
+static constexpr const char* SET_REBOOT = "set_reboot";
+
+// GET actions than only query for data
+static constexpr const char* GET_UIPAGE = "get_uipage";
+
+// misc
+static constexpr const char* T_DO_OTAUPD = "update";
+
+
+// Interface elements
 static constexpr const char* P_action = "action";
 static constexpr const char* P_app = "app";
 static constexpr const char* P_appjsapi = "appjsapi";
@@ -25,6 +49,7 @@ static constexpr const char* P_datetime = "datetime-local";
 static constexpr const char* P_display = "display";
 static constexpr const char* P_div = "div";
 static constexpr const char* P_directly = "directly";
+static constexpr const char* P_dtime = "dtime";
 static constexpr const char* P_email = "email";
 static constexpr const char* P_empty_quotes = "";
 static constexpr const char* P_file = "file";
@@ -132,7 +157,6 @@ static constexpr const char* P_cfgfile_bkp = "/config_bkp.json";
 static constexpr const char* P_APonly = "APonly";        // AccessPoint-only mode
 static constexpr const char* P_APpwd = "APpwd";          // AccessPoint password
 static constexpr const char* P_TZSET = "TZSET";          // TimeZone rule variable
-static constexpr const char* P_DTIME = "dtime";
 static constexpr const char* P_NOCaptP = "ncapp";        // Captive Portal Disabled
 static constexpr const char* P_hostname = "hostname";    // System hostname
 static constexpr const char* P_LANGUAGE = "lang";        // UI language

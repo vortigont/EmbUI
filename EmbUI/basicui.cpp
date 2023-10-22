@@ -18,22 +18,22 @@ void register_handlers(){
      * UI action handlers
      */ 
     // вывод BasicUI секций
-    embui.action.add(T_SETTINGS, page_system_settings);    // generate "settings" UI section
-    embui.action.add(T_SH_SECT,  show_section);              // display UI section template
+    embui.action.add(UI_SETTINGS, page_system_settings);    // generate "settings" UI section
+    embui.action.add(GET_UIPAGE,  show_uipage);               // display UI section template
 
     // обработка базовых настроек
-    embui.action.add(T_SET_HOSTNAME, set_hostname);          // hostname setup
+    embui.action.add(SET_HOSTNAME, set_hostname);           // hostname setup
 #ifndef EMBUI_NOFTP
-    embui.action.add(T_SET_FTP, set_settings_ftp);           // обработка настроек FTP Client
+    embui.action.add(SET_FTP, set_settings_ftp);           // обработка настроек FTP Client
 #endif  // #ifdef EMBUI_NOFTP
-    embui.action.add(T_SET_WIFI, set_settings_wifi);         // обработка настроек WiFi Client
-    embui.action.add(T_SET_WIFIAP, set_settings_wifiAP);     // обработка настроек WiFi AP
-    embui.action.add(T_SET_MQTT, set_settings_mqtt);         // обработка настроек MQTT
-    embui.action.add(T_SET_TIME, set_settings_time);         // установки даты/времени
-    embui.action.add(P_LANGUAGE, set_language);              // смена языка интерфейса
-    embui.action.add(T_REBOOT, set_reboot);                  // ESP reboot action
-    embui.action.add(P_time, set_datetime);                  // set system date/time from a ISO string value
-    embui.action.add(T_SET_CFGCLEAR, set_cfgclear);          // clear sysconfig
+    embui.action.add(SET_CFGCLEAR, set_cfgclear);           // clear sysconfig
+    embui.action.add(SET_DATETIME, set_datetime);           // set system date/time from a ISO string value
+    embui.action.add(SET_LANGUAGE, set_language);           // смена языка интерфейса
+    embui.action.add(SET_MQTT, set_settings_mqtt);          // обработка настроек MQTT
+    embui.action.add(SET_REBOOT, set_reboot);               // ESP reboot action
+    embui.action.add(SET_TIMEOPTIONS, set_settings_time);   // установки даты/времени
+    embui.action.add(SET_WIFI, set_settings_wifi);          // обработка настроек WiFi Client
+    embui.action.add(SET_WIFIAP, set_settings_wifiAP);      // обработка настроек WiFi AP
 }
 
 void page_main(Interface *interf, JsonObject *data, const char* action){
@@ -44,7 +44,7 @@ void page_main(Interface *interf, JsonObject *data, const char* action){
 
     // create menu
     interf->json_section_menu();
-        menuitem_settings(interf, data, action);
+        menuitem_settings(interf);
     interf->json_section_end();
 
     interf->json_frame_flush();
@@ -56,8 +56,8 @@ void page_main(Interface *interf, JsonObject *data, const char* action){
  * This code adds "Settings" section to the MENU
  * it is up to you to properly open/close Interface menu json_section
  */
-void menuitem_settings(Interface *interf, JsonObject *data, const char* action){
-    interf->option(T_SETTINGS, T_DICT[lang][TD::D_SETTINGS]);     // пункт меню "настройки"
+void menuitem_settings(Interface *interf){
+    interf->option(UI_SETTINGS, T_DICT[lang][TD::D_SETTINGS]);     // пункт меню "настройки"
 }
 
 /**
@@ -70,24 +70,24 @@ void page_system_settings(Interface *interf, JsonObject *data, const char* actio
     if (!interf) return;
     interf->json_frame_interface();
 
-    interf->json_section_main(T_SETTINGS, T_DICT[lang][TD::D_SETTINGS]);
+    interf->json_section_main(UI_SETTINGS, T_DICT[lang][TD::D_SETTINGS]);
 
-    interf->select(P_LANGUAGE, String(lang), String(T_DICT[lang][TD::D_LANG]), true);
+    interf->select(P_LANGUAGE, lang, T_DICT[lang][TD::D_LANG], true);
         interf->option(0, "Eng");
         interf->option(1, "Rus");
     interf->json_section_end();
 
     interf->spacer();
 
-    //interf->button_value(button_t::generic, T_SH_SECT, 0, T_GNRL_SETUP);                  // кнопка перехода в общие настройки
-    interf->button_value(button_t::generic, T_SH_SECT, 1, T_DICT[lang][TD::D_WiFi]);        // кнопка перехода в настройки сети
-    interf->button_value(button_t::generic, T_SH_SECT, 2, T_DICT[lang][TD::D_DATETIME]);    // кнопка перехода в настройки времени
-    interf->button_value(button_t::generic, T_SH_SECT, 3, P_MQTT);                          // кнопка перехода в настройки MQTT
+    //interf->button_value(button_t::generic, GET_UIPAGE, 0, T_GNRL_SETUP);                             // кнопка перехода в общие настройки
+    interf->button_value(button_t::generic, GET_UIPAGE, e2int(page::network), T_DICT[lang][TD::D_WiFi]);       // кнопка перехода в настройки сети
+    interf->button_value(button_t::generic, GET_UIPAGE, e2int(page::datetime), T_DICT[lang][TD::D_DATETIME]);  // кнопка перехода в настройки времени
+    interf->button_value(button_t::generic, GET_UIPAGE, e2int(page::mqtt), P_MQTT);                            // кнопка перехода в настройки MQTT
 
 #ifndef EMBUI_NOFTP
-    interf->button_value(button_t::generic, T_SH_SECT, 4, "FTP Server");           // кнопка перехода в настройки FTP
+    interf->button_value(button_t::generic, GET_UIPAGE, e2int(page::ftp), "FTP Server");                       // кнопка перехода в настройки FTP
 #endif
-    interf->button_value(button_t::generic, T_SH_SECT, 0, T_DICT[lang][TD::D_SYSSET]);      // кнопка перехода в настройки System
+    interf->button_value(button_t::generic, GET_UIPAGE, e2int(page::syssetup), T_DICT[lang][TD::D_SYSSET]);    // кнопка перехода в настройки System
 
     interf->spacer();
 
@@ -101,63 +101,64 @@ void page_system_settings(Interface *interf, JsonObject *data, const char* actio
  * @brief choose UI section to display based on supplied index
  * 
  */
-void show_section(Interface *interf, JsonObject *data, const char* action){
-    if (!interf || !data || (*data)[T_SH_SECT].isNull()) return;  // bail out if no section specifier
+void show_uipage(Interface *interf, JsonObject *data, const char* action){
+    if (!interf || !data || (*data)[GET_UIPAGE].isNull()) return;  // bail out if no section specifier
 
-    // find section index "sh_sec"
-    int idx = (*data)[T_SH_SECT];
+    // find page enum index
+    page idx = static_cast<page>((*data)[GET_UIPAGE].as<int>());
 
     switch (idx){
-//        case 0 :    // general setup section
-//            block_settings_gnrl(interf, data, NULL);
+//        case 0 :    // main page stub
+//            page_main(interf, data, NULL);
 //            break;
-        case 1 :    // WiFi network setup section
-            block_settings_netw(interf, nullptr, NULL);
+        case page::settings :   // general settings page
+            page_system_settings(interf, nullptr, action);
+        case page::network :    // WiFi network setup section
+            page_settings_netw(interf, nullptr, action);
             break;
-        case 2 :    // time setup section
-            block_settings_time(interf, nullptr, NULL);
+        case page::datetime :   // time setup section
+            page_settings_time(interf, nullptr, action);
             break;
-        case 3 :    // MQTT setup section
-            block_settings_mqtt(interf, nullptr, NULL);
+        case page::mqtt :       // MQTT setup section
+            page_settings_mqtt(interf, nullptr, action);
             break;
-        case 4 :    // FTP server setup section
-            block_settings_ftp(interf, nullptr, NULL);
+        case page::ftp :        // FTP server setup section
+            page_settings_ftp(interf, nullptr, action);
             break;
-        default:
-            block_settings_sys(interf, nullptr, NULL);
+        default:;   // do not show anything
     }
 }
 
 /**
  *  BasicUI блок интерфейса настроек WiFi
  */
-void block_settings_netw(Interface *interf, JsonObject *data, const char* action){
+void page_settings_netw(Interface *interf, JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
     // Headline
-    interf->json_section_main(T_OPT_NETW, T_EN_WiFi);
+    interf->json_section_main(UI_NETWORK, T_EN_WiFi);
 
     // Hostname setup
-    interf->json_section_hidden(T_SET_HOSTNAME, "Device name");
+    interf->json_section_hidden(SET_HOSTNAME, "Device name");
     interf->json_section_line();
     interf->comment(T_DICT[lang][TD::D_Hostname]);
     interf->constant(embui.hostname());
     interf->json_section_end(); // Line
     interf->text(P_hostname, P_EMPTY, "Redefine hostname, or clear to reset to default");
-    interf->button(button_t::submit, T_SET_HOSTNAME, T_DICT[lang][TD::D_SAVE], P_GREEN);
+    interf->button(button_t::submit, SET_HOSTNAME, T_DICT[lang][TD::D_SAVE], P_GREEN);
     interf->json_section_end(); // Hostname setup
 
     // Wi-Fi Client setup block
-    interf->json_section_hidden(T_SET_WIFI, T_DICT[lang][TD::D_WiFiClient]);
+    interf->json_section_hidden(SET_WIFI, T_DICT[lang][TD::D_WiFiClient]);
     interf->spacer(T_DICT[lang][TD::D_WiFiClientOpts]);
     interf->text(P_WCSSID, WiFi.SSID().c_str(), T_DICT[lang][TD::D_WiFiSSID]);
     interf->password(P_WCPASS, P_EMPTY, T_DICT[lang][TD::D_Password]);
-    interf->button(button_t::submit, T_SET_WIFI, T_DICT[lang][TD::D_CONNECT], P_GRAY);
+    interf->button(button_t::submit, SET_WIFI, T_DICT[lang][TD::D_CONNECT], P_GRAY);
     interf->json_section_end();
 
     // Wi-Fi AP setup block
-    interf->json_section_hidden(T_SET_WIFIAP, T_DICT[lang][TD::D_WiFiAP]);
+    interf->json_section_hidden(SET_WIFIAP, T_DICT[lang][TD::D_WiFiAP]);
     interf->spacer(T_DICT[lang][TD::D_WiFiAPOpts]);
 
     interf->password(P_APpwd, embui.paramVariant(P_APpwd).as<const char*>(),  T_DICT[lang][TD::D_MSG_APProtect]);          // AP password
@@ -177,12 +178,12 @@ void block_settings_netw(Interface *interf, JsonObject *data, const char* action
     interf->comment("Do not run catch-all DNS in AP mode");
     interf->json_section_end(); // Line
 
-    interf->button(button_t::submit, T_SET_WIFIAP, T_DICT[lang][TD::D_SAVE], P_GRAY);
+    interf->button(button_t::submit, SET_WIFIAP, T_DICT[lang][TD::D_SAVE], P_GRAY);
 
     interf->json_section_end(); // Wi-Fi AP
 
     interf->spacer();
-    interf->button(button_t::submit, T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::submit, UI_SETTINGS, T_DICT[lang][TD::D_EXIT]);
 
     interf->json_frame_flush();
 }
@@ -190,18 +191,18 @@ void block_settings_netw(Interface *interf, JsonObject *data, const char* action
 /**
  *  BasicUI блок настройки даты/времени
  */
-void block_settings_time(Interface *interf, JsonObject *data, const char* action){
+void page_settings_time(Interface *interf, JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
     // Headline
-    interf->json_section_main(T_SET_TIME, T_DICT[lang][TD::D_DATETIME]);
+    interf->json_section_main(SET_TIMEOPTIONS, T_DICT[lang][TD::D_DATETIME]);
 
     // Simple Clock display
     interf->json_section_line();
-    String clk("Device date/time: "); TimeProcessor::getDateTimeString(clk);
-    interf->constant(P_date, clk);
-    interf->button(button_t::js, P_DTIME, "Set local time");     // run js function that post browser's date/time to device
+        String clk("Device date/time: "); TimeProcessor::getDateTimeString(clk);
+        interf->constant(P_date, clk.c_str());
+        interf->button(button_t::js, P_dtime, "Set browser's time");     // run js function that post browser's date/time to device
     interf->json_section_end(); // line
 
     interf->comment(T_DICT[lang][TD::D_MSG_TZSet01]);     // комментарий-описание секции
@@ -223,7 +224,7 @@ void block_settings_time(Interface *interf, JsonObject *data, const char* action
     // a list of ntp servers
     interf->json_section_line();
         for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
-            interf->constant(String(i), TimeProcessor::getInstance().getserver(i));
+            interf->constant(String(i).c_str(), TimeProcessor::getInstance().getserver(i));
     interf->json_section_end(); // line
 
     // user-defined NTP server field
@@ -232,17 +233,17 @@ void block_settings_time(Interface *interf, JsonObject *data, const char* action
     // manual date and time setup
     interf->comment(T_DICT[lang][TD::D_MSG_DATETIME]);
     interf->json_section_line();
-        interf->datetime(P_time, P_EMPTY, P_EMPTY);   // placeholder for ISO date/time string
-        interf->button(button_t::js, P_DTIME, "Paste local time");  // js function that paste browser's date into P_time field
+        interf->datetime(P_datetime, P_EMPTY, P_EMPTY);   // placeholder for ISO date/time string
+        interf->button_value(button_t::js, P_dtime, P_datetime, "Paste local time");  // call js function that paste browser's date into P_dtime field
     interf->json_section_end(); // line
 
     // send form button
-    interf->button(button_t::submit, T_SET_TIME, T_DICT[lang][TD::D_SAVE], P_GRAY);
+    interf->button(button_t::submit, SET_TIMEOPTIONS, T_DICT[lang][TD::D_SAVE], P_GRAY);
 
     interf->spacer();
 
     // exit button
-    interf->button(button_t::submit, T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::submit, UI_SETTINGS, T_DICT[lang][TD::D_EXIT]);
 
     // close and send frame
     interf->json_frame_flush(); // main
@@ -261,12 +262,12 @@ void block_settings_time(Interface *interf, JsonObject *data, const char* action
 /**
  *  BasicUI блок интерфейса настроек MQTT
  */
-void block_settings_mqtt(Interface *interf, JsonObject *data, const char* action){
+void page_settings_mqtt(Interface *interf, JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
     // Headline
-    interf->json_section_main(T_SET_MQTT, P_MQTT);
+    interf->json_section_main(SET_MQTT, P_MQTT);
 
     // форма настроек MQTT
     interf->checkbox_cfg(P_mqtt_enable, "Enable MQTT Client");
@@ -296,10 +297,10 @@ void block_settings_mqtt(Interface *interf, JsonObject *data, const char* action
         interf->number(P_mqtt_ka, t, T_DICT[lang][TD::D_MQTT_Interval]);
     interf->json_section_end();
 
-    interf->button(button_t::submit, T_SET_MQTT, T_DICT[lang][TD::D_SAVE]);
+    interf->button(button_t::submit, SET_MQTT, T_DICT[lang][TD::D_SAVE]);
 
     interf->spacer();
-    interf->button(button_t::generic, T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::generic, UI_SETTINGS, T_DICT[lang][TD::D_EXIT]);
 
     interf->json_frame_flush();
 }
@@ -307,7 +308,7 @@ void block_settings_mqtt(Interface *interf, JsonObject *data, const char* action
 /**
  *  BasicUI блок настройки system
  */
-void block_settings_sys(Interface *interf, JsonObject *data, const char* action){
+void page_settings_sys(Interface *interf, JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -321,14 +322,14 @@ void block_settings_sys(Interface *interf, JsonObject *data, const char* action)
     interf->file_form(T_DO_OTAUPD, T_DO_OTAUPD, T_DICT[lang][TD::D_UPLOADFS], "fs");
     interf->json_section_end();
 
-    interf->button(button_t::generic, T_SET_CFGCLEAR, "Clear sys config", P_RED);
+    interf->button(button_t::generic, SET_CFGCLEAR, "Clear sys config", P_RED);
 
-    interf->button(button_t::generic, T_REBOOT, T_DICT[lang][TD::D_REBOOT], P_RED);
+    interf->button(button_t::generic, SET_REBOOT, T_DICT[lang][TD::D_REBOOT], P_RED);
 
     interf->spacer();
 
     // exit button
-    interf->button(button_t::generic, T_SETTINGS, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::generic, UI_SETTINGS, T_DICT[lang][TD::D_EXIT]);
 
     interf->json_frame_flush(); // main
 }
@@ -382,7 +383,7 @@ void set_settings_mqtt(Interface *interf, JsonObject *data, const char* action){
     else
         embui.mqttStop();
 
-    page_system_settings(interf, data, NULL);
+    if (interf) page_system_settings(interf, nullptr, NULL);
 }
 
 /**
@@ -408,10 +409,10 @@ void set_settings_time(Interface *interf, JsonObject *data, const char* action){
 #endif
 
     // if there is a field with custom ISO date/time, call time setter
-    if ((*data)[P_time])
+    if ((*data)[P_datetime])
         set_datetime(nullptr, data, NULL);
 
-    page_system_settings(interf, data, NULL);   // redirect to 'settings' page
+    if (interf) page_settings_time(interf, nullptr, NULL);   // refresh same page
 }
 
 /**
@@ -420,9 +421,9 @@ void set_settings_time(Interface *interf, JsonObject *data, const char* action){
  */
 void set_datetime(Interface *interf, JsonObject *data, const char* action){
     if (!data) return;
-    TimeProcessor::getInstance().setTime((*data)[P_time].as<String>());
+    TimeProcessor::getInstance().setTime((*data)[P_datetime].as<const char*>());
     if (interf)
-        block_settings_time(interf, nullptr, NULL);
+        page_settings_time(interf, nullptr, NULL);
 }
 
 void set_language(Interface *interf, JsonObject *data, const char* action){
@@ -465,9 +466,7 @@ void set_reboot(Interface *interf, JsonObject *data, const char* action){
     Task *t = new Task(TASK_SECOND*5, TASK_ONCE, nullptr, &ts, false, nullptr, [](){ LOG(println, "Rebooting..."); ESP.restart(); });
     t->enableDelayed();
     if(interf){
-        interf->json_frame_interface();
-        block_settings_sys(interf, nullptr, NULL);
-        interf->json_frame_flush();
+        page_settings_sys(interf, nullptr, NULL);
     }
 }
 

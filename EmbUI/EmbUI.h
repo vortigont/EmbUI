@@ -644,7 +644,7 @@ void EmbUI::var(const char* key, const V& value, bool force){
         cfg.garbageCollect();
     }
 
-    if (cfg[key].add(value)){
+    if (cfg[key].set(value)){
         LOG(printf, " WRITE val:'%s...', mem free: %d\n", cfg[key].template as<String>().substring(0, 10).c_str(), cfg.capacity() - cfg.memoryUsage());
         autosave();
         return;

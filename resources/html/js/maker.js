@@ -8,7 +8,7 @@ var global = {menu_id:0, menu: [], value:{}};
  * EmbUI's js api version
  * used to set compatibilty dependency between backend firmware and WebUI js
  */
-const ui_jsapi = 1;
+const ui_jsapi = 2;
 
 /**
  * User application versions - frontend/backend
@@ -39,8 +39,8 @@ var customFuncs = {
 		var data = {};
 		if (typeof v == 'undefined' || typeof v == 'object'){
 			// if there was no 'value' given, than simply post the date string to MCU that triggers time/date setup
-			data["time"] = isodate;
-			ws.send_post("time", data);
+			data["set_datetime"] = isodate;
+			ws.send_post("set_datetime", data);
 		} else {
 			// if there was a param 'value', then paste the date string into doc element with id='value'
 			// let's do this via simulating MCU value frame
