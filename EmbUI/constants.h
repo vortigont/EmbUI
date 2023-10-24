@@ -14,22 +14,28 @@ static constexpr const char* UI_SETTINGS = "ui_settings";
 static constexpr const char* UI_NETWORK = "ui_network";
 
 // setter actions (IDs)
-static constexpr const char* SET_FTP = "set_ftp";
-static constexpr const char* SET_WIFI = "set_wifi";
-static constexpr const char* SET_WIFIAP = "set_wifiAP";
-static constexpr const char* SET_MQTT = "set_mqtt";
-static constexpr const char* SET_TIMEOPTIONS = "set_timeoptions";
-static constexpr const char* SET_HOSTNAME = "set_hostname";
-static constexpr const char* SET_DATETIME = "set_datetime";
-static constexpr const char* SET_LANGUAGE = "set_language";
-static constexpr const char* SET_CFGCLEAR = "set_cfgclr";
-static constexpr const char* SET_REBOOT = "set_reboot";
+static constexpr const char* SET_FTP = "set_ntwrk_ftp";
+static constexpr const char* SET_WIFI = "set_ntwrk_wifi";
+static constexpr const char* SET_WIFIAP = "set_ntwrk_wifiAP";
+static constexpr const char* SET_MQTT = "set_ntwrk_mqtt";
+static constexpr const char* SET_TIMEOPTIONS = "set_sys_timeoptions";
+static constexpr const char* SET_HOSTNAME = "set_sys_hostname";
+static constexpr const char* SET_DATETIME = "set_sys_datetime";
+static constexpr const char* SET_LANGUAGE = "set_ui_language";
+// bare actions
+static constexpr const char* SET_CFGCLEAR = "set_sys_cfgclr";
+static constexpr const char* SET_REBOOT = "set_sys_reboot";
 
 // GET actions than only query for data
-static constexpr const char* GET_UIPAGE = "get_uipage";
+static constexpr const char* GET_UIPAGE = "get_ui_page";
+
+// other Action ID's
+static constexpr const char* A_ui_mainpage = "ui_mainpage";
+static constexpr const char* A_ui_usersettings = "ui_usersettings";
+static constexpr const char* A_publish = "publish";
 
 // misc
-static constexpr const char* T_DO_OTAUPD = "update";
+static constexpr const char* T_DO_OTAUPD = "update";    // http OTA update URL /update
 
 
 // Interface elements
@@ -72,7 +78,6 @@ static constexpr const char* P_manifest = "manifest";
 static constexpr const char* P_max = "max";
 static constexpr const char* P_menu = "menu";
 static constexpr const char* P_min = "min";
-static constexpr const char* P_null = "null";
 static constexpr const char* P_number = "number";
 static constexpr const char* P_options = "options";
 static constexpr const char* P_params = "params";
@@ -99,6 +104,8 @@ static constexpr const char* P_url = "url";
 static constexpr const char* P_uiver = "uiver";
 static constexpr const char* P_value = "value";
 static constexpr const char* P_wifi = "wifi";
+static constexpr const char* P_xload ="xload";
+
 
 // order of elements MUST match with 'enum class ui_element_t' in ui.h
 // increase index in case of new elements
@@ -150,38 +157,33 @@ static constexpr const char* P_GRAY = "gray";
 static constexpr const char* P_BLACK = "black";
 static constexpr const char* P_WHITE = "white";
 
-// System configuration variables
-static constexpr const char* P_cfgfile = "/config.json";
-static constexpr const char* P_cfgfile_bkp = "/config_bkp.json";
+// System configuration variables and constants
+static constexpr const char* C_cfgfile = "/config.json";
+static constexpr const char* C_cfgfile_bkp = "/config_bkp.json";
 
-static constexpr const char* P_APonly = "APonly";        // AccessPoint-only mode
-static constexpr const char* P_APpwd = "APpwd";          // AccessPoint password
-static constexpr const char* P_TZSET = "TZSET";          // TimeZone rule variable
-static constexpr const char* P_NOCaptP = "ncapp";        // Captive Portal Disabled
-static constexpr const char* P_hostname = "hostname";    // System hostname
-static constexpr const char* P_LANGUAGE = "lang";        // UI language
-static constexpr const char* P_noNTPoDHCP = "ntpod";     // Disable NTP over DHCP
-static constexpr const char* P_userntp = "userntp";      // user-defined NTP server
+static constexpr const char* V_APonly = "APonly";        // AccessPoint-only mode
+static constexpr const char* V_APpwd = "APpwd";          // AccessPoint password
+static constexpr const char* V_timezone = "timezone";          // TimeZone rule variable
+static constexpr const char* V_NOCaptP = "ncapp";        // Captive Portal Disabled
+static constexpr const char* V_hostname = "hostname";    // System hostname
+static constexpr const char* V_LANGUAGE = "lang";        // UI language
+static constexpr const char* V_noNTPoDHCP = "ntpod";     // Disable NTP over DHCP
+static constexpr const char* V_userntp = "userntp";      // user-defined NTP server
 
 // WiFi vars
-static constexpr const char* P_WCSSID = "wcssid";        // WiFi-Client SSID
-static constexpr const char* P_WCPASS = "wcpass";        // WiFi-Client password
+static constexpr const char* V_WCSSID = "wcssid";        // WiFi-Client SSID
+static constexpr const char* V_WCPASS = "wcpass";        // WiFi-Client password
 
 // MQTT related vars, topic names, etc
-static constexpr const char* P_mqtt_enable = "mqtt_ena";
-static constexpr const char* P_mqtt_host = "mqtt_host";
-static constexpr const char* P_mqtt_pass = "mqtt_pass";
-static constexpr const char* P_mqtt_port = "mqtt_port";
-static constexpr const char* P_mqtt_topic = "mqtt_topic";
-static constexpr const char* P_mqtt_user = "mqtt_user";
-static constexpr const char* P_mqtt_ka = "mqtt_ka";       // mqtt keep-alive interval
-static constexpr const char* P_sys = "sys/";              // mqtt 'sys/' suffix
-static constexpr const char* P_pub = "pub/";              // mqtt 'pub/' suffix
-
-// Action ID's
-static constexpr const char* A_mainpage = "mainpage";
-static constexpr const char* A_block_usr_settings = "blk_usrsettings";
-static constexpr const char* A_publish = "publish";
+static constexpr const char* V_mqtt_enable = "mqtt_ena";
+static constexpr const char* V_mqtt_host = "mqtt_host";
+static constexpr const char* V_mqtt_pass = "mqtt_pass";
+static constexpr const char* V_mqtt_port = "mqtt_port";
+static constexpr const char* V_mqtt_topic = "mqtt_topic";
+static constexpr const char* V_mqtt_user = "mqtt_user";
+static constexpr const char* V_mqtt_ka = "mqtt_ka";       // mqtt keep-alive interval
+static constexpr const char* C_sys = "sys/";              // mqtt 'sys/' suffix
+static constexpr const char* C_pub = "pub/";              // mqtt 'pub/' suffix
 
 // http-related constants
 static constexpr const char* PGgzip = "gzip";

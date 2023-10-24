@@ -31,7 +31,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         LOG(printf_P, PSTR("CONNECT ws:%s id:%u\n"), server->url(), client->id());
         {
             Interface interf(&embui, client);
-            if (!embui.action.exec(&interf, nullptr, A_mainpage))   // call user defined mainpage callback
+            if (!embui.action.exec(&interf, nullptr, A_ui_mainpage))   // call user defined mainpage callback
                 basicui::page_main(&interf, nullptr, NULL);         // if no callback was registered, then show default stub page
         }
         embui.send_pub();
@@ -137,7 +137,7 @@ void EmbUI::begin(){
 
     // монтируем ФС только один раз при старте
     while(!LittleFS.begin(true)){   // format FS if corrupted
-        LOG(println, F("UI: LittleFS initialization error, retrying..."));
+        LOG(println, "UI: LittleFS initialization error, retrying...");
         --retry_cnt;
         delay(100);
         if (!retry_cnt){
@@ -152,13 +152,19 @@ void EmbUI::begin(){
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
 
     // restore Time settings
-    TimeProcessor::getInstance().setcustomntp(paramVariant(P_userntp).as<const char*>());
-    TimeProcessor::getInstance().tzsetup(paramVariant(P_TZSET).as<String>().substring(4).c_str());  // cut off 4 chars of html selector index
-    if (paramVariant(P_noNTPoDHCP))
+    if (cfg[V_userntp])
+        TimeProcessor::getInstance().setcustomntp(paramVariant(V_userntp).as<const char*>());
+
+    if (cfg[V_timezone]){
+        std::string_view tzrule(cfg[V_timezone].as<const char*>());
+        TimeProcessor::getInstance().tzsetup(tzrule.substr(4).data());   // cutoff '000_' prefix
+    }
+
+    if (paramVariant(V_noNTPoDHCP))
         TimeProcessor::getInstance().ntpodhcp(false);
 
     // start-up WiFi
-    wifi = new WiFiController(this, paramVariant(P_APonly));
+    wifi = new WiFiController(this, paramVariant(V_APonly));
     wifi->init();
     
     // set WebSocket event handler
@@ -300,7 +306,7 @@ void EmbUI::autosave(bool force){
  */
 const char* EmbUI::hostname(){
 
-    JsonVariantConst h = paramVariant(P_hostname);
+    JsonVariantConst h = paramVariant(V_hostname);
     if (h && strlen(h.as<const char*>()))
         return h.as<const char*>();
 
@@ -315,7 +321,7 @@ const char* EmbUI::hostname(){
 }
 
 const char* EmbUI::hostname(const char* name){
-    var_dropnulls(P_hostname, (char*)name);
+    var_dropnulls(V_hostname, (char*)name);
     return hostname();
 };
 
@@ -383,11 +389,11 @@ size_t ActionHandler::exec(Interface *interf, JsonObject *data, const char* acti
 }
 
 void ActionHandler::set_mainpage_cb(actionCallback_t callback){
-    remove(A_mainpage);
-    add(A_mainpage, callback);
+    remove(A_ui_mainpage);
+    add(A_ui_mainpage, callback);
 }
 
 void ActionHandler::set_settings_cb(actionCallback_t callback){
-    remove(A_block_usr_settings);
-    add(A_block_usr_settings, callback);
+    remove(A_ui_usersettings);
+    add(A_ui_usersettings, callback);
 }

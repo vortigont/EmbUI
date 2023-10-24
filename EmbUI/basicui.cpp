@@ -12,7 +12,7 @@ namespace basicui {
  */
 void register_handlers(){
     // variable for UI language (specific to basic UI translations)
-    lang = embui.paramVariant(P_LANGUAGE).as<uint8_t>();
+    lang = embui.paramVariant(V_LANGUAGE).as<uint8_t>();
 
     /**
      * UI action handlers
@@ -36,6 +36,7 @@ void register_handlers(){
     embui.action.add(SET_WIFIAP, set_settings_wifiAP);      // обработка настроек WiFi AP
 }
 
+// dummy intro page that cimply calls for "system setup page"
 void page_main(Interface *interf, JsonObject *data, const char* action){
 
     interf->json_frame_interface();
@@ -72,7 +73,7 @@ void page_system_settings(Interface *interf, JsonObject *data, const char* actio
 
     interf->json_section_main(UI_SETTINGS, T_DICT[lang][TD::D_SETTINGS]);
 
-    interf->select(P_LANGUAGE, lang, T_DICT[lang][TD::D_LANG], true);
+    interf->select(V_LANGUAGE, lang, T_DICT[lang][TD::D_LANG], true);
         interf->option(0, "Eng");
         interf->option(1, "Rus");
     interf->json_section_end();
@@ -92,7 +93,7 @@ void page_system_settings(Interface *interf, JsonObject *data, const char* actio
     interf->spacer();
 
     // call for user_defined function that may add more elements to the "settings page"
-    embui.action.exec(interf, nullptr, A_block_usr_settings);
+    embui.action.exec(interf, nullptr, A_ui_usersettings);
 
     interf->json_frame_flush();
 }
@@ -108,9 +109,9 @@ void show_uipage(Interface *interf, JsonObject *data, const char* action){
     page idx = static_cast<page>((*data)[GET_UIPAGE].as<int>());
 
     switch (idx){
-//        case 0 :    // main page stub
-//            page_main(interf, data, NULL);
-//            break;
+        case page::main :    // main page stub
+            page_main(interf, data, NULL);
+            break;
         case page::settings :   // general settings page
             page_system_settings(interf, nullptr, action);
         case page::network :    // WiFi network setup section
@@ -124,6 +125,9 @@ void show_uipage(Interface *interf, JsonObject *data, const char* action){
             break;
         case page::ftp :        // FTP server setup section
             page_settings_ftp(interf, nullptr, action);
+            break;
+        case page::syssetup :   // system setup section
+            page_settings_sys(interf, nullptr, action);
             break;
         default:;   // do not show anything
     }
@@ -145,15 +149,15 @@ void page_settings_netw(Interface *interf, JsonObject *data, const char* action)
     interf->comment(T_DICT[lang][TD::D_Hostname]);
     interf->constant(embui.hostname());
     interf->json_section_end(); // Line
-    interf->text(P_hostname, P_EMPTY, "Redefine hostname, or clear to reset to default");
+    interf->text(V_hostname, P_EMPTY, "Redefine hostname, or clear to reset to default");
     interf->button(button_t::submit, SET_HOSTNAME, T_DICT[lang][TD::D_SAVE], P_GREEN);
     interf->json_section_end(); // Hostname setup
 
     // Wi-Fi Client setup block
     interf->json_section_hidden(SET_WIFI, T_DICT[lang][TD::D_WiFiClient]);
     interf->spacer(T_DICT[lang][TD::D_WiFiClientOpts]);
-    interf->text(P_WCSSID, WiFi.SSID().c_str(), T_DICT[lang][TD::D_WiFiSSID]);
-    interf->password(P_WCPASS, P_EMPTY, T_DICT[lang][TD::D_Password]);
+    interf->text(V_WCSSID, WiFi.SSID().c_str(), T_DICT[lang][TD::D_WiFiSSID]);
+    interf->password(V_WCPASS, P_EMPTY, T_DICT[lang][TD::D_Password]);
     interf->button(button_t::submit, SET_WIFI, T_DICT[lang][TD::D_CONNECT], P_GRAY);
     interf->json_section_end();
 
@@ -161,7 +165,7 @@ void page_settings_netw(Interface *interf, JsonObject *data, const char* action)
     interf->json_section_hidden(SET_WIFIAP, T_DICT[lang][TD::D_WiFiAP]);
     interf->spacer(T_DICT[lang][TD::D_WiFiAPOpts]);
 
-    interf->password(P_APpwd, embui.paramVariant(P_APpwd).as<const char*>(),  T_DICT[lang][TD::D_MSG_APProtect]);          // AP password
+    interf->password(V_APpwd, embui.paramVariant(V_APpwd).as<const char*>(),  T_DICT[lang][TD::D_MSG_APProtect]);          // AP password
 
     interf->json_section_line();
     interf->comment("Access Point SSID (hostname)");
@@ -169,12 +173,12 @@ void page_settings_netw(Interface *interf, JsonObject *data, const char* action)
     interf->json_section_end(); // Line
 
     interf->json_section_line();
-    interf->checkbox_cfg(P_APonly, T_DICT[lang][TD::D_APOnlyMode]);         // checkbox "AP-only mode"
+    interf->checkbox_cfg(V_APonly, T_DICT[lang][TD::D_APOnlyMode]);         // checkbox "AP-only mode"
     interf->comment(T_DICT[lang][TD::D_MSG_APOnly]);
     interf->json_section_end(); // Line
 
     interf->json_section_line();
-    interf->checkbox_cfg(P_NOCaptP, "Disable WiFi Captive-Portal");         // checkbox "Disable Captive-portal"
+    interf->checkbox_cfg(V_NOCaptP, "Disable WiFi Captive-Portal");         // checkbox "Disable Captive-portal"
     interf->comment("Do not run catch-all DNS in AP mode");
     interf->json_section_end(); // Line
 
@@ -208,17 +212,12 @@ void page_settings_time(Interface *interf, JsonObject *data, const char* action)
     interf->comment(T_DICT[lang][TD::D_MSG_TZSet01]);     // комментарий-описание секции
 
     // Current TIME Zone string from config
-    interf->text(P_TZSET, embui.paramVariant(P_TZSET), T_DICT[lang][TD::D_MSG_TZONE]);
+    interf->text(V_timezone, embui.paramVariant(V_timezone), T_DICT[lang][TD::D_MSG_TZONE]);
 
     // NTP servers section
     interf->json_section_line();
-    interf->comment("NTP Servers");
-
-#if ARDUINO <= 10805
-    // ESP32's Arduino Core <=1.0.6 miss NTPoDHCP feature, see https://github.com/espressif/esp-idf/pull/7336
-#else
-    interf->checkbox_cfg(P_noNTPoDHCP, "Disable NTP over DHCP");
-#endif
+        interf->comment("NTP Servers");
+        interf->checkbox_cfg(V_noNTPoDHCP, "Disable NTP over DHCP");
     interf->json_section_end(); // line
 
     // a list of ntp servers
@@ -228,7 +227,7 @@ void page_settings_time(Interface *interf, JsonObject *data, const char* action)
     interf->json_section_end(); // line
 
     // user-defined NTP server field
-    interf->text(P_userntp, embui.paramVariant(P_userntp), T_DICT[lang][TD::D_NTP_Secondary]);
+    interf->text(V_userntp, embui.paramVariant(V_userntp), T_DICT[lang][TD::D_NTP_Secondary]);
 
     // manual date and time setup
     interf->comment(T_DICT[lang][TD::D_MSG_DATETIME]);
@@ -250,10 +249,10 @@ void page_settings_time(Interface *interf, JsonObject *data, const char* action)
 
     // формируем и отправляем кадр с запросом подгрузки внешнего ресурса со списком правил временных зон
     // полученные данные заместят предыдущее поле выпадающим списком с данными о всех временных зонах
-    interf->json_frame("xload");
+    interf->json_frame(P_xload);
     interf->json_section_content();
                     //id           val                                 label    direct  URL for external data
-    interf->select(P_TZSET, embui.paramVariant(P_TZSET), P_EMPTY, false,  "/js/tz.json");
+    interf->select(V_timezone, embui.paramVariant(V_timezone), P_EMPTY, false,  "/js/tz.json");
     interf->json_section_end(); // select
     interf->json_frame_flush(); // xload
 
@@ -270,31 +269,31 @@ void page_settings_mqtt(Interface *interf, JsonObject *data, const char* action)
     interf->json_section_main(SET_MQTT, P_MQTT);
 
     // форма настроек MQTT
-    interf->checkbox_cfg(P_mqtt_enable, "Enable MQTT Client");
+    interf->checkbox_cfg(V_mqtt_enable, "Enable MQTT Client");
     interf->json_section_line();
-        interf->text(P_mqtt_host, embui.paramVariant(P_mqtt_host).as<const char*>(), T_DICT[lang][TD::D_MQTT_Host]);
-        interf->number(P_mqtt_port, embui.paramVariant(P_mqtt_port).as<int>(), T_DICT[lang][TD::D_MQTT_Port]);
+        interf->text(V_mqtt_host, embui.paramVariant(V_mqtt_host).as<const char*>(), T_DICT[lang][TD::D_MQTT_Host]);
+        interf->number(V_mqtt_port, embui.paramVariant(V_mqtt_port).as<int>(), T_DICT[lang][TD::D_MQTT_Port]);
     interf->json_section_end();
 
     interf->json_section_line();
-        interf->text(P_mqtt_user, embui.paramVariant(P_mqtt_user).as<const char*>(), T_DICT[lang][TD::D_User]);
-        interf->text(P_mqtt_pass, embui.paramVariant(P_mqtt_pass).as<const char*>(), T_DICT[lang][TD::D_Password]);
+        interf->text(V_mqtt_user, embui.paramVariant(V_mqtt_user).as<const char*>(), T_DICT[lang][TD::D_User]);
+        interf->text(V_mqtt_pass, embui.paramVariant(V_mqtt_pass).as<const char*>(), T_DICT[lang][TD::D_Password]);
     interf->json_section_end(); // select
 
     interf->json_section_line();
         // comment about mqtt prefix 
         interf->comment(T_DICT[lang][TD::D_MQTT_Cmt]);
         // current MQTT prefix
-        interf->constant(P_EMPTY, embui.mqttPrefix().c_str());
+        interf->constant(embui.mqttPrefix().c_str());
     interf->json_section_end();
 
-    int t = embui.paramVariant(P_mqtt_ka);
+    int t = embui.paramVariant(V_mqtt_ka);
     if (!t) t = 30;     // default mqtt interval
 
     interf->json_section_line();
         // mqtt prefix
-        interf->text(P_mqtt_topic, embui.paramVariant(P_mqtt_topic).as<const char*>(), T_DICT[lang][TD::D_MQTT_Topic]);
-        interf->number(P_mqtt_ka, t, T_DICT[lang][TD::D_MQTT_Interval]);
+        interf->text(V_mqtt_topic, embui.paramVariant(V_mqtt_topic).as<const char*>(), T_DICT[lang][TD::D_MQTT_Topic]);
+        interf->number(V_mqtt_ka, t, T_DICT[lang][TD::D_MQTT_Interval]);
     interf->json_section_end();
 
     interf->button(button_t::submit, SET_MQTT, T_DICT[lang][TD::D_SAVE]);
@@ -340,8 +339,8 @@ void page_settings_sys(Interface *interf, JsonObject *data, const char* action){
 void set_settings_wifi(Interface *interf, JsonObject *data, const char* action){
     if (!data) return;
 
-    embui.var_remove(P_APonly);              // remove "force AP mode" parameter when attempting connection to external AP
-    embui.wifi->connect((*data)[P_WCSSID].as<const char*>(), (*data)[P_WCPASS].as<const char*>());
+    embui.var_remove(V_APonly);              // remove "force AP mode" parameter when attempting connection to external AP
+    embui.wifi->connect((*data)[V_WCSSID].as<const char*>(), (*data)[V_WCPASS].as<const char*>());
 
     page_system_settings(interf, nullptr, NULL);           // display "settings" page
 }
@@ -352,11 +351,11 @@ void set_settings_wifi(Interface *interf, JsonObject *data, const char* action){
 void set_settings_wifiAP(Interface *interf, JsonObject *data, const char* action){
     if (!data) return;
 
-    embui.var_dropnulls(P_APonly, (*data)[P_APonly]);     // AP-Only chkbx
-    embui.var_dropnulls(P_APpwd, (*data)[P_APpwd]);       // AP password
-    embui.var_dropnulls(P_NOCaptP, (*data)[P_NOCaptP]);                 // captive portal chkbx
+    embui.var_dropnulls(V_APonly, (*data)[V_APonly]);     // AP-Only chkbx
+    embui.var_dropnulls(V_APpwd, (*data)[V_APpwd]);       // AP password
+    embui.var_dropnulls(V_NOCaptP, (*data)[V_NOCaptP]);                 // captive portal chkbx
 
-    embui.wifi->aponly((*data)[P_APonly]);
+    embui.wifi->aponly((*data)[V_APonly]);
     //embui.wifi->setupAP(true);        // no need to apply settings now?
 
     if (interf) page_system_settings(interf, nullptr, NULL);                // go to "Options" page
@@ -368,17 +367,17 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data, const char* action
 void set_settings_mqtt(Interface *interf, JsonObject *data, const char* action){
     if (!data) return;
     // сохраняем настройки в конфиг
-    embui.var_dropnulls(P_mqtt_enable, (*data)[P_mqtt_enable]);
-    embui.var_dropnulls(P_mqtt_host, (*data)[P_mqtt_host]);
-    embui.var_dropnulls(P_mqtt_port, (*data)[P_mqtt_port]);
-    embui.var_dropnulls(P_mqtt_user, (*data)[P_mqtt_user]);
-    embui.var_dropnulls(P_mqtt_pass, (*data)[P_mqtt_pass]);
-    embui.var_dropnulls(P_mqtt_topic, (*data)[P_mqtt_topic]);
-    embui.var_dropnulls(P_mqtt_ka, (*data)[P_mqtt_ka]);
+    embui.var_dropnulls(V_mqtt_enable, (*data)[V_mqtt_enable]);
+    embui.var_dropnulls(V_mqtt_host, (*data)[V_mqtt_host]);
+    embui.var_dropnulls(V_mqtt_port, (*data)[V_mqtt_port]);
+    embui.var_dropnulls(V_mqtt_user, (*data)[V_mqtt_user]);
+    embui.var_dropnulls(V_mqtt_pass, (*data)[V_mqtt_pass]);
+    embui.var_dropnulls(V_mqtt_topic, (*data)[V_mqtt_topic]);
+    embui.var_dropnulls(V_mqtt_ka, (*data)[V_mqtt_ka]);
     embui.save();
 
     // reconnect/disconnect MQTT
-    if ((*data)[P_mqtt_enable])
+    if ((*data)[V_mqtt_enable])
         embui.mqttStart();
     else
         embui.mqttStop();
@@ -392,21 +391,15 @@ void set_settings_mqtt(Interface *interf, JsonObject *data, const char* action){
 void set_settings_time(Interface *interf, JsonObject *data, const char* action){
     if (!data) return;
 
-    // Save and apply timezone rules
-    SETPARAM_NONULL(P_TZSET)
-
-    String tzrule = (*data)[P_TZSET];
-    if (!tzrule.isEmpty()){
-        TimeProcessor::getInstance().tzsetup(tzrule.substring(4).c_str());   // cutoff '000_' prefix key
+    // save and apply timezone
+    if ((*data)[V_timezone]) {
+        embui.var(V_timezone, (*data)[V_timezone], true);
+        std::string_view tzrule((*data)[V_timezone].as<const char*>());
+        TimeProcessor::getInstance().tzsetup(tzrule.substr(4).data());   // cutoff '000_' prefix
     }
 
-    SETPARAM_NONULL(P_userntp, TimeProcessor::getInstance().setcustomntp((*data)[P_userntp]));
-
-#if ARDUINO <= 10805
-    // ESP32's Arduino Core <=1.0.6 miss NTPoDHCP feature
-#else
-    SETPARAM_NONULL( P_noNTPoDHCP, TimeProcessor::getInstance().ntpodhcp(!(*data)[P_noNTPoDHCP]) )
-#endif
+    SETPARAM_NONULL(V_userntp, TimeProcessor::getInstance().setcustomntp((*data)[V_userntp]));
+    SETPARAM_NONULL( V_noNTPoDHCP, TimeProcessor::getInstance().ntpodhcp(!(*data)[V_noNTPoDHCP]) )
 
     // if there is a field with custom ISO date/time, call time setter
     if ((*data)[P_datetime])
@@ -429,8 +422,8 @@ void set_datetime(Interface *interf, JsonObject *data, const char* action){
 void set_language(Interface *interf, JsonObject *data, const char* action){
     if (!data) return;
 
-    embui.var_dropnulls(P_LANGUAGE, (*data)[P_LANGUAGE]);
-    lang = (*data)[P_LANGUAGE];
+    embui.var_dropnulls(V_LANGUAGE, (*data)[V_LANGUAGE]);
+    lang = (*data)[V_LANGUAGE];
     page_system_settings(interf, data, NULL);
 }
 
@@ -477,7 +470,7 @@ void set_reboot(Interface *interf, JsonObject *data, const char* action){
 void set_hostname(Interface *interf, JsonObject *data, const char* action){
     if (!data) return;
 
-    embui.hostname((*data)[P_hostname].as<const char*>());
+    embui.hostname((*data)[V_hostname].as<const char*>());
     page_system_settings(interf, data, NULL);           // переходим в раздел "настройки"
 }
 

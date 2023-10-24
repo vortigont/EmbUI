@@ -27,8 +27,8 @@ void EmbUI::_mqttConnTask(bool state){
 void EmbUI::_connectToMqtt() {
     LOG(println, PSTR("Connecting to MQTT..."));
 
-    if (cfg[P_mqtt_topic]){
-        mqtt_topic = cfg[P_mqtt_topic].as<const char*>();
+    if (cfg[V_mqtt_topic]){
+        mqtt_topic = cfg[V_mqtt_topic].as<const char*>();
         mqtt_topic.replace("$id", mc);
     } else {
         mqtt_topic = "EmbUI/";
@@ -36,10 +36,10 @@ void EmbUI::_connectToMqtt() {
         mqtt_topic += (char)0x2f; // "/"
     }
 
-    mqtt_host = paramVariant(P_mqtt_host).as<const char*>();
-    mqtt_port = cfg[P_mqtt_port];
-    mqtt_user = paramVariant(P_mqtt_user).as<const char*>();
-    mqtt_pass = paramVariant(P_mqtt_pass).as<const char*>();
+    mqtt_host = paramVariant(V_mqtt_host).as<const char*>();
+    mqtt_port = cfg[V_mqtt_port];
+    mqtt_user = paramVariant(V_mqtt_user).as<const char*>();
+    mqtt_pass = paramVariant(V_mqtt_pass).as<const char*>();
     //mqtt_lwt=id(F("embui/pub/online"));
 
     //if (mqttClient->connected())
@@ -59,7 +59,7 @@ void EmbUI::_connectToMqtt() {
 }
 
 void EmbUI::mqttStart(){
-    if (cfg[P_mqtt_enable] != true || !cfg.containsKey(P_mqtt_host)){
+    if (cfg[V_mqtt_enable] != true || !cfg.containsKey(V_mqtt_host)){
         LOG(println, "UI: MQTT disabled or no host set");
         return;   // выходим если host не задан
     }
@@ -103,8 +103,8 @@ void EmbUI::_onMqttConnect(bool sessionPresent){
 */
     _mqttConnTask(false);
 
-    String t(P_sys);
-    publish((t + P_hostname).c_str(), hostname(), true);
+    String t(C_sys);
+    publish((t + V_hostname).c_str(), hostname(), true);
     publish((t + "ip").c_str(), WiFi.localIP().toString().c_str(), true);
     publish((t + P_uiver).c_str(), EMBUI_VERSION_STRING, true);
     publish((t + P_uijsapi).c_str(), EMBUI_JSAPI, true);
@@ -125,7 +125,7 @@ void EmbUI::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessagePro
     strncpy(buffer, payload, len);
 
     String tpc(topic);
-    String mqtt_topic = embui.param(P_mqtt_topic); 
+    String mqtt_topic = embui.param(V_mqtt_topic); 
     if (!mqtt_topic.isEmpty()) tpc = tpc.substring(mqtt_topic.length() + 1, tpc.length());
 
     if (tpc.equals(F("embui/get/config"))) {
@@ -179,7 +179,7 @@ void EmbUI::publish(const char* topic, const char* payload, bool retained){
 }
 
 void EmbUI::_mqtt_pub_sys_status(){
-    String t(P_sys);
+    String t(C_sys);
     if(psramFound())
         publish((t + "spiram_free").c_str(), ESP.getFreePsram()/1024);
 

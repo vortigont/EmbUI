@@ -36,7 +36,7 @@ void EmbUI::_notFound(AsyncWebServerRequest *request) {
     if (cb_not_found && cb_not_found(request)) return;      // process redirect via external call-back if set
 
     // if external cb is not defined or returned false, than handle it via captive-portal or return 404
-    if (!embui.paramVariant(P_NOCaptP) && WiFi.getMode() & WIFI_AP){         // return redirect to root page in Captive-Portal mode
+    if (!embui.paramVariant(V_NOCaptP) && WiFi.getMode() & WIFI_AP){         // return redirect to root page in Captive-Portal mode
         request->redirect("/");
         return;
     }

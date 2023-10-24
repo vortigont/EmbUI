@@ -50,8 +50,8 @@ void WiFiController::connect(const char *ssid, const char *pwd)
     wconn = wifi_recon_t::ap_grace_enable;
     ap_ctr = WIFI_AP_GRACE_PERIOD;
     // drop "AP-only flag from config"
-    if (emb->paramVariant(P_APonly)){
-        emb->var_remove(P_APonly);
+    if (emb->paramVariant(V_APonly)){
+        emb->var_remove(V_APonly);
         emb->autosave();
     }
 }
@@ -96,13 +96,13 @@ void WiFiController::setupAP(bool force){
         return;
 
     // clear password if invalid 
-    if (emb->param(P_APpwd) && strlen(emb->param(P_APpwd)) < WIFI_PSK_MIN_LENGTH)
-        emb->var_remove(P_APpwd);
+    if (emb->param(V_APpwd) && strlen(emb->param(V_APpwd)) < WIFI_PSK_MIN_LENGTH)
+        emb->var_remove(V_APpwd);
 
-    LOG(printf_P, PSTR("UI WiFi: set AP params to SSID:'%s', pwd:'%s'\n"), emb->hostname(), emb->paramVariant(P_APpwd) ? emb->paramVariant(P_APpwd).as<const char*>() : P_empty_quotes);
+    LOG(printf_P, PSTR("UI WiFi: set AP params to SSID:'%s', pwd:'%s'\n"), emb->hostname(), emb->paramVariant(V_APpwd) ? emb->paramVariant(V_APpwd).as<const char*>() : P_empty_quotes);
 
-    WiFi.softAP(emb->hostname(), emb->paramVariant(P_APpwd).as<const char*>());
-    if (!emb->paramVariant(P_NOCaptP))          // start DNS server in "captive portal mode"
+    WiFi.softAP(emb->hostname(), emb->paramVariant(V_APpwd).as<const char*>());
+    if (!emb->paramVariant(V_NOCaptP))          // start DNS server in "captive portal mode"
         dnssrv.start();
 }
 
