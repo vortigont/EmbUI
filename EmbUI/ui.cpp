@@ -100,7 +100,9 @@ void Interface::json_section_end(){
 /**
  * @brief - serialize and send json obj directly to the ws buffer
  */
-void FrameSendAll::send(const JsonObject& data){
+void FrameSendWSServer::send(const JsonObject& data){
+    if (!available()) return;   // no need to do anything if there is no clients connected
+
     size_t length = measureJson(data);
     auto buffer = ws->makeBuffer(length);
     if (!buffer)
@@ -118,7 +120,9 @@ void FrameSendAll::send(const JsonObject& data){
 /**
  * @brief - serialize and send json obj directly to the ws buffer
  */
-void FrameSendClient::send(const JsonObject& data){
+void FrameSendWSClient::send(const JsonObject& data){
+    if (!available()) return;   // no need to do anything if there is no clients connected
+
     size_t length = measureJson(data);
     auto buffer = cl->server()->makeBuffer(length);
     if (!buffer)
@@ -131,3 +135,30 @@ void FrameSendClient::send(const JsonObject& data){
 #endif
     cl->text(buffer);
 };
+
+void FrameSendChain::remove(int id){
+    _hndlr_chain.remove_if([id](HndlrChain &c){ return id == c.id; });
+};
+
+bool FrameSendChain::available() const {
+    for (const auto &i : _hndlr_chain)
+        if (i.handler->available()) return true;
+
+    return false;
+};
+
+
+int FrameSendChain::add(std::unique_ptr<FrameSend>&& handler){
+    _hndlr_chain.emplace_back(std::forward<std::unique_ptr<FrameSend>>(handler));
+    return _hndlr_chain.back().id;
+}
+
+void FrameSendChain::send(const JsonObject& data){
+    for (auto &i : _hndlr_chain)
+        i.handler->send(data);
+}
+
+void FrameSendChain::send(const String& data){
+    for (auto &i : _hndlr_chain)
+        i.handler->send(data);
+}

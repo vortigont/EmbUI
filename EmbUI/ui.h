@@ -5,8 +5,12 @@
 
 #pragma once
 
-#include "EmbUI.h"
+#include "globals.h"
 #include "traits.hpp"
+#include <list>
+#include "LList.h"
+#include <ESPAsyncWebServer.h>
+#include "ArduinoJson.h"
 
 // static json obj size for tiny ui elements, like checkboxes, number inputs, etc...
 #ifndef TINY_JSON_SIZE
@@ -187,28 +191,35 @@ public:
 
 class FrameSend {
     public:
-        virtual ~FrameSend(){};
+        /**
+         * @brief should return 'true' if downlevel protol is availbale
+         * i.e. a connection is ready to send data, WebSocket subsribers are available, etc...
+         */
+        virtual bool available() const = 0;
+        virtual ~FrameSend(){ };
         virtual void send(const String &data) = 0;
         virtual void send(const JsonObject& data) = 0;
         virtual void flush(){};
 };
 
-class FrameSendAll: public FrameSend {
+class FrameSendWSServer: public FrameSend {
     private:
         AsyncWebSocket *ws;
     public:
-        FrameSendAll(AsyncWebSocket *server) : ws(server){}
-        ~FrameSendAll() { ws = nullptr; }
+        FrameSendWSServer(AsyncWebSocket *server) : ws(server){}
+        ~FrameSendWSServer() { ws = nullptr; }
+        bool available() const override { return ws->count(); }
         void send(const String &data) override { if (!data.isEmpty()) ws->textAll(data); };
         void send(const JsonObject& data) override;
 };
 
-class FrameSendClient: public FrameSend {
+class FrameSendWSClient: public FrameSend {
     private:
         AsyncWebSocketClient *cl;
     public:
-        FrameSendClient(AsyncWebSocketClient *client) : cl(client){}
-        ~FrameSendClient() { cl = nullptr; }
+        FrameSendWSClient(AsyncWebSocketClient *client) : cl(client){}
+        ~FrameSendWSClient() { cl = nullptr; }
+        bool available() const override { return cl->status() == WS_CONNECTED; }
         void send(const String &data) override { if (!data.isEmpty()) cl->text(data); };
         /**
          * @brief - serialize and send json obj directly to the ws buffer
@@ -239,7 +250,59 @@ class FrameSendHttp: public FrameSend {
         void flush(){
             req->send(stream);
         };
+        bool available() const override { return true; }
 };
+
+struct HndlrChain {
+    int id;
+    std::unique_ptr<FrameSend> handler;
+    HndlrChain() = delete;
+    HndlrChain(const HndlrChain& rhs) = delete;
+    HndlrChain(std::unique_ptr<FrameSend>&& rhs) noexcept : id(std::rand()), handler(std::move(rhs)) {};
+};
+
+class FrameSendChain : public FrameSend {
+    // a list of send handlers
+    std::list<HndlrChain> _hndlr_chain;
+
+    public:
+
+    bool available() const override;
+
+    /**
+     * @brief add FrameSend object to the chain
+     * object WILL be moved and invalidated
+     * 
+     * @param rhs FrameSend object 
+     * @return int unique id for the object in a chain (could be used to remove handler later via remove() )
+     */
+    int add(std::unique_ptr<FrameSend>&& handler);
+
+    /**
+     * @brief removes handler with specified id from the chain, if exist
+     * 
+     * @param id handler id to remove
+     * @return true on success
+     * @return false if specified id was not found
+     */
+    void remove(int id);
+
+    /**
+     * @brief clear handlers list
+     * 
+     */
+    void clear(){ _hndlr_chain.clear(); }
+
+    /**
+     * @brief send data to all handlers in list
+     * 
+     * @param data 
+     */
+    void send(const JsonObject& data) override;
+    void send(const String& data) override;
+
+};
+
 
 class Interface {
 
@@ -249,10 +312,11 @@ class Interface {
       int idx{0};
     };
 
-    EmbUI *embui;
     DynamicJsonDocument json;
+    bool _delete_handler_on_destruct;
     LList<section_stack_t*> section_stack;
     FrameSend *send_hndl;
+
 
     /**
      * @brief append supplied json data to the current Interface frame
@@ -288,20 +352,33 @@ class Interface {
 
 
     public:
-        Interface(EmbUI *j, AsyncWebSocket *server, size_t size = IFACE_DYN_JSON_SIZE): embui(j), json(size) {
-            send_hndl = new FrameSendAll(server);
+        /**
+         * @brief Construct a new Interface object
+         * it will pick send hanlder from EmbUI object.
+         * EmbUI could have it's own chain of send handlers to execute
+         * 
+         * @param feeder an FrameSender object to use for sending data 
+         * @param size desired size of DynamicJsonDocument
+         */
+        Interface (FrameSend *feeder, size_t size = IFACE_DYN_JSON_SIZE): json(size), _delete_handler_on_destruct(false) {
+            send_hndl = feeder;
         }
-        Interface(EmbUI *j, AsyncWebSocketClient *client, size_t size = IFACE_DYN_JSON_SIZE): embui(j), json(size) {
-            send_hndl = new FrameSendClient(client);
+
+        Interface(AsyncWebSocket *server, size_t size = IFACE_DYN_JSON_SIZE): json(size), _delete_handler_on_destruct(true) {
+            send_hndl = new FrameSendWSServer(server);
         }
-        Interface(EmbUI *j, AsyncWebServerRequest *request, size_t size = IFACE_DYN_JSON_SIZE): embui(j), json(size) {
+        Interface(AsyncWebSocketClient *client, size_t size = IFACE_DYN_JSON_SIZE): json(size), _delete_handler_on_destruct(true) {
+            send_hndl = new FrameSendWSClient(client);
+        }
+        Interface(AsyncWebServerRequest *request, size_t size = IFACE_DYN_JSON_SIZE): json(size), _delete_handler_on_destruct(true) {
             send_hndl = new FrameSendHttp(request);
         }
         ~Interface(){
             json_frame_clear();
-            delete send_hndl;
-            send_hndl = nullptr;
-            embui = nullptr;
+            if (_delete_handler_on_destruct){
+                delete send_hndl;
+                send_hndl = nullptr;
+            }
         }
 
 
@@ -390,12 +467,14 @@ class Interface {
          * and any arbitrary json'ed data that could be processed in user js code
          * could be supplied with additional date via (optional) value() call, otherwise just closed
          * @param appname - application name, builds Document title on the page
-         * @param fwversion - numeric firmware version, this is for compatibility checking between fw and user JS code,
+         * @param devid - unique device ID, usually based on mac address
+         * @param appjsapi - application js api version
+         * @param appversion - application version, could be of any type suitable for user-code to rely on it
          * if 0 - than no checking required
          */
         template  <typename ID, typename L = const char*>
             typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
-        json_section_manifest(const ID appname, unsigned appjsapi = 0, const L appversion = P_EMPTY);
+        json_section_manifest(const ID appname, const char* devid, unsigned appjsapi = 0, const L appversion = P_EMPTY);
 
         /**
          * @brief - start a section with left-side MENU elements
@@ -467,13 +546,6 @@ class Interface {
          */
         template <typename ID, typename L>
         void checkbox(const ID id, bool value, const L label, bool onChange = false){ html_input(id, P_chckbox, value, label, onChange); };
-
-        /**
-         * @brief - элемент интерфейса checkbox, значение чекбокса выбирается из одноменного параметра системного конфига
-         * @param onChange - значение чекбокса при изменении сразу передается на сервер без отправки формы
-         */
-        template <typename ID, typename L>
-        void checkbox_cfg(const ID id, const L label, bool onChange = false){ html_input(id, P_chckbox, embui->paramVariant(id), label, onChange); };
 
         /**
          * @brief - элемент интерфейса "color selector"
@@ -828,7 +900,7 @@ Interface::json_section_begin(const ID name, const L label, bool main, bool hidd
 
 template  <typename ID, typename L = const char*>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
-Interface::json_section_manifest(const ID appname, unsigned appjsapi, const L appversion){
+Interface::json_section_manifest(const ID appname, const char* devid, unsigned appjsapi, const L appversion){
     json_section_begin("manifest", P_EMPTY, false, false, false);
     JsonObject obj = section_stack.tail()->block.createNestedObject();
     obj[P_uijsapi] = EMBUI_JSAPI;
@@ -836,7 +908,7 @@ Interface::json_section_manifest(const ID appname, unsigned appjsapi, const L ap
     obj[P_app] = appname;
     obj[P_appjsapi] = appjsapi;
     if (!embui_traits::is_empty_string(appversion)) obj["appver"] = appversion;
-    obj["mc"] = embui->macid();
+    obj["mc"] = devid;
 }
 
 template <typename ID, typename T, typename L>
