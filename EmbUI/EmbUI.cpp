@@ -22,74 +22,26 @@ union MacID
     uint8_t mc[8];
 };
 
+// forward declaration
+void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);
+
 /**
  * WebSocket events handler
  *
  */
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len){
+    // pass data to handler fuction
+    if(type == WS_EVT_DATA)
+        return wsDataHandler(server, client, type, arg, data, len);
+
     if(type == WS_EVT_CONNECT){
         LOG(printf_P, PSTR("CONNECT ws:%s id:%u\n"), server->url(), client->id());
         {
-            Interface interf(&embui, client);
-            if (!embui.action.exec(&interf, nullptr, A_ui_mainpage))   // call user defined mainpage callback
-                basicui::page_main(&interf, nullptr, NULL);         // if no callback was registered, then show default stub page
+            Interface interf(client);
+            if (!embui.action.exec(&interf, nullptr, A_ui_mainpage))    // call user defined mainpage callback
+                basicui::page_main(&interf, nullptr, NULL);             // if no callback was registered, then show default stub page
         }
         embui.send_pub();
-        return;
-    }
-
-    if(type == WS_EVT_DATA){
-        AwsFrameInfo *info = (AwsFrameInfo*)arg;
-        if(info->final && info->index == 0 && info->len == len){
-            LOG(printf_P, PSTR("UI: =POST= LEN: %u\n"), len);
-            // ignore packets without 'post' marker
-            if (strncmp_P((const char *)data+1, PSTR("\"pkg\":\"post\""), 12))
-                return;
-
-            // deserializing data with deep copy to pass to post-action
-            uint16_t objCnt = 0;
-            for(uint16_t i=0; i<len; ++i)
-                if(data[i]==0x3a || data[i]==0x7b)    // считаем ':' и '{' это учитывает и пары k:v и вложенные массивы
-                    ++objCnt;
-
-            DynamicJsonDocument *res = new DynamicJsonDocument(len + JSON_OBJECT_SIZE(objCnt)); // https://arduinojson.org/v6/assistant/
-            if(!res->capacity())
-                return;
-
-            DeserializationError error = deserializeJson((*res), (const char*)data, len); // deserialize via copy to prevent dangling pointers in action()'s
-            if (error){
-                LOG(printf_P, PSTR("UI: Post deserialization err: %d\n"), error.code());
-                delete res;
-                return;
-            }
-            //res->shrinkToFit();      // this doc should not grow anyway
-
-            if (embui.ws.count()>1 && data){   // if there are multiple ws cliens connected, we must echo back data section, to reflect any changes in UI
-                Interface interf(&embui, &embui.ws, TINY_JSON_SIZE);
-                JsonVariant d = (*res)[P_data];
-                interf.json_frame_value(d, true);
-                interf.json_frame_flush();
-
-                if (len > POST_LARGE_SIZE){     // если прилетел большой пост, то откладываем обработку и даем возможность освободить часть памяти
-                    Task *t = new Task(POST_ACTION_DELAY, TASK_ONCE,
-                        [res](){
-                            //JsonObject data = (*res)[F("data")];
-                            JsonObject o = res->as<JsonObject>();
-                            embui.post(o);
-                            delete res; },
-                        &ts, false, nullptr, nullptr, true
-                    );
-                    if (t){
-                        t->enableDelayed();
-                        return;
-                    }
-                }
-            }
-
-            JsonObject o = res->as<JsonObject>();
-            embui.post(o);
-            delete res;
-        }
         return;
     }
 
@@ -110,6 +62,58 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     }
 }
 
+
+void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len){
+    AwsFrameInfo *info = (AwsFrameInfo*)arg;
+
+    // fragmented messages reassembly is not (yet) supported
+    if(!info->final || info->index != 0 || info->len != len)
+        return;
+
+    LOG(printf_P, PSTR("UI: WebSock data len: %u\n"), len);
+
+    // ignore packets without "pkg":"post" marker
+    std::string_view payload((const char *)data, len);
+    if (payload.substr(1, 12) != "\"pkg\":\"post\"")
+        return;
+
+    // deserializing data with deep copy to pass to post() for action lookup
+    uint16_t objCnt = 0;
+    for(uint16_t i=0; i<len; ++i)
+        if(data[i]==0x3a || data[i]==0x7b)    // считаем ':' и '{' это учитывает и пары k:v и вложенные массивы
+            ++objCnt;
+
+    DynamicJsonDocument *res = new DynamicJsonDocument(len + JSON_OBJECT_SIZE(objCnt)); // https://arduinojson.org/v6/assistant/
+    if(!res->capacity())
+        return;
+
+    DeserializationError error = deserializeJson((*res), (const char*)data, len); // deserialize via copy to prevent dangling pointers in action()'s
+    if (error){
+        LOG(printf_P, PSTR("UI: WS_EVT_DATA deserialization err: %d\n"), error.code());
+        delete res;
+        return;
+    }
+
+    // switch context for processing data
+    Task *t = new Task(POST_ACTION_DELAY, TASK_ONCE,
+        [res](){
+            JsonObject o = res->as<JsonObject>();
+            // if there is nested data in the object
+            if (o[P_data].size()){
+                // echo back data to all feeders
+                Interface interf(&embui.ws, MEDIUM_JSON_SIZE);
+                interf.json_frame_value(o[P_data], true);
+                interf.json_frame_flush();
+            }
+
+            // call action handler for post'ed data
+            embui.post(o);
+            delete res; },
+        &ts, false, nullptr, nullptr, true
+    );
+    if (t)
+        t->enableDelayed();
+}
 
 // EmbUI constructor
 EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), server(80), ws(EMBUI_WEBSOCK_URI){
@@ -171,6 +175,9 @@ void EmbUI::begin(){
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
+    // install WebSocker feeder
+    feeders.add(std::make_unique<FrameSendWSServer> (&ws));
+
     // install EmbUI http handlers
     http_set_handlers();
     server.begin();
@@ -203,9 +210,9 @@ void EmbUI::begin(){
  */
 void EmbUI::post(JsonObject &data, bool inject){
     JsonObject odata = data[P_data].as<JsonObject>();
-    Interface interf(this, &ws);
+    Interface interf(&feeders);
 
-    if (inject && ws.count()){            // echo back injected data to WebUI
+    if (inject && feeders.available()){            // echo back injected data to WebUI
         interf.json_frame_value();
         interf.value(odata);              // copy values array as-is
         interf.json_frame_flush();
@@ -217,7 +224,7 @@ void EmbUI::post(JsonObject &data, bool inject){
 void EmbUI::send_pub(){
     if (mqttAvailable()) _mqtt_pub_sys_status();
     if (!ws.count()) return;
-    Interface interf(this, &ws, SMALL_JSON_SIZE);
+    Interface interf(&ws, SMALL_JSON_SIZE);     // only websocket publish!
     basicui::embuistatus(&interf);
     action.exec(&interf, nullptr, A_publish);   // call user-callback for publishing task
 }

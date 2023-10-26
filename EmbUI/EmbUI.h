@@ -12,9 +12,8 @@
 #include "ts.h"
 #include "timeProcessor.h"
 #include "embui_wifi.hpp"
-#include "traits.hpp"
+#include "ui.h"
 
-#include <FS.h>
 #include <ESPAsyncWebServer.h>
 #include <AsyncMqttClient.h>
 
@@ -46,9 +45,6 @@
 #endif
 
 #define EMBUI_WEBSOCK_URI             "/ws"
-
-// forward declarations
-class Interface;
 
 
 // Weak Callback functions (user code might override it)
@@ -162,7 +158,14 @@ class EmbUI
     AsyncWebSocket ws;
     WiFiController *wifi;
 
+    // action handler manager object
     ActionHandler action;
+
+    /**
+     * @brief  data feeders, that sends EmbUI objects to different proto/subscribers
+     * i.e. WebSocket, MQTT, etc...
+     */
+    FrameSendChain feeders;
 
     /**
      * @brief EmbUI initialization
@@ -567,60 +570,22 @@ class EmbUI
 
 // Global EmbUI instance
 extern EmbUI embui;
-#include "ui.h"
 
 
 // ----------------------- UI/VAR MACRO's
 
 /**
- * @brief save key from the (*data) in sys config and call function
+ * @brief save registered key from the (*data) object into sys config
  * 
  */
-#define SETPARAM(key, call...) { \
-    embui.var(key, (*data)[key]); \
-    call; \
-}
+#define SETPARAM(key) { embui.var(key, (*data)[key].as<JsonVariant>()); }
 
 /**
  * @brief save key from the (*data) in sys config but only if non empty/non null
  * and call function
  * if empty or null, then drop matching key from sys config
  */
-#define SETPARAM_NONULL(key, call...) { \
-    embui.var_dropnulls(key, (JsonVariant)(*data)[key]); \
-    call; \
-}
-
-#define CALL_SETTER(key, val, call) { \
-    obj[key] = val; \
-    call(nullptr, &obj); \
-    obj.clear(); \
-}
-
-#define CALL_INTF(key, val, call) { \
-    obj[key] = val; \
-    Interface *interf = embui.ws.count()? new Interface(&embui, &embui.ws, SMALL_JSON_SIZE) : nullptr; \
-    call(interf, &obj); \
-    if (interf) { \
-        interf->json_frame_value(); \
-        interf->value(key, val, false); \
-        interf->json_frame_flush(); \
-        delete interf; \
-    } \
-}
-
-#define CALL_INTF_OBJ(call) { \
-    Interface *interf = embui.ws.count()? new Interface(&embui, &embui.ws, SMALL_JSON_SIZE*1.5) : nullptr; \
-    call(interf, &obj, NULL); \
-    if (interf) { \
-        interf->json_frame_value(); \
-        for (JsonPair kv : obj) { \
-            interf->value(kv.key().c_str(), kv.value(), false); \
-        } \
-        interf->json_frame_flush(); \
-        delete interf; \
-    } \
-}
+#define SETPARAM_NONULL(key) { embui.var_dropnulls(key, (*data)[key].as<JsonVariant>()); }
 
 /* ======================================== */
 /* Templated methods implementation follows */

@@ -40,7 +40,7 @@ void register_handlers(){
 void page_main(Interface *interf, JsonObject *data, const char* action){
 
     interf->json_frame_interface();
-    interf->json_section_manifest("BasicUI", 0, "v1");       // app name/version manifest
+    interf->json_section_manifest("BasicUI", embui.macid(), 0, "v1");       // app name/version manifest
     interf->json_section_end();
 
     // create menu
@@ -173,12 +173,12 @@ void page_settings_netw(Interface *interf, JsonObject *data, const char* action)
     interf->json_section_end(); // Line
 
     interf->json_section_line();
-    interf->checkbox_cfg(V_APonly, T_DICT[lang][TD::D_APOnlyMode]);         // checkbox "AP-only mode"
+    interf->checkbox(V_APonly, embui.paramVariant(V_APonly), T_DICT[lang][TD::D_APOnlyMode]);         // checkbox "AP-only mode"
     interf->comment(T_DICT[lang][TD::D_MSG_APOnly]);
     interf->json_section_end(); // Line
 
     interf->json_section_line();
-    interf->checkbox_cfg(V_NOCaptP, "Disable WiFi Captive-Portal");         // checkbox "Disable Captive-portal"
+    interf->checkbox(V_NOCaptP, embui.paramVariant(V_NOCaptP), "Disable WiFi Captive-Portal");         // checkbox "Disable Captive-portal"
     interf->comment("Do not run catch-all DNS in AP mode");
     interf->json_section_end(); // Line
 
@@ -217,7 +217,7 @@ void page_settings_time(Interface *interf, JsonObject *data, const char* action)
     // NTP servers section
     interf->json_section_line();
         interf->comment("NTP Servers");
-        interf->checkbox_cfg(V_noNTPoDHCP, "Disable NTP over DHCP");
+        interf->checkbox(V_noNTPoDHCP, embui.paramVariant(V_noNTPoDHCP), "Disable NTP over DHCP");
     interf->json_section_end(); // line
 
     // a list of ntp servers
@@ -269,7 +269,7 @@ void page_settings_mqtt(Interface *interf, JsonObject *data, const char* action)
     interf->json_section_main(SET_MQTT, P_MQTT);
 
     // форма настроек MQTT
-    interf->checkbox_cfg(V_mqtt_enable, "Enable MQTT Client");
+    interf->checkbox(V_mqtt_enable, embui.paramVariant(V_mqtt_enable), "Enable MQTT Client");
     interf->json_section_line();
         interf->text(V_mqtt_host, embui.paramVariant(V_mqtt_host).as<const char*>(), T_DICT[lang][TD::D_MQTT_Host]);
         interf->number(V_mqtt_port, embui.paramVariant(V_mqtt_port).as<int>(), T_DICT[lang][TD::D_MQTT_Port]);
@@ -398,8 +398,10 @@ void set_settings_time(Interface *interf, JsonObject *data, const char* action){
         TimeProcessor::getInstance().tzsetup(tzrule.substr(4).data());   // cutoff '000_' prefix
     }
 
-    SETPARAM_NONULL(V_userntp, TimeProcessor::getInstance().setcustomntp((*data)[V_userntp]));
-    SETPARAM_NONULL( V_noNTPoDHCP, TimeProcessor::getInstance().ntpodhcp(!(*data)[V_noNTPoDHCP]) )
+    embui.var_dropnulls(V_userntp, (*data)[V_userntp]);
+    TimeProcessor::getInstance().setcustomntp((*data)[V_userntp]);
+    embui.var_dropnulls(V_noNTPoDHCP, (*data)[V_noNTPoDHCP]);
+    TimeProcessor::getInstance().ntpodhcp(!(*data)[V_noNTPoDHCP]);
 
     // if there is a field with custom ISO date/time, call time setter
     if ((*data)[P_datetime])

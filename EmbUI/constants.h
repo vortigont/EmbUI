@@ -30,7 +30,7 @@ static constexpr const char* SET_REBOOT = "set_sys_reboot";
 static constexpr const char* GET_UIPAGE = "get_ui_page";
 
 // other Action ID's
-static constexpr const char* A_ui_mainpage = "ui_mainpage";
+static constexpr const char* A_ui_mainpage = "ui_page_main";
 static constexpr const char* A_ui_usersettings = "ui_usersettings";
 static constexpr const char* A_publish = "publish";
 
