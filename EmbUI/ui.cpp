@@ -72,8 +72,8 @@ void Interface::json_frame_next(){
         if (i) obj = section_stack[i - 1]->block.createNestedObject();
         obj[P_section] = section_stack[i]->name;
         obj["idx"] = section_stack[i]->idx;
-        LOG(printf_P, PSTR("UI: section:'%s' [#%u] idx:%u\n"), section_stack[i]->name.isEmpty() ? " " : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
         section_stack[i]->block = obj.createNestedArray(P_block);
+        LOG(printf, "UI: nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
     }
     LOG(printf_P, PSTR("json_frame_next: [#%u], mem:%u/%u\n"), section_stack.size()-1, obj.memoryUsage(), json.capacity());   // section index counts from 0
 }
@@ -93,7 +93,7 @@ void Interface::json_section_end(){
     if (section_stack.size()) {
         section_stack.tail()->idx++;
     }
-    LOG(printf, "UI: section end #%u '%s', heap: %u\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
+    LOG(printf, "UI: section end #%u '%s'\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
     delete section;
 }
 
