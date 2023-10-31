@@ -386,6 +386,19 @@ class EmbUI
 
     /**
      * @brief publish data to MQTT ~ topic
+     * a data will be published to a topic with prefix that is set in MQTT properties for EMbUI
+     * it's just a shortcut function. For more flexible topic control and message options
+     * a user code could use native mqttClient member and mqttPrefix() call to get home prefix
+     * 
+     * @param topic 
+     * @param data  - JsonObject that will be serialized and send to MQTT broker 
+     * @param retained - flag
+     */
+    void publish(const char* topic, const JsonObject& data, bool retained = false);
+
+
+    /**
+     * @brief publish data to MQTT ~ topic
      * templated method that accepts data types from which String is constructible
      * 
      * @tparam T - topic suffix
@@ -441,6 +454,7 @@ class EmbUI
 
     // Task that will make reconnect attempts to mqtt
     Task *tMqttReconnector = nullptr;
+    int _mqtt_feed_id{0};           // FrameSendMQTT id
 
     /**
      * @brief enable/disable reconnecting task

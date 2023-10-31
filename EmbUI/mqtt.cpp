@@ -1,9 +1,19 @@
-// This framework originaly based on JeeUI2 lib used under MIT License Copyright (c) 2019 Marsel Akhkamov
-// then re-written and named by (c) 2020 Anton Zolotarev (obliterator) (https://github.com/anton-zolotarev)
-// also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
-// and others people
+/*
+    This file is part of EmbUI project
+    https://github.com/vortigont/EmbUI
 
-#include "EmbUI.h"
+    Copyright © 2023 Emil Muratov (Vortigont)   https://github.com/vortigont/
+
+    EmbUI is free software: you can redistribute it and/or modify
+    it under the terms of MIT License https://opensource.org/license/mit/
+
+    This framework originaly based on JeeUI2 lib used under MIT License Copyright (c) 2019 Marsel Akhkamov
+    then re-written and named by (c) 2020 Anton Zolotarev (obliterator) (https://github.com/anton-zolotarev)
+    also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
+    and others people
+*/
+
+#include "mqtt.h"
 
 #define MQTT_RECONNECT_PERIOD    15
 
@@ -87,8 +97,9 @@ void EmbUI::mqttReconnect(){ // принудительный реконнект,
     _mqttConnTask(true);
 }
 
-void EmbUI::_onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
+void EmbUI::_onMqttDisconnect(AsyncMqttClientDisconnectReason reason){
   LOG(printf, "UI: Disconnected from MQTT:%u\n", static_cast<uint8_t>(reason));
+  feeders.remove(_mqtt_feed_id);    // remove MQTT feeder from chain
   //mqttReconnect();
 }
 
@@ -102,6 +113,9 @@ void EmbUI::_onMqttConnect(bool sessionPresent){
     }
 */
     _mqttConnTask(false);
+
+    // create MQTT feeder and add into the chain
+    _mqtt_feed_id = feeders.add( std::make_unique<FrameSendMQTT>(this) );
 
     String t(C_sys);
     publish((t + V_hostname).c_str(), hostname(), true);
@@ -123,6 +137,7 @@ void EmbUI::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessagePro
     char buffer[len + 2];
     memset(buffer, 0, sizeof(buffer));
     strncpy(buffer, payload, len);
+    //strncpy(buffer, reinterpret_cast<const char*>(payload), len);
 
     String tpc(topic);
     String mqtt_topic = embui.param(V_mqtt_topic); 
@@ -188,9 +203,27 @@ void EmbUI::_mqtt_pub_sys_status(){
     publish((t + "rssi").c_str(), WiFi.RSSI());
 }
 
-
-/*
-void EmbUI::subscribe(const char* topic, uint8_t qos){
-    mqttClient->subscribe(topic, 0);
+void publish(const char* topic, const JsonObject& data, bool retained = false){
+    auto s = measureJson(data);
+    std::vector<uint8_t> buff(s);
+    serializeJson(data, static_cast<unsigned char*>(buff.data()), s);
+    String t(mqttPrefix());
+    t += topic;
+    mqttClient->publish(t.c_str(), 0, retained, reinterpret_cast<const char*>(buff.data()), buff.size());
 }
-*/
+
+
+void FrameSendMQTT::send(const JsonObject& data){
+    if (data[P_pkg] == P_value){
+        _eu->publish("jpub/value", data);
+        return;
+    }
+
+    // objects like "pkg", "xload", "section" are related to WebUI interface
+    if (data[P_pkg] == P_interface || data[P_pkg] == P_xload || data.containsKey(P_section) ){
+        _eu->publish("jpub/interface", data);
+        return;
+    }
+
+    _eu->publish("jpub/etc", data);
+}
