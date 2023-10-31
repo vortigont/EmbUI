@@ -503,12 +503,7 @@ class Interface {
          */
         template  <typename ID>
             typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
-        json_section_extend(const ID &name){
-            section_stack.tail()->idx--;
-            // open new nested section
-            JsonObject o( section_stack.tail()->block[section_stack.tail()->block.size()-1].createNestedObject());    // find last array element
-            json_section_begin(name, P_EMPTY, false, false, false, o);
-        };
+        json_section_extend(const ID name);
 
         /**
          * @brief - close current UI section
@@ -885,6 +880,7 @@ Interface::json_section_begin(const ID name, const L label, bool main, bool hidd
     else
         obj[P_section] = name;
 
+    //LOG(printf, "BEGIN: '%s'\n", obj[P_section].as<const char*>());
     if (!embui_traits::is_empty_string(label)) obj[P_label] = label;
     if (main) obj["main"] = true;
     if (hidden) obj[P_hidden] = true;
@@ -897,6 +893,14 @@ Interface::json_section_begin(const ID name, const L label, bool main, bool hidd
     LOG(printf, "UI: section begin #%u '%s', %ub free\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0, so I print in fo BEFORE adding section to stack
     section_stack.add(section);
 }
+
+template  <typename ID>
+    typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+Interface::json_section_extend(const ID name){
+    section_stack.tail()->idx--;
+    JsonObject o(section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element
+    json_section_begin(name, P_EMPTY, false, false, false, o);
+};
 
 template  <typename ID, typename L = const char*>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
