@@ -198,7 +198,7 @@ class FrameSend {
         virtual bool available() const = 0;
         virtual ~FrameSend(){ };
         virtual void send(const String &data) = 0;
-        virtual void send(const JsonObject& data) = 0;
+        virtual void send(const JsonVariantConst& data) = 0;
         virtual void flush(){};
 };
 
@@ -210,7 +210,7 @@ class FrameSendWSServer: public FrameSend {
         ~FrameSendWSServer() { ws = nullptr; }
         bool available() const override { return ws->count(); }
         void send(const String &data) override { if (!data.isEmpty()) ws->textAll(data); };
-        void send(const JsonObject& data) override;
+        void send(const JsonVariantConst& data) override;
 };
 
 class FrameSendWSClient: public FrameSend {
@@ -224,7 +224,7 @@ class FrameSendWSClient: public FrameSend {
         /**
          * @brief - serialize and send json obj directly to the ws buffer
          */
-        void send(const JsonObject& data) override;
+        void send(const JsonVariantConst& data) override;
 };
 
 class FrameSendHttp: public FrameSend {
@@ -244,7 +244,7 @@ class FrameSendHttp: public FrameSend {
         /**
          * @brief - serialize and send json obj directly to the ws buffer
          */
-        void send(const JsonObject& data) override {
+        void send(const JsonVariantConst& data) override {
             serializeJson(data, *stream);
         };
         void flush(){
@@ -298,7 +298,7 @@ class FrameSendChain : public FrameSend {
      * 
      * @param data 
      */
-    void send(const JsonObject& data) override;
+    void send(const JsonVariantConst& data) override;
     void send(const String& data) override;
 
 };
@@ -340,7 +340,7 @@ class Interface {
     /**
      * @brief - serialize and send Interface object to the WebSocket
      */
-    inline void json_frame_send(){ if (send_hndl) send_hndl->send(json.as<JsonObject>()); };
+    inline void json_frame_send(){ if (send_hndl) send_hndl->send(json); };
 
     /**
      * @brief - start UI section
@@ -880,7 +880,6 @@ Interface::json_section_begin(const ID name, const L label, bool main, bool hidd
     else
         obj[P_section] = name;
 
-    //LOG(printf, "BEGIN: '%s'\n", obj[P_section].as<const char*>());
     if (!embui_traits::is_empty_string(label)) obj[P_label] = label;
     if (main) obj["main"] = true;
     if (hidden) obj[P_hidden] = true;

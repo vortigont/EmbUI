@@ -44,12 +44,12 @@ bool Interface::json_frame_enqueue(const JsonObject &obj, bool shallow){
 
     LOG(printf_P, PSTR("UI: Frame add obj %u b, mem:%d/%d"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
 
-    if (json.capacity() - json.memoryUsage() > obj.memoryUsage() + 16 && section_stack.tail()->block.add(obj)) {
+    if ( ( json.capacity() - json.memoryUsage() > obj.memoryUsage() + 16 ) && section_stack.tail()->block.add(obj)) {
         LOG(printf_P, PSTR("...OK idx:%u\tmem free: %u\n"), section_stack.tail()->idx, ESP.getFreeHeap());
         section_stack.tail()->idx++;        // incr idx for next obj
         return true;
     }
-    LOG(printf_P, PSTR(" - Frame full! Heap free: %u\n"), ESP.getFreeHeap());
+    LOG(printf, " - Frame full! Heap free: %u\n", ESP.getFreeHeap());
 
     json_frame_send();
     json_frame_next();
@@ -58,11 +58,11 @@ bool Interface::json_frame_enqueue(const JsonObject &obj, bool shallow){
 
 void Interface::json_frame_flush(){
     if (!section_stack.size()) return;
-    LOG(println, "UI: json_frame_flush");
     json[P_final] = true;
     json_section_end();
     json_frame_send();
     json_frame_clear();
+    LOG(println, "UI: json_frame_flush");
 }
 
 void Interface::json_frame_next(){
@@ -73,9 +73,9 @@ void Interface::json_frame_next(){
         obj[P_section] = section_stack[i]->name;
         obj["idx"] = section_stack[i]->idx;
         section_stack[i]->block = obj.createNestedArray(P_block);
-        LOG(printf, "UI: nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
+        //LOG(printf, "UI: nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
     }
-    LOG(printf_P, PSTR("json_frame_next: [#%u], mem:%u/%u\n"), section_stack.size()-1, obj.memoryUsage(), json.capacity());   // section index counts from 0
+    LOG(printf, "json_frame_next: [#%u], mem:%u/%u\n", section_stack.size()-1, obj.memoryUsage(), json.capacity());   // section index counts from 0
 }
 
 void Interface::json_frame_value(const JsonVariant val, bool shallow){
@@ -100,7 +100,7 @@ void Interface::json_section_end(){
 /**
  * @brief - serialize and send json obj directly to the ws buffer
  */
-void FrameSendWSServer::send(const JsonObject& data){
+void FrameSendWSServer::send(const JsonVariantConst& data){
     if (!available()) return;   // no need to do anything if there is no clients connected
 
     size_t length = measureJson(data);
@@ -120,7 +120,7 @@ void FrameSendWSServer::send(const JsonObject& data){
 /**
  * @brief - serialize and send json obj directly to the ws buffer
  */
-void FrameSendWSClient::send(const JsonObject& data){
+void FrameSendWSClient::send(const JsonVariantConst& data){
     if (!available()) return;   // no need to do anything if there is no clients connected
 
     size_t length = measureJson(data);
@@ -153,7 +153,7 @@ int FrameSendChain::add(std::unique_ptr<FrameSend>&& handler){
     return _hndlr_chain.back().id;
 }
 
-void FrameSendChain::send(const JsonObject& data){
+void FrameSendChain::send(const JsonVariantConst& data){
     for (auto &i : _hndlr_chain)
         i.handler->send(data);
 }
