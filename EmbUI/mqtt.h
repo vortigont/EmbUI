@@ -19,6 +19,6 @@ class FrameSendMQTT: public FrameSend {
         ~FrameSendMQTT() { _eu = nullptr; }
         bool available() const override { return _eu->mqttAvailable(); }
         void send(const String &data) override { };
-        void send(const JsonObject& data) override;
+        void send(const JsonVariantConst& data) override;
 };
 

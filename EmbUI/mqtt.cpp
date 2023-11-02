@@ -50,7 +50,7 @@ void EmbUI::_connectToMqtt() {
     mqtt_port = cfg[V_mqtt_port];
     mqtt_user = paramVariant(V_mqtt_user).as<const char*>();
     mqtt_pass = paramVariant(V_mqtt_pass).as<const char*>();
-    //mqtt_lwt=id(F("embui/pub/online"));
+    //mqtt_lwt=id("embui/pub/online");
 
     //if (mqttClient->connected())
         mqttClient->disconnect(true);
@@ -104,7 +104,7 @@ void EmbUI::_onMqttDisconnect(AsyncMqttClientDisconnectReason reason){
 }
 
 void EmbUI::_onMqttConnect(bool sessionPresent){
-    LOG(println,F("UI: Connected to MQTT."));
+    LOG(println,"UI: Connected to MQTT.");
 /*
     if(sysData.mqtt_remotecontrol){
         subscribeAll();
@@ -143,21 +143,21 @@ void EmbUI::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessagePro
     String mqtt_topic = embui.param(V_mqtt_topic); 
     if (!mqtt_topic.isEmpty()) tpc = tpc.substring(mqtt_topic.length() + 1, tpc.length());
 
-    if (tpc.equals(F("embui/get/config"))) {
+    if (tpc.equals("embui/get/config")) {
         String jcfg; serializeJson(embui.cfg, jcfg);
-        embui.publish(F("embui/pub/config"), jcfg, false);    
-    } else if (tpc.startsWith(F("embui/get/"))) {
+        embui.publish("embui/pub/config", jcfg.c_str(), false);
+    } else if (tpc.startsWith("embui/get/")) {
         String param = tpc.substring(10); // sizeof embui/set/
         if(embui.isparamexists(param))
-            embui.publish(String(F("embui/pub/")) + param, embui.param(param), false);
+            embui.publish((String("embui/pub/") + param).c_str(), embui.param(param).c_str(), false);
         else {
             httpCallback(param, String(buffer), false); // нельзя напрямую передавать payload, это не ASCIIZ
             //mqt(tpc, String(buffer));                           // отправим во внешний пользовательский обработчик
         }
-    } else if (/* embui.sysData.mqtt_remotecontrol && */ tpc.startsWith(F("embui/set/"))) {
+    } else if (/* embui.sysData.mqtt_remotecontrol && */ tpc.startsWith("embui/set/")) {
        String cmd = tpc.substring(10); // sizeof embui/set/
        httpCallback(cmd, String(buffer), true); // нельзя напрямую передавать payload, это не ASCIIZ
-    } else if (/* embui.sysData.mqtt_remotecontrol && */ tpc.startsWith(F("embui/jsset/"))) {
+    } else if (/* embui.sysData.mqtt_remotecontrol && */ tpc.startsWith("embui/jsset/")) {
         DynamicJsonDocument doc(1024);
         deserializeJson(doc, payload, len);
         JsonObject obj = doc.as<JsonObject>();
@@ -182,7 +182,7 @@ void EmbUI::subscribeAll(bool setonly){
 */
 void EmbUI::publish(const char* topic, const char* payload, bool retained){
     if (!mqttClient) return;
-    String t(mqttPrefix());
+    std::string t(mqttPrefix().c_str());
     t += topic;    // make topic string "~/{$topic}/"
     /*
     LOG(print, "MQTT pub: topic:");
@@ -190,7 +190,16 @@ void EmbUI::publish(const char* topic, const char* payload, bool retained){
     LOG(print, " payload:");
     LOG(println, payload);
     */
-    mqttClient->publish(t.c_str(), 0, retained, payload);
+    mqttClient->publish(t.data(), 0, retained, payload);
+}
+
+void EmbUI::publish(const char* topic, const JsonVariantConst& data, bool retained){
+    auto s = measureJson(data);
+    std::vector<uint8_t> buff(s);
+    serializeJson(data, static_cast<unsigned char*>(buff.data()), s);
+    std::string t(mqttPrefix().c_str());
+    t += topic;
+    mqttClient->publish(t.data(), 0, retained, reinterpret_cast<const char*>(buff.data()), buff.size());
 }
 
 void EmbUI::_mqtt_pub_sys_status(){
@@ -203,19 +212,9 @@ void EmbUI::_mqtt_pub_sys_status(){
     publish((t + "rssi").c_str(), WiFi.RSSI());
 }
 
-void publish(const char* topic, const JsonObject& data, bool retained = false){
-    auto s = measureJson(data);
-    std::vector<uint8_t> buff(s);
-    serializeJson(data, static_cast<unsigned char*>(buff.data()), s);
-    String t(mqttPrefix());
-    t += topic;
-    mqttClient->publish(t.c_str(), 0, retained, reinterpret_cast<const char*>(buff.data()), buff.size());
-}
-
-
-void FrameSendMQTT::send(const JsonObject& data){
+void FrameSendMQTT::send(const JsonVariantConst& data){
     if (data[P_pkg] == P_value){
-        _eu->publish("jpub/value", data);
+        _eu->publish("jpub/value", data[P_block]);
         return;
     }
 

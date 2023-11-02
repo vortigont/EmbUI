@@ -394,12 +394,12 @@ class EmbUI
      * @param data  - JsonObject that will be serialized and send to MQTT broker 
      * @param retained - flag
      */
-    void publish(const char* topic, const JsonObject& data, bool retained = false);
+    void publish(const char* topic, const JsonVariantConst& data, bool retained = false);
 
 
     /**
      * @brief publish data to MQTT ~ topic
-     * templated method that accepts data types from which String is constructible
+     * templated method that accepts fundamental data types from which String is constructible
      * 
      * @tparam T - topic suffix
      * @tparam P - payload
@@ -407,8 +407,9 @@ class EmbUI
      * @param payload 
      * @param retained 
      */
-    template <typename T, typename P>
-    void publish(const T &topic, const P &payload, bool retained = false);
+    template <typename P>
+        typename std::enable_if< std::is_fundamental_v<P>, void >::type
+    publish(const char* topic, P payload, bool retained = false);
 
 
 /* ********** PRIVATE members *********** */
@@ -649,10 +650,8 @@ void EmbUI::var_dropnulls(const char* key, const T& value){
     var(key, value, true ); // save value as-is
 }
 
-template <typename T, typename P>
-void EmbUI::publish(const T &topic, const P &payload, bool retained){
-    if constexpr(std::is_same_v<const char *, std::decay_t<T>>)
-        return publish(topic, String(payload).c_str(), retained);
-
-    publish(String(topic).c_str(), String(payload).c_str(), retained);
+template <typename P>
+    typename std::enable_if< std::is_fundamental_v<P>, void >::type
+EmbUI::publish(const char* topic, P payload, bool retained){
+    publish(topic, String(payload).c_str(), retained);
 }

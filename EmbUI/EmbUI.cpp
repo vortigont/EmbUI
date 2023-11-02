@@ -70,7 +70,7 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
     if(!info->final || info->index != 0 || info->len != len)
         return;
 
-    LOG(printf_P, PSTR("UI: WebSock data len: %u\n"), len);
+    LOG(printf_P, PSTR("UI: =WS MSG= data len: %u\n"), len);
 
     // ignore packets without "pkg":"post" marker
     std::string_view payload((const char *)data, len);
@@ -99,13 +99,14 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
         [res](){
             JsonObject o = res->as<JsonObject>();
             // if there is nested data in the object
+/*
             if (o[P_data].size()){
                 // echo back data to all feeders
                 Interface interf(&embui.ws, MEDIUM_JSON_SIZE);
                 interf.json_frame_value(o[P_data], true);
                 interf.json_frame_flush();
             }
-
+*/
             // call action handler for post'ed data
             embui.post(o);
             delete res; },
@@ -212,12 +213,17 @@ void EmbUI::post(JsonObject &data, bool inject){
     JsonObject odata = data[P_data].as<JsonObject>();
     Interface interf(&feeders);
 
-    if (inject && feeders.available()){            // echo back injected data to WebUI
-        interf.json_frame_value();
-        interf.value(odata);              // copy values array as-is
+    //if (inject && feeders.available()){             // echo back injected data to all availbale feeders
+    if (odata.size() && feeders.available()){         // echo back injected data to all availbale feeders
+        interf.json_frame_value(odata, true);
         interf.json_frame_flush();
     }
 
+    // reflect post'ed data to MQTT (todo: do this on-demand)
+    JsonVariantConst jvc(data);
+    publish("jpub/post", jvc);
+
+    // execute callback actions
     action.exec(&interf, &odata, data[P_action].as<const char*>());
 }
 
@@ -228,6 +234,7 @@ void EmbUI::send_pub(){
     basicui::embuistatus(&interf);
     action.exec(&interf, nullptr, A_publish);   // call user-callback for publishing task
 }
+
 /**
  * Возвращает указатель на строку со значением параметра из конфига
  * В случае отсутствующего параметра возвращает пустой указатель
