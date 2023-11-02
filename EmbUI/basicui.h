@@ -72,10 +72,10 @@ namespace basicui {
    * i.e. free ram, uptime, etc... 
    */
   void embuistatus();
-  void set_reboot(Interface *interf, JsonObject *data, const char* action);
-  void set_hostname(Interface *interf, JsonObject *data, const char* action);
-  void set_datetime(Interface *interf, JsonObject *data, const char* action);
-  void set_cfgclear(Interface *interf, JsonObject *data, const char* action);
+  void set_sys_reboot(Interface *interf, JsonObject *data, const char* action);
+  void set_sys_hostname(Interface *interf, JsonObject *data, const char* action);
+  void set_sys_datetime(Interface *interf, JsonObject *data, const char* action);
+  void set_sys_cfgclear(Interface *interf, JsonObject *data, const char* action);
 
   /**
    * @brief default main_page with a simple "settings" menu entry

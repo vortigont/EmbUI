@@ -10,28 +10,29 @@
 #define P_EMPTY static_cast<const char*>(0)
 
 // UI blocks generator actions (IDs)
-static constexpr const char* UI_SETTINGS = "ui_settings";
-static constexpr const char* UI_NETWORK = "ui_network";
+static constexpr const char* A_get_ui_page = "get_ui_page";
+static constexpr const char* A_get_ui_page_settings = "get_ui_page_settings";
+static constexpr const char* A_get_ui_page_network = "get_ui_page_network";
+static constexpr const char* A_get_ui_page_main = "get_ui_page_main";
+static constexpr const char* A_get_ui_blk_usersettings = "get_ui_blk_usersettings";
 
 // setter actions (IDs)
-static constexpr const char* SET_FTP = "set_ntwrk_ftp";
-static constexpr const char* SET_WIFI = "set_ntwrk_wifi";
-static constexpr const char* SET_WIFIAP = "set_ntwrk_wifiAP";
-static constexpr const char* SET_MQTT = "set_ntwrk_mqtt";
-static constexpr const char* SET_TIMEOPTIONS = "set_sys_timeoptions";
-static constexpr const char* SET_HOSTNAME = "set_sys_hostname";
-static constexpr const char* SET_DATETIME = "set_sys_datetime";
-static constexpr const char* SET_LANGUAGE = "set_ui_language";
-// bare actions
-static constexpr const char* SET_CFGCLEAR = "set_sys_cfgclr";
-static constexpr const char* SET_REBOOT = "set_sys_reboot";
+static constexpr const char* A_set_ntwrk_ftp = "set_ntwrk_ftp";
+static constexpr const char* A_set_ntwrk_wifi = "set_ntwrk_wifi";
+static constexpr const char* A_set_ntwrk_wifiap = "set_ntwrk_wifiap";
+static constexpr const char* A_set_ntwrk_mqtt = "set_ntwrk_mqtt";
+static constexpr const char* A_set_sys_timeoptions = "set_sys_timeoptions";
+static constexpr const char* A_set_sys_hostname = "set_sys_hostname";
+static constexpr const char* A_set_sys_datetime = "set_sys_datetime";
+static constexpr const char* A_set_sys_language = "set_sys_language";
+
+// bare setter actions (IDs)
+static constexpr const char* A_set_sys_cfgclr = "set_sys_cfgclr";
+static constexpr const char* A_set_sys_reboot = "set_sys_reboot";
 
 // GET actions than only query for data
-static constexpr const char* GET_UIPAGE = "get_ui_page";
 
 // other Action ID's
-static constexpr const char* A_ui_mainpage = "ui_page_main";
-static constexpr const char* A_ui_usersettings = "ui_usersettings";
 static constexpr const char* A_publish = "publish";
 
 // misc

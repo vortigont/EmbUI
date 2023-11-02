@@ -30,14 +30,14 @@ void page_settings_ftp(Interface *interf, JsonObject *data, const char* action){
     interf->json_frame_interface();
 
     // Headline
-    interf->json_section_main(SET_FTP, T_DICT[lang][TD::D_FTPSRV]);
+    interf->json_section_main(A_set_ntwrk_ftp, T_DICT[lang][TD::D_FTPSRV]);
 
     interf->checkbox(P_ftp, ftp_status(), "Enable FTP Server");     // FTP On/off
 
     interf->text(P_ftp_usr, embui.paramVariant(P_ftp_usr) ? embui.paramVariant(P_ftp_usr) : P_ftp, "FTP login");
     interf->password(P_ftp_pwd, embui.paramVariant(P_ftp_pwd) ? embui.paramVariant(P_ftp_pwd) : P_ftp, T_DICT[lang][TD::D_Password]);
-    interf->button(button_t::submit, SET_FTP, T_DICT[lang][TD::D_SAVE], P_BLUE);
-    interf->button(button_t::submit, UI_SETTINGS, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::submit, A_set_ntwrk_ftp, T_DICT[lang][TD::D_SAVE], P_BLUE);
+    interf->button(button_t::submit, A_get_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
 
     // close and send frame
     interf->json_frame_flush(); // main
