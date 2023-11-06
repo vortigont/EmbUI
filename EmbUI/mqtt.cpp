@@ -195,6 +195,7 @@ void EmbUI::publish(const char* topic, const char* payload, bool retained){
 }
 
 void EmbUI::publish(const char* topic, const JsonVariantConst& data, bool retained){
+    if (!mqttAvailable()) return;
     auto s = measureJson(data);
     std::vector<uint8_t> buff(s);
     serializeJson(data, static_cast<unsigned char*>(buff.data()), s);
