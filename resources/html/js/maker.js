@@ -8,7 +8,7 @@ var global = {menu_id:0, menu: [], value:{}};
  * EmbUI's js api version
  * used to set compatibilty dependency between backend firmware and WebUI js
  */
-const ui_jsapi = 2;
+const ui_jsapi = 3;
 
 /**
  * User application versions - frontend/backend
@@ -110,17 +110,15 @@ var render = function(){
 					return v;
 			};
 
-			var value;
-			var type = this.type;
+			let value;
 
 			// check if value has been supplied by templater
 			if (val !== undefined){
 				value = val;
 			} else {
-				switch (type){
+				switch (this.type){
 					case 'checkbox':
-						var chbox=document.getElementById(id);
-						value = chbox.checked ? true : false;		// send 'checked' state as boolean true/false
+						value = document.getElementById(id).checked;
 						break;
 					case 'input':
 					case 'select-one':
@@ -128,11 +126,7 @@ var render = function(){
 						value = chkNumeric(this.value);
 						break;
 					case 'textarea':	// cast empty strings to null
-						if (typeof this.value == 'string' && this.value == "")
-							value = null;
-						else
-							value = this.value;
-						break;
+						value = (typeof this.value == 'string' && this.value == "") ? null : this.value;
 					default:
 						value = this.value;
 				}
@@ -140,8 +134,10 @@ var render = function(){
 			if (this.id != id){
 				custom_hook(this.id, d, id);
 			}
+			let data = {};
+			if (value !== undefined)
+				data["value"] = value;
 
-			var data = {}; data[id] = (value !== undefined)? value : null;
 			ws.send_post(id, data);
 		},
 		on_showhide: function(d, id) {
