@@ -162,3 +162,10 @@ void FrameSendChain::send(const String& data){
     for (auto &i : _hndlr_chain)
         i.handler->send(data);
 }
+
+FrameSendAsyncJS::send(const JsonVariantConst& data){
+    JsonVariant& root = response->getRoot();
+    root.shallowCopy(data);
+    response->setLength();
+    req->send(response);
+};

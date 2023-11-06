@@ -219,7 +219,7 @@ void FrameSendMQTT::send(const JsonVariantConst& data){
         return;
     }
 
-    // objects like "pkg", "xload", "section" are related to WebUI interface
+    // objects like "interface", "xload", "section" are related to WebUI interface
     if (data[P_pkg] == P_interface || data[P_pkg] == P_xload || data.containsKey(P_section) ){
         _eu->publish(C_pub_iface, data);
         return;

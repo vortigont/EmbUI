@@ -15,6 +15,7 @@
 #include "ui.h"
 
 #include <ESPAsyncWebServer.h>
+#include <AsyncJson.h>
 #include <AsyncMqttClient.h>
 
 #define U_FS   U_SPIFFS
@@ -424,6 +425,10 @@ class EmbUI
 
     // external handler for 404 not found 
     asyncsrv_callback_t cb_not_found = nullptr;
+
+    // AsyncJson handler (for HTTP REST API)
+    std::unique_ptr<AsyncCallbackJsonWebHandler> _ajs_handler;
+
 
 
     /*** WiFi-related methods ***/

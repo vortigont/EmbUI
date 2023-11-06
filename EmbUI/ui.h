@@ -199,7 +199,7 @@ class FrameSend {
         virtual ~FrameSend(){ };
         virtual void send(const String &data) = 0;
         virtual void send(const JsonVariantConst& data) = 0;
-        virtual void flush(){};
+        //virtual void flush(){};
 };
 
 class FrameSendWSServer: public FrameSend {
@@ -246,12 +246,50 @@ class FrameSendHttp: public FrameSend {
          */
         void send(const JsonVariantConst& data) override {
             serializeJson(data, *stream);
-        };
-        void flush(){
             req->send(stream);
         };
         bool available() const override { return true; }
 };
+
+class FrameSendHttpChunked: public FrameSend {
+        AsyncWebServerRequest *_req;
+        std::unique_ptr<AsyncJsonResponse> _response;
+    public:
+        FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {
+            response = std::make_unique<AsyncJsonResponse>(false, IFACE_DYN_JSON_SIZE);
+        }
+        ~FrameSendAsyncJS() {
+            req = nullptr;
+        }
+
+        // not supported
+        void send(const String &data) override {};
+
+        void send(const JsonVariantConst& data) override;
+
+        bool available() const override { return true; }
+};
+
+class FrameSendAsyncJS: public FrameSend {
+    private:
+        AsyncWebServerRequest *req;
+        std::unique_ptr<AsyncJsonResponse> response;
+    public:
+        FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {
+            response = std::make_unique<AsyncJsonResponse>(false, IFACE_DYN_JSON_SIZE);
+        }
+        ~FrameSendAsyncJS() {
+            req = nullptr;
+        }
+
+        // not supported
+        void send(const String &data) override {};
+
+        void send(const JsonVariantConst& data) override;
+
+        bool available() const override { return true; }
+};
+
 
 struct HndlrChain {
     int id;

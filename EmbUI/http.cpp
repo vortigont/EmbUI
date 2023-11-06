@@ -48,24 +48,15 @@ void EmbUI::_notFound(AsyncWebServerRequest *request) {
  */
 void EmbUI::http_set_handlers(){
 
-    // HTTP commands handler
-    server.on(PSTR("/cmd"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        String result; 
-        int params = request->params();
-        for(int i=0;i<params;i++){
-            AsyncWebParameter* p = request->getParam(i);
-            if(p->isFile()){ //p->isPost() is also true
-                //Serial.printf("FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
-            } else if(p->isPost()){
-                //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-            } else {
-                //Serial.printf("GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
-                result = httpCallback(p->name(), p->value(), !p->value().isEmpty());
-            }
-        }
-        request->send(200, PGmimetxt, result);
-    });
+    // HTTP REST API handler
+    _ajs_handler = std::make_unique<AsyncCallbackJsonWebHandler>("/api");
 
+    handler->onRequest([this](AsyncWebServerRequest *request, JsonVariant &json) {
+        JsonObject& jsonObj = json.as<JsonObject>();
+        //post(jsonObj);
+        // ...
+    });
+    server.addHandler(_ajs_handler);
 
     // returns run-time system config serialized in JSON
     server.on(PSTR("/config"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
