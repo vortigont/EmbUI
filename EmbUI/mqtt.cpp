@@ -80,7 +80,7 @@ void EmbUI::mqttStart(){
 
     mqttClient->onConnect([this](bool sessionPresent){ _onMqttConnect(sessionPresent); });
     mqttClient->onDisconnect([this](AsyncMqttClientDisconnectReason reason){_onMqttDisconnect(reason);});
-    //mqttClient->onMessage( [this](char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total){_onMqttMessage(topic, payload, properties, len, index, total);} );
+    mqttClient->onMessage( [this](char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total){_onMqttMessage(topic, payload, properties, len, index, total);} );
     //mqttClient->onSubscribe(onMqttSubscribe);
     //mqttClient->onUnsubscribe(onMqttUnsubscribe);
     //mqttClient->onPublish(onMqttPublish);
@@ -105,18 +105,14 @@ void EmbUI::_onMqttDisconnect(AsyncMqttClientDisconnectReason reason){
 
 void EmbUI::_onMqttConnect(bool sessionPresent){
     LOG(println,"UI: Connected to MQTT.");
-/*
-    if(sysData.mqtt_remotecontrol){
-        subscribeAll();
-        // mqttClient->publish(mqtt_lwt.c_str(), 0, true, "1");  // publish Last Will testament
-        //httpCallback(F("sys_AUTODISCOVERY"), "", false); // реализация AUTODISCOVERY
-    }
-*/
     _mqttConnTask(false);
+    _mqttSubscribe();
+    // mqttClient->publish(mqtt_lwt.c_str(), 0, true, "1");  // publish Last Will testament
 
     // create MQTT feeder and add into the chain
     _mqtt_feed_id = feeders.add( std::make_unique<FrameSendMQTT>(this) );
 
+    // publish sys info
     String t(C_sys);
     publish((t + V_hostname).c_str(), hostname(), true);
     publish((t + "ip").c_str(), WiFi.localIP().toString().c_str(), true);
@@ -125,61 +121,66 @@ void EmbUI::_onMqttConnect(bool sessionPresent){
 }
 
 void EmbUI::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
-    //LOG(printf, "UI: Got MQTT msg len:%u/%u\n", len, total);
-
+    LOG(printf, "UI: Got MQTT msg topic:%s len:%u/%u\n", topic, len, total);
     if (index || len != total) return;     // this is chunked message, reassembly is not supported (yet)
-/*
-    std::string_view t_view(topic, len);
-    const auto pos = t_view.find(mqttPrefix().c_str());
-    if (pos == t_view.npos)
-    tpc.remove_prefix(mqttPrefix().length());
-*/
-    char buffer[len + 2];
-    memset(buffer, 0, sizeof(buffer));
-    strncpy(buffer, payload, len);
-    //strncpy(buffer, reinterpret_cast<const char*>(payload), len);
 
-    String tpc(topic);
-    String mqtt_topic = embui.param(V_mqtt_topic); 
-    if (!mqtt_topic.isEmpty()) tpc = tpc.substring(mqtt_topic.length() + 1, tpc.length());
-
-    if (tpc.equals("embui/get/config")) {
-        String jcfg; serializeJson(embui.cfg, jcfg);
-        embui.publish("embui/pub/config", jcfg.c_str(), false);
-    } else if (tpc.startsWith("embui/get/")) {
-        String param = tpc.substring(10); // sizeof embui/set/
-        if(embui.isparamexists(param))
-            embui.publish((String("embui/pub/") + param).c_str(), embui.param(param).c_str(), false);
-        else {
-            httpCallback(param, String(buffer), false); // нельзя напрямую передавать payload, это не ASCIIZ
-            //mqt(tpc, String(buffer));                           // отправим во внешний пользовательский обработчик
-        }
-    } else if (/* embui.sysData.mqtt_remotecontrol && */ tpc.startsWith("embui/set/")) {
-       String cmd = tpc.substring(10); // sizeof embui/set/
-       httpCallback(cmd, String(buffer), true); // нельзя напрямую передавать payload, это не ASCIIZ
-    } else if (/* embui.sysData.mqtt_remotecontrol && */ tpc.startsWith("embui/jsset/")) {
-        DynamicJsonDocument doc(1024);
-        deserializeJson(doc, payload, len);
-        JsonObject obj = doc.as<JsonObject>();
-        embui.post(obj);
-    } else {
-        //mqt(tpc, String(buffer));
-    }
-}
+    std::string_view tpc(topic);
 /*
-void EmbUI::subscribeAll(bool setonly){
-    String t(mqttPrefix());
-    LOG(print, "MQTT: Subscribe {prefix}/");
-    if(setonly){
-        t += "set/#";
-        LOG(println, "set/#");
-    } else {
-        t += (char)0x23;  //"#"
-        LOG(println, "#");
-    }
-    mqttClient->subscribe(t.c_str(), 0);
-}
+    const auto pos = tpc.find(mqttPrefix().c_str());
+    if (pos == tpc.npos)
+        tpc.remove_prefix(mqttPrefix().length());
 */
+
+    // this is a dublicate code same as for WS, need to implement a proper queue for such data
+
+    uint16_t objCnt = 0;
+    for(uint16_t i=0; i<len; ++i)
+        if(payload[i]==0x3a || payload[i]==0x7b)    // считаем ':' и '{' это учитывает и пары k:v и вложенные массивы
+            ++objCnt;
+
+    DynamicJsonDocument *res = new DynamicJsonDocument(len + JSON_OBJECT_SIZE(objCnt)); // https://arduinojson.org/v6/assistant/
+    if(!res->capacity())
+        return;
+
+    DeserializationError error = deserializeJson((*res), (const char*)payload, len); // deserialize via copy to prevent dangling pointers in action()'s
+    if (error){
+        LOG(printf_P, PSTR("MQTT: msg deserialization err: %d\n"), error.code());
+        delete res;
+        return;
+    }
+
+    tpc.remove_prefix(mqttPrefix().length()+1);     // chop off constant prefix
+
+    if (starts_with(tpc, C_get) || starts_with(tpc, C_set)){
+        std::string act(tpc);
+        std::replace( act.begin(), act.end(), '/', '_');    // replace topic delimiters into underscores
+
+        JsonObject o = res->as<JsonObject>();
+        o[P_action] = act;
+    }
+
+    // switch context for processing data
+    Task *t = new Task(10, TASK_ONCE,
+        [res](){
+            JsonObject o = res->as<JsonObject>();
+            // call action handler for post'ed data
+            embui.post(o);
+            delete res; },
+        &ts, false, nullptr, nullptr, true
+    );
+    if (t)
+        t->enableDelayed();
+
+
+}
+
+void EmbUI::_mqttSubscribe(){
+    mqttClient->subscribe((mqttPrefix()+"set/#").c_str(), 0);
+    mqttClient->subscribe((mqttPrefix()+"get/#").c_str(), 0);
+    mqttClient->subscribe((mqttPrefix()+C_post).c_str(), 0);
+    //    t += (char)0x23;  //"#"
+}
+
 void EmbUI::publish(const char* topic, const char* payload, bool retained){
     if (!mqttClient) return;
     std::string t(mqttPrefix().c_str());
@@ -214,15 +215,15 @@ void EmbUI::_mqtt_pub_sys_status(){
 
 void FrameSendMQTT::send(const JsonVariantConst& data){
     if (data[P_pkg] == P_value){
-        _eu->publish("jpub/value", data[P_block]);
+        _eu->publish(C_pub_value, data[P_block]);
         return;
     }
 
     // objects like "pkg", "xload", "section" are related to WebUI interface
     if (data[P_pkg] == P_interface || data[P_pkg] == P_xload || data.containsKey(P_section) ){
-        _eu->publish("jpub/interface", data);
+        _eu->publish(C_pub_iface, data);
         return;
     }
 
-    _eu->publish("jpub/etc", data);
+    _eu->publish(C_pub_etc, data);
 }

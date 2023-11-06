@@ -499,6 +499,7 @@ class EmbUI
      */
     void _mqtt_pub_sys_status();
 
+    void _mqttSubscribe();
     //void _onMqttSubscribe(uint16_t packetId, uint8_t qos);
     //void _onMqttUnsubscribe(uint16_t packetId);
     //void _onMqttPublish(uint16_t packetId);

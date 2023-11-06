@@ -221,7 +221,7 @@ void EmbUI::post(JsonObject &data, bool inject){
 
     // reflect post'ed data to MQTT (todo: do this on-demand)
     JsonVariantConst jvc(data);
-    publish("jpub/post", jvc);
+    publish(C_pub_post, jvc);
 
     // execute callback actions
     action.exec(&interf, &odata, data[P_action].as<const char*>());

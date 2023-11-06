@@ -1,7 +1,23 @@
+/*
+    This file is part of EmbUI project
+    https://github.com/vortigont/EmbUI
+
+    Copyright © 2023 Emil Muratov (Vortigont)   https://github.com/vortigont/
+
+    EmbUI is free software: you can redistribute it and/or modify
+    it under the terms of MIT License https://opensource.org/license/mit/
+
+    This framework originaly based on JeeUI2 lib used under MIT License Copyright (c) 2019 Marsel Akhkamov
+    then re-written and named by (c) 2020 Anton Zolotarev (obliterator) (https://github.com/anton-zolotarev)
+    also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
+    and others people
+*/
+
 // type traits I use for various literals
 
 #pragma once
 #include <type_traits>
+#include "Arduino.h"
 
 // cast enum to int
 template <class E>
@@ -9,6 +25,18 @@ constexpr std::common_type_t<int, std::underlying_type_t<E>>
 e2int(E e) {
     return static_cast<std::common_type_t<int, std::underlying_type_t<E>>>(e);
 }
+
+// std::string_view.ends_with before C++20
+bool ends_with(std::string_view str, std::string_view sv);
+
+// std::string_view.ends_with before C++20
+bool ends_with(std::string_view str, const char* sv);
+
+// std::string_view.starts_with before C++20
+bool starts_with(std::string_view str, std::string_view sv);
+
+// std::string_view.starts_with before C++20
+bool starts_with(std::string_view str, const char* sv);
 
 namespace embui_traits{
 

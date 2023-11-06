@@ -183,8 +183,14 @@ static constexpr const char* V_mqtt_port = "mqtt_port";
 static constexpr const char* V_mqtt_topic = "mqtt_topic";
 static constexpr const char* V_mqtt_user = "mqtt_user";
 static constexpr const char* V_mqtt_ka = "mqtt_ka";       // mqtt keep-alive interval
+static constexpr const char* C_get = "get/";              // mqtt 'get/' prefix
+static constexpr const char* C_set = "set/";              // mqtt 'set/' prefix
 static constexpr const char* C_sys = "sys/";              // mqtt 'sys/' suffix
-static constexpr const char* C_pub = "pub/";              // mqtt 'pub/' suffix
+static constexpr const char* C_post = "post";             // mqtt 'post' suffix
+static constexpr const char* C_pub_etc = "pub/etc";       // mqtt 'pub/etc' suffix
+static constexpr const char* C_pub_iface = "pub/interface";   // mqtt 'pub/interface' suffix
+static constexpr const char* C_pub_post = "pub/post";     // mqtt 'pub/post' suffix
+static constexpr const char* C_pub_value = "pub/value";   // mqtt 'pub/value' suffix
 
 // http-related constants
 static constexpr const char* PGgzip = "gzip";
