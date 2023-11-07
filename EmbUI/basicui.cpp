@@ -223,7 +223,7 @@ void page_settings_time(Interface *interf, JsonObject *data, const char* action)
     // a list of ntp servers
     interf->json_section_line();
         for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
-            interf->constant(String(i).c_str(), TimeProcessor::getInstance().getserver(i));
+            interf->constant(TimeProcessor::getInstance().getserver(i));
     interf->json_section_end(); // line
 
     // user-defined NTP server field

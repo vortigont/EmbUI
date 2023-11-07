@@ -19,8 +19,9 @@
 
 void EmbUI::_mqttConnTask(bool state){
     if (!state){
-        delete tMqttReconnector;
-        tMqttReconnector = nullptr;
+        tMqttReconnector->disable();
+        //delete tMqttReconnector;
+        //tMqttReconnector = nullptr;
         return;
     }
 
@@ -30,7 +31,7 @@ void EmbUI::_mqttConnTask(bool state){
         tMqttReconnector = new Task(MQTT_RECONNECT_PERIOD * TASK_SECOND, TASK_FOREVER, [this](){
             if (!(WiFi.getMode() & WIFI_MODE_STA)) return;
             if (mqttClient) _connectToMqtt();
-        }, &ts, true );
+        }, &ts, true, nullptr, [this](){ tMqttReconnector = nullptr; }, true );
     }
 }
 
@@ -182,7 +183,7 @@ void EmbUI::_mqttSubscribe(){
 }
 
 void EmbUI::publish(const char* topic, const char* payload, bool retained){
-    if (!mqttClient) return;
+    if (!mqttAvailable()) return;
     std::string t(mqttPrefix().c_str());
     t += topic;    // make topic string "~/{$topic}/"
     /*

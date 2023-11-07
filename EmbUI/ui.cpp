@@ -12,7 +12,7 @@
 /**
  * @brief - add object to frame with mem overflow protection 
  */
-void Interface::json_frame_add(const JsonObject &jobj){
+void Interface::json_frame_add(const JsonVariantConst &jobj){
     size_t _cnt = FRAME_ADD_RETRY;
 
     do {
@@ -31,7 +31,7 @@ void Interface::json_frame_clear(){
     json.clear();
 }
 
-bool Interface::json_frame_enqueue(const JsonObject &obj, bool shallow){
+bool Interface::json_frame_enqueue(const JsonVariantConst &obj, bool shallow){
     if (!obj.memoryUsage()) // пустышки не передаем
         return false;
 
@@ -162,10 +162,3 @@ void FrameSendChain::send(const String& data){
     for (auto &i : _hndlr_chain)
         i.handler->send(data);
 }
-
-FrameSendAsyncJS::send(const JsonVariantConst& data){
-    JsonVariant& root = response->getRoot();
-    root.shallowCopy(data);
-    response->setLength();
-    req->send(response);
-};

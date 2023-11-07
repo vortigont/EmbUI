@@ -112,8 +112,8 @@ public:
     UIelement(ui_element_t t, const T id, typename std::enable_if<embui_traits::is_string_ptr<T>::value, T>::type* = 0) : _t(t) {
         if (!embui_traits::is_empty_string(id))
             obj[P_id] = id;
-        else
-            obj[P_id] = P_EMPTY;
+        //else
+        //    obj[P_id] = P_EMPTY;
 
         set_html_type(t);
     };
@@ -123,8 +123,8 @@ public:
     UIelement(ui_element_t t, const T& id, typename std::enable_if<embui_traits::is_string_obj<T>::value, T>::type* = 0) : _t(t) {
         if (!embui_traits::is_empty_string(id))
             obj[P_id] = id;
-        else
-            obj[P_id] = P_EMPTY;
+        //else
+        //    obj[P_id] = P_EMPTY;
 
         set_html_type(t);
     };
@@ -251,46 +251,6 @@ class FrameSendHttp: public FrameSend {
         bool available() const override { return true; }
 };
 
-class FrameSendHttpChunked: public FrameSend {
-        AsyncWebServerRequest *_req;
-        std::unique_ptr<AsyncJsonResponse> _response;
-    public:
-        FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {
-            response = std::make_unique<AsyncJsonResponse>(false, IFACE_DYN_JSON_SIZE);
-        }
-        ~FrameSendAsyncJS() {
-            req = nullptr;
-        }
-
-        // not supported
-        void send(const String &data) override {};
-
-        void send(const JsonVariantConst& data) override;
-
-        bool available() const override { return true; }
-};
-
-class FrameSendAsyncJS: public FrameSend {
-    private:
-        AsyncWebServerRequest *req;
-        std::unique_ptr<AsyncJsonResponse> response;
-    public:
-        FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {
-            response = std::make_unique<AsyncJsonResponse>(false, IFACE_DYN_JSON_SIZE);
-        }
-        ~FrameSendAsyncJS() {
-            req = nullptr;
-        }
-
-        // not supported
-        void send(const String &data) override {};
-
-        void send(const JsonVariantConst& data) override;
-
-        bool available() const override { return true; }
-};
-
-
 struct HndlrChain {
     int id;
     std::unique_ptr<FrameSend> handler;
@@ -367,7 +327,7 @@ class Interface {
      * @return true on success adding obj
      * @return false otherwise
      */
-    bool json_frame_enqueue(const JsonObject &obj, bool shallow = false);
+    bool json_frame_enqueue(const JsonVariantConst &obj, bool shallow = false);
 
     /**
      * @brief purge json object while keeping section structure
@@ -432,9 +392,9 @@ class Interface {
          * @brief - add object to current Interface frame
          * attempts to retry on mem overflow
          */
-        void json_frame_add(const JsonObject &obj);
+        void json_frame_add(const JsonVariantConst &obj);
         template <size_t capacity>
-        void json_frame_add( UIelement<capacity> &ui){ json_frame_add(ui.obj.template as<JsonObject>()); }
+        void json_frame_add( UIelement<capacity> &ui){ json_frame_add(ui.obj); }
 
         /**
          * @brief purge all current section data
@@ -852,7 +812,6 @@ void Interface::constant(const ID id, const L label, const V value){
     ui.obj[P_label] = label;    // implicitly set label to a supplied parameter (could be non-literal)
     json_frame_add(ui);
 };
-
 
 template <typename ID, typename V, typename L = const char*>
 void Interface::display(const ID id, V&& value, const L label, String cssclass, const JsonObject params ){
