@@ -446,6 +446,15 @@ class EmbUI
 
     // default callback for http 404 responces
     void _notFound(AsyncWebServerRequest *request);
+    
+    /**
+     * @brief HTTP rest api req handler
+     * executes action for posted json data and hooks to the feeder chain to get the reply
+     * ONLY value type packets are responded back to http request since http can't handle section packets as ws/mqtt feedrs 
+     * @param request - async http request
+     * @param json - json request body
+     */
+    void _http_api_hndlr(AsyncWebServerRequest *request, JsonVariant &json);
 
     // *** MQTT Private Methods and members ***
 

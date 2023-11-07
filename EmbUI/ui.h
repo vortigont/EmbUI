@@ -9,8 +9,7 @@
 #include "traits.hpp"
 #include <list>
 #include "LList.h"
-#include <ESPAsyncWebServer.h>
-#include "ArduinoJson.h"
+#include "AsyncJson.h"
 
 // static json obj size for tiny ui elements, like checkboxes, number inputs, etc...
 #ifndef TINY_JSON_SIZE
@@ -301,6 +300,24 @@ class FrameSendChain : public FrameSend {
 
 };
 
+class FrameSendAsyncJS: public FrameSend {
+    private:
+        bool flushed = false;
+        AsyncWebServerRequest *req;
+        AsyncJsonResponse* response;
+    public:
+        FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {
+            response = new AsyncJsonResponse(false, IFACE_DYN_JSON_SIZE);
+        }
+        ~FrameSendAsyncJS();
+
+        // not supported
+        void send(const String &data) override {};
+
+        void send(const JsonVariantConst& data) override;
+
+        bool available() const override { return flushed; }
+};
 
 class Interface {
 

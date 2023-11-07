@@ -24,12 +24,6 @@ void ota_handler(AsyncWebServerRequest *request, String filename, size_t index, 
  */
 //uint8_t uploadProgress(size_t len, size_t total);
 
-/**
- * @brief Default HTTP callback function
- * a catch-all stub for uknown http /cmd commands
- */
-String httpCallback(const String &param, const String &value, bool isSet) { return String(); }
-
 // default 404 handler
 void EmbUI::_notFound(AsyncWebServerRequest *request) {
 
@@ -49,14 +43,9 @@ void EmbUI::_notFound(AsyncWebServerRequest *request) {
 void EmbUI::http_set_handlers(){
 
     // HTTP REST API handler
-    _ajs_handler = std::make_unique<AsyncCallbackJsonWebHandler>("/api");
+    _ajs_handler = std::make_unique<AsyncCallbackJsonWebHandler>("/api", [this](AsyncWebServerRequest *r, JsonVariant &json) { _http_api_hndlr(r, json); });
 
-    handler->onRequest([this](AsyncWebServerRequest *request, JsonVariant &json) {
-        JsonObject& jsonObj = json.as<JsonObject>();
-        //post(jsonObj);
-        // ...
-    });
-    server.addHandler(_ajs_handler);
+    server.addHandler(_ajs_handler.get());
 
     // returns run-time system config serialized in JSON
     server.on(PSTR("/config"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
@@ -85,15 +74,6 @@ void EmbUI::http_set_handlers(){
     fz.provide_ota_form(&server, UPDATE_URI);
     fz.handle_ota_form(&server, UPDATE_URI);
 
-    // some ugly stats
-    server.on(PSTR("/heap"), HTTP_GET, [this](AsyncWebServerRequest *request){
-        String out = F("Heap: ");
-        out += ESP.getFreeHeap();
-        out += F("\nWS Client: ");
-        out += ws.count();
-        request->send(200, PGmimetxt, out);
-    });
-
     // serve all static files from LittleFS root /
     server.serveStatic("/", LittleFS, "/")
         .setDefaultFile(PSTR("index.html"))
@@ -102,49 +82,6 @@ void EmbUI::http_set_handlers(){
 
     // 404 handler - disabled to allow override in user code
     server.onNotFound([this](AsyncWebServerRequest *r){_notFound(r);});
-
-
-/*
-    // WiFi AP scanner (pretty useless)
-    //First request will return 0 results unless you start scan from somewhere else (loop/setup)
-    //Do not request more often than 3-5 seconds
-    server.on(PSTR("/scan"), HTTP_GET, [](AsyncWebServerRequest *request){
-        String json = F("[");
-        int n = WiFi.scanComplete();
-        if(n == -2){
-            WiFi.scanNetworks(true);
-        } else if(n){
-            for (int i = 0; i < n; ++i){
-            if(i) json += F(",");
-            json += F("{");
-            json += String(F("\"rssi\":"))+String(WiFi.RSSI(i));
-            json += String(F(",\"ssid\":\""))+WiFi.SSID(i)+F("\"");
-            json += String(F(",\"bssid\":\""))+WiFi.BSSIDstr(i)+F("\"");
-            json += String(F(",\"channel\":"))+String(WiFi.channel(i));
-            json += String(F(",\"secure\":"))+String(WiFi.encryptionType(i));
-            json += F("}");
-            }
-            WiFi.scanDelete();
-            if(WiFi.scanComplete() == -2){
-            WiFi.scanNetworks(true);
-            }
-        }
-        json += F("]");
-        request->send(200, PGmimejson, json);
-    });
-*/
-
-/*
-    // может пригодится позже, файлы отдаются как статика
-
-    server.on(PSTR("/config.json"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        request->send(LittleFS, P_cfgfile, String(), true);
-    });
-
-    server.on(PSTR("/events_config.json"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        request->send(LittleFS, F("/events_config.json"), String(), true);
-    });
-*/
 
 }   //  end of EmbUI::http_set_handlers
 
@@ -163,3 +100,17 @@ uint8_t uploadProgress(size_t len, size_t total){
     return progress;
 }
  */
+
+void EmbUI::_http_api_hndlr(AsyncWebServerRequest *request, JsonVariant &json){
+
+    // NOTE: this is a bad design attaching/detaching http responder to the chain of fram-based feeders, but I have no better ideas for now
+    //std::unique_ptr<FrameSendAsyncJS> responder = std::make_unique<FrameSendAsyncJS>(request);
+    int rid = feeders.add(std::make_unique<FrameSendAsyncJS>(request));    // hook up feeder to the chain
+
+    JsonObject jsonObj = json.as<JsonObject>();
+    // execute actions
+    post(jsonObj);
+
+    // unhook our http responder from chain
+    feeders.remove(rid);
+}

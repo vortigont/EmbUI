@@ -162,3 +162,26 @@ void FrameSendChain::send(const String& data){
     for (auto &i : _hndlr_chain)
         i.handler->send(data);
 }
+
+void FrameSendAsyncJS::send(const JsonVariantConst& data){
+    if (flushed) return;    // we can send only ONCE!
+
+    if (data[P_pkg] == P_value){
+        JsonVariant& root = response->getRoot();
+        root.shallowCopy(data[P_block]);
+    } else
+        return;     // won't reply with non-value packets
+
+    response->setLength();
+    req->send(response);
+    flushed = true;
+};
+
+FrameSendAsyncJS::~FrameSendAsyncJS() {
+    if (!flushed){
+        // there were no usefull data, let's reply with empty obj
+        response->setLength();
+        req->send(response);        
+    }
+    req = nullptr;
+}
