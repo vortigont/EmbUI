@@ -393,7 +393,7 @@ void set_settings_time(Interface *interf, JsonObject *data, const char* action){
 
     // save and apply timezone
     if ((*data)[V_timezone]) {
-        embui.var(V_timezone, (*data)[V_timezone], true);
+        embui.var(V_timezone, (*data)[V_timezone]);
         std::string_view tzrule((*data)[V_timezone].as<const char*>());
         TimeProcessor::getInstance().tzsetup(tzrule.substr(4).data());   // cutoff '000_' prefix
     }

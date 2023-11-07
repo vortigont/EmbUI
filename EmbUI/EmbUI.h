@@ -264,7 +264,7 @@ class EmbUI
      * beware of dangling pointers here passing non-static char*, use JsonVariant or String instead 
      */
     template <typename V>
-    void var(const char* key, const V& value, bool force = false);
+    void var(const char* key, const V& value);
 
     /**
      * @brief - create config varialbe if it does not exist yet
@@ -273,7 +273,7 @@ class EmbUI
      * it's value won't be replaced
      */
     template <typename T>
-    inline void var_create(const char* key, const T& value){ if(!cfg.containsKey(key)){var(key, value, true );} }
+    inline void var_create(const char* key, const T& value){ if(!cfg.containsKey(key)){var(key, value);} }
 
     /**
      * @brief - remove key from config
@@ -621,12 +621,8 @@ extern EmbUI embui;
 /* Templated methods implementation follows */
 /* ======================================== */
 template <typename V>
-void EmbUI::var(const char* key, const V& value, bool force){
+void EmbUI::var(const char* key, const V& value){
     LOG(print, "UI Key:"); LOG(print, key);
-    if (!force && !cfg.containsKey(key)) {
-        LOG(println, " is NOT initialized!\n");
-        return;
-    }
 
     // do not update key if new value is the same as existing one
     if (cfg[key] == value){
@@ -662,7 +658,7 @@ void EmbUI::var_dropnulls(const char* key, const T& value){
     }
 
     // deduce further???
-    var(key, value, true ); // save value as-is
+    var(key, value); // save value as-is
 }
 
 template <typename P>

@@ -21,7 +21,7 @@ extern uint8_t lang;
 namespace basicui {
 
     // numeric indexes for pages
-    enum class page : uint8_t {
+    enum class page : uint16_t {
         main = 0,
         settings,
         network,
