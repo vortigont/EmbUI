@@ -97,6 +97,12 @@ void Interface::json_section_end(){
     delete section;
 }
 
+void Interface::json_section_extend(const char* name){
+    section_stack.tail()->idx--;
+    JsonObject o(section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element
+    json_section_begin(name, P_EMPTY, false, false, false, o);
+};
+
 /**
  * @brief - serialize and send json obj directly to the ws buffer
  */
