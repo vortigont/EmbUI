@@ -39,7 +39,7 @@ static constexpr const char* A_publish = "publish";
 static constexpr const char* T_DO_OTAUPD = "update";    // http OTA update URL /update
 
 
-// Interface elements
+// Interface class elements
 static constexpr const char* P_action = "action";
 static constexpr const char* P_app = "app";
 static constexpr const char* P_appjsapi = "appjsapi";
@@ -55,7 +55,6 @@ static constexpr const char* P_date = "date";
 static constexpr const char* P_datetime = "datetime-local";
 static constexpr const char* P_display = "display";
 static constexpr const char* P_div = "div";
-static constexpr const char* P_directly = "directly";
 static constexpr const char* P_dtime = "dtime";
 static constexpr const char* P_email = "email";
 static constexpr const char* P_empty_quotes = "";
@@ -80,6 +79,7 @@ static constexpr const char* P_max = "max";
 static constexpr const char* P_menu = "menu";
 static constexpr const char* P_min = "min";
 static constexpr const char* P_number = "number";
+static constexpr const char* P_onChange = "onChange";
 static constexpr const char* P_options = "options";
 static constexpr const char* P_params = "params";
 static constexpr const char* P_password = "password";
