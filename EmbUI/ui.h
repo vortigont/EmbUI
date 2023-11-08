@@ -40,9 +40,6 @@ using ValidStringRef_t = std::enable_if_t<embui_traits::is_string_obj_v<TString>
 template<typename TChar>
 using ValidCharPtr_t = std::enable_if_t<embui_traits::is_string_ptr_v<TChar*>, void>;
 
-template<typename TString>
-using ValidString_t = std::enable_if_t<embui_traits::is_string_v<TString>, void>;
-
 /**
  * @brief a list of available ui elenets
  * changes to this list order MUST be reflected to 'static const char *const UI_T_DICT' in constants.h
@@ -139,20 +136,13 @@ public:
 
     UIelement(ui_element_t t) : UIelement(t, P_EMPTY) {};
 
-    template <typename V>
-    UIelement(ui_element_t t, const char* id, const V value) : UIelement(t, id ){
+    template <typename ID, typename V>
+    UIelement(ui_element_t t, const ID id, const V value) : UIelement(t, id ){
         obj[P_value] = value;
     };
 
     template <typename T>
-        typename std::enable_if<std::is_arithmetic_v<T>, void>::type
-    param(ui_param_t key, T value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
-
-    template <typename T>
-    void param(ui_param_t key, const T* value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
-
-    template <typename T>
-    void param(ui_param_t key, const T& value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
+    void param(ui_param_t key, const T value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
 
     /**
      * @brief set 'html' flag for element
@@ -169,12 +159,8 @@ public:
      * @param label 
      */
     template <typename T>
-        ValidCharPtr_t<T>
-    label(const T* string){ if (!embui_traits::is_empty_string(string)) obj[P_label] = string; }
-
-    template <typename T>
-        ValidStringRef_t<T>
-    label(const T& string){ if (!embui_traits::is_empty_string(string)) obj[P_label] = string; }
+        typename std::enable_if<embui_traits::is_string_v<T>,void>::type
+    label(const T string){ if (!embui_traits::is_empty_string(string)) obj[P_label] = string; }
 
     /**
      * @brief add 'color' key to the UI element
@@ -191,22 +177,9 @@ public:
      * 
      */
     template <typename T>
-        typename std::enable_if<std::is_fundamental_v<T>, void>::type
-    value(T v){ obj[P_value] = v; }
-
-    template <typename T>
-    void value(const T* v){ obj[P_value] = v; }
-
-    template <typename T>
-        typename std::enable_if<!std::is_fundamental_v<T>, void>::type
-    value(const T& v){ obj[P_value] = v; }
-
-    //template <typename T>
-    //void value(T&& v){ obj[P_value] = std::forward<T>(v); }
-
+    void value(const T v){ obj[P_value] = v; }
 
 };
-
 
 template <size_t S = UI_DEFAULT_JSON_SIZE>
 class UI_button : public UIelement<S> {
@@ -214,20 +187,12 @@ public:
     using UIelement<S>::value;
     using UIelement<S>::color;
 
-    template <typename L>
-    UI_button(button_t btype, const char* id, const L* label, typename std::enable_if<embui_traits::is_string_ptr<L*>::value, L>::type* = 0) : UIelement<S>(ui_element_t::button, id) {
+    template <typename T, typename L>
+    UI_button(button_t btype, const T id, const L label) : UIelement<S>(ui_element_t::button, id) {
         UIelement<S>::obj[P_type] = static_cast<uint8_t>(btype);
         UIelement<S>::label(label);
     };
-
-    template <typename L>
-    UI_button(button_t btype, const char* id, const L& label, typename std::enable_if<embui_traits::is_string_obj<L>::value, L>::type* = 0) : UIelement<S>(ui_element_t::button, id) {
-        UIelement<S>::obj[P_type] = static_cast<uint8_t>(btype);
-        UIelement<S>::label(label);
-    };
-
 };
-
 
 class FrameSend {
     public:
@@ -402,8 +367,8 @@ class Interface {
      * @brief - start UI section
      * A section contains DOM UI elements, this is generic one
      */
-    template  <typename L>
-    void json_section_begin(const char* name, const L label, bool main, bool hidden, bool line, JsonObject &obj);
+    template  <typename TAdaptedString, typename L>
+    void json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, JsonObject &obj);
 
     template <typename L>
     void _html_input(UIelement<TINY_JSON_SIZE> &ui, const char* type, const L label, bool onChange);
@@ -457,7 +422,6 @@ class Interface {
          * attempts to retry on mem overflow
          */
         void json_frame_add(const JsonVariantConst &obj);
-
         template <size_t capacity>
         void json_frame_add( UIelement<capacity> &ui){ json_frame_add(ui.obj); }
 
@@ -511,8 +475,10 @@ class Interface {
          * @param hidden - creates section hidden under 'spoiler' button, user needs to press the button to unfold it
          * @param line  -  all elements of the section will be alligned in a line
          */
-        template  <typename L = const char*>
-        void json_section_begin(const char* name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
+        template  <typename TString, typename L = const char*>
+        void json_section_begin(const TString& name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
+        template  <typename TChar, typename L = const char*>
+        void json_section_begin(const TChar* name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
 
         /**
          * @brief - content section is meant to replace existing data on the page
@@ -523,7 +489,9 @@ class Interface {
          * @brief - opens section for UI elements that are aligned in one line on a page
          * each json_section_line() must be closed by a json_section_end() call
          */
-        void json_section_line(const char* name = P_EMPTY){ json_section_begin(name, P_EMPTY, false, false, true); };
+        template  <typename ID = const char*>
+            typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+        json_section_line(const ID name = P_EMPTY){ json_section_begin(name, P_EMPTY, false, false, true); };
 
         /**
          * @brief - section with manifest data
@@ -536,26 +504,27 @@ class Interface {
          * @param appversion - application version, could be of any type suitable for user-code to rely on it
          * if 0 - than no checking required
          */
-        template  <typename L = const char*>
-        void json_section_manifest(const char* appname, const char* devid, unsigned appjsapi = 0, const L appversion = P_EMPTY);
+        template  <typename ID, typename L = const char*>
+            typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+        json_section_manifest(const ID appname, const char* devid, unsigned appjsapi = 0, const L appversion = P_EMPTY);
 
         /**
          * @brief - start a section with left-side MENU elements
          */
-        void json_section_menu(){ json_section_begin(P_menu); };
+        inline void json_section_menu(){ json_section_begin(P_menu); };
 
         /**
          * @brief - start a section with a new page content
          * it replaces current page from scratch, may contain other nested sections
          */
-        template  <typename L>
-        void json_section_main(const char* name, const L label){ json_section_begin(name, label, true); };
+        template  <typename ID, typename L>
+        void json_section_main(const ID name, const L label){ json_section_begin(name, label, true); };
 
         /**
          * @brief - start hidden UI section with button to hide/unhide elements
          */
-        template  <typename L>
-        void json_section_hidden(const char* name, const L label){ json_section_begin(name, label, false, true); };
+        template  <typename ID, typename L>
+        void json_section_hidden(const ID name, const L label){ json_section_begin(name, label, false, true); };
 
         /**
          * @brief opens nested json_section using previous section's index
@@ -564,7 +533,9 @@ class Interface {
          * each extended section MUST be closed with json_section_end() prior to opening new section
          * @param name extended section name
          */
-        void json_section_extend(const char* name = P_EMPTY);
+        template  <typename ID>
+            typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+        json_section_extend(const ID name);
 
         /**
          * @brief - close current UI section
@@ -584,7 +555,7 @@ class Interface {
          *  type js - call a js function with name ~ id
          */
         template <typename T>
-        void button(button_t btype, const char* id, const T label, const char* color = P_EMPTY);
+        void button(button_t btype, const T id, const T label, const char* color = P_EMPTY);
 
         /**
          * @brief - create html button to submit itself's id, value, section form or else
@@ -594,25 +565,25 @@ class Interface {
          *  type 2 - call a js function with name ~ id + pass it a value
          */
         template <typename T, typename V>
-        void button_value(button_t btype, const char* id, const V value, const T label, const char* color = P_EMPTY);
+        void button_value(button_t btype, const T id, const V value, const T label, const char* color = P_EMPTY);
 
         /**
          * @brief - элемент интерфейса checkbox
          * @param onChange - значение чекбокса при изменении сразу передается на сервер без отправки формы
          */
-        template <typename TChar>
+        template <typename TChar, typename L>
             ValidCharPtr_t<TChar>
-        checkbox(const char* id, bool value, const TChar* label, bool onChange = false){ html_input(id, P_chckbox, value, label, onChange); };
+        checkbox(const TChar* id, bool value, const L label, bool onChange = false){ html_input(id, P_chckbox, value, label, onChange); };
 
-        template <typename TString>
+        template <typename TString, typename L>
             ValidStringRef_t<TString>
-        checkbox(const char* id, bool value, const TString& label, bool onChange = false){ html_input(id, P_chckbox, value, label, onChange); };
+        checkbox(const TString& id, bool value, const L label, bool onChange = false){ html_input(id, P_chckbox, value, label, onChange); };
 
         /**
          * @brief - элемент интерфейса "color selector"
          */
-        template <typename V, typename L>
-        void color(const char* id, const V value, const L label){ html_input(id, P_color, value, label); };
+        template <typename ID, typename V, typename L>
+        void color(const ID id, const V value, const L label){ html_input(id, P_color, value, label); };
 
         /**
          * @brief insert text comment (a simple <p>text</p> block)
@@ -620,8 +591,8 @@ class Interface {
          * @param id comment id (might be used to replace value with content() method)
          * @param label - text label
          */
-        template <typename L>
-        void comment(const char* id, const L label);
+        template <typename ID, typename L>
+        void comment(const ID id, const L label);
 
         template <typename L>
         void comment(const L label){ comment(P_EMPTY, label); };
@@ -634,19 +605,19 @@ class Interface {
          * @param value  - element value (hidden value, if any)
          *  
          */
-        template <typename L, typename V=int>
-        void constant(const char* id, const L label, const V value=0);
+        template <typename ID, typename L, typename V=int>
+        void constant(const ID id, const L label, const V value=0);
 
         template <typename L>
         void constant(const L label){ constant(P_EMPTY, label); };
 
-        template <typename L, typename V>
-            typename std::enable_if<embui_traits::is_string_v<V>, void>::type
-        date(const char* id, const V value, const L label){ html_input(id, P_date, value, label); };
-
-        template <typename L, typename V>
+        template <typename ID, typename L, typename V>
             typename std::enable_if<embui_traits::is_string_v<V>,void>::type
-        datetime(const char* id, const V value, const L label){ html_input(id, P_datetime, value, label); };
+        date(const ID id, const V value, const L label){ html_input(id, P_date, value, label); };
+
+        template <typename ID, typename L, typename V>
+            typename std::enable_if<embui_traits::is_string_v<V>,void>::type
+        datetime(const ID id, const V value, const L label){ html_input(id, P_datetime, value, label); };
 
         /**
          * @brief - create "display" div with custom css selector
@@ -658,8 +629,8 @@ class Interface {
          *                inherit from the base class, default is "display ${id}"
          * @param params - additional parameters (reserved for future use to be used in template processor)
          */
-        template <typename V, typename L = const char*>
-        void display(const char* id, V&& value, const L label = P_EMPTY, String css = P_EMPTY, const JsonObject params = JsonObject() );
+        template <typename ID, typename V, typename L = const char*>
+        void display(const ID id, V&& value, const L label = P_EMPTY, String css = P_EMPTY, const JsonObject params = JsonObject() );
 
         /**
          * @brief - Creates html div element based on a templated configuration and arbitrary parameters
@@ -671,12 +642,12 @@ class Interface {
          * @param label - value usage depends on template
          * @param params - dict with arbitrary params, usage depends on template
          */
-        template <typename V, typename L = const char*, typename CSS = const char*>
-        void div(const char* id, const char* type, const V value, const L label = P_EMPTY, const CSS css = P_EMPTY, const JsonVariantConst params = JsonVariantConst());
+        template <typename ID, typename V, typename L = const char*, typename CSS = const char*>
+        void div(const ID id, const ID type, const V value, const L label = P_EMPTY, const CSS css = P_EMPTY, const JsonVariantConst params = JsonVariantConst());
 
-        template <typename V, typename L>
+        template <typename ID, typename V, typename L>
             typename std::enable_if<embui_traits::is_string_v<V>,void>::type
-        email(const char* id, const V value, const L label){ html_input(id, P_email, value, label); };
+        email(const ID id, const V value, const L label){ html_input(id, P_email, value, label); };
 
         /**
          * @brief create a file upload form
@@ -688,17 +659,16 @@ class Interface {
          * @param label - label for file upload
          * @param opt - optional parametr, passes "opt"=opt_value
          */
-        template <typename V, typename L = const char*>
-            ValidString_t<V>
-            //typename std::enable_if<embui_traits::is_string_v<V>,void>::type
-        file_form(const char* id, const V action, const L label, const L opt = P_EMPTY);
+        template <typename ID, typename V, typename L = const char*>
+            typename std::enable_if<embui_traits::is_string_v<V>,void>::type
+        file_form(const ID id, const V action, const L label, const L opt = P_EMPTY);
 
         /**
          * @brief Create hidden html field
          * could be used to pass some data between different sections
          */
-        template <typename V>
-        void hidden(const char* id, const V value);
+        template <typename ID, typename V>
+        void hidden(const ID id, const V value);
 
         /**
          * @brief - create generic html input element
@@ -708,13 +678,13 @@ class Interface {
          * @param label - element label
          * @param onChange - if true, element value in send via ws on-change 
          */
-        template <typename TChar, typename V>
-            ValidCharPtr_t<TChar>
-        html_input(const char* id, const char* type, const V value, const TChar* label, bool onChange = false);
+        template <typename TChar, typename V, typename L>
+            typename std::enable_if<embui_traits::is_string_ptr_v<TChar*>, void>::type
+        html_input(const TChar* id, const char* type, const V value, const L label, bool onChange = false);
 
-        template <typename TString, typename V>
-            ValidStringRef_t<TString>
-        html_input(const char* id, const char* type, const V value, const TString& label, bool onChange = false);
+        template <typename TString, typename V, typename L>
+            typename std::enable_if<embui_traits::is_string_obj_v<TString>, void>::type
+        html_input(const TString& id, const char* type, const V value, const L label, bool onChange = false);
 
         /**
          * @brief create an iframe on page
@@ -722,8 +692,8 @@ class Interface {
          * @param id 
          * @param value 
          */
-        template <typename V>
-        void iframe(const char* id, const V value){ html_input(id, P_iframe, value, P_EMPTY); };
+        template <typename ID, typename V>
+        void iframe(const ID id, const V value){ html_input(id, P_iframe, value, P_EMPTY); };
 
         /**
          * @brief - create empty div and call js-function over this div
@@ -735,8 +705,8 @@ class Interface {
          * @param class - css class for div
          * @param params - additional parameters (reserved to be used in template processor)
          */
-        template <typename V, typename L = const char*>
-        void jscall(const char* id, const V value, const L label = P_EMPTY, const L css = P_EMPTY, JsonVariantConst params = JsonVariantConst() ){ div(id, P_js, value, label, css, params); };
+        template <typename ID, typename V, typename L = const char*>
+        void jscall(const ID id, const V value, const L label = P_EMPTY, const L css = P_EMPTY, JsonVariantConst params = JsonVariantConst() ){ div(id, P_js, value, label, css, params); };
 
         /**
          * @brief - create "number" html field with optional step, min, max constraints
@@ -744,18 +714,18 @@ class Interface {
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          * front-end converts numeric values to integers or floats
          */
-        template <typename T, typename L>
+        template <typename ID, typename T, typename L>
             typename std::enable_if<std::is_arithmetic_v<T>, void>::type
-        number_constrained(const char* id, T value, const L label, T step = 0, T min = 0, T max = 0);
+        number_constrained(const ID id, T value, const L label, T step = 0, T min = 0, T max = 0);
 
         /**
          * @brief - create "number" html field with optional step, min, max constraints
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          * front-end converts numeric values to integers or floats
          */
-        template <typename T, typename L>
+        template <typename ID, typename T, typename L>
             typename std::enable_if<std::is_arithmetic_v<T>, void>::type
-        number(const char* id, T value, const L label){ number_constrained(id, value, label); };
+        number(const ID id, T value, const L label){ number_constrained(id, value, label); };
 
         /**
          * @brief - create an option element for "select" drop-down list
@@ -763,9 +733,9 @@ class Interface {
         template <typename T, typename L>
         void option(const T value, const L label);
 
-        template <typename L>
-            ValidString_t<L>
-        password(const char* id, const L value, const L label){ html_input(id, P_password, value, label); };
+        template <typename ID, typename L>
+            typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+        password(const ID id, const L value, const L label){ html_input(id, P_password, value, label); };
 
         /**
          * @brief create live progressbar based on div+css
@@ -775,15 +745,16 @@ class Interface {
          * @param id 
          * @param label 
          */
-        template <typename L>
-        void progressbar(const char* id, const L label){ div(id, P_progressbar, 0, label); };
+        template <typename ID, typename L>
+        void progressbar(const ID id, const L label){ div(id, P_progressbar, 0, label); };
 
         /**
          * @brief - create "range" html field with step, min, max constraints
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
-        template <typename T, typename L>
-        void range(const char* id, T value, T min, T max, T step, const L label, bool onChange = false);
+        template <typename ID, typename T, typename L>
+            typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+        range(const ID id, T value, T min, T max, T step, const L label, bool onChange = false);
 
         /**
          * @brief - create drop-down selection list
@@ -794,8 +765,8 @@ class Interface {
          * @param exturl - an url for xhr request to fetch list content, it must be a valid json object
          * with label/value pairs arranged in assoc array
          */
-        template <typename T, typename L = const char*>
-        void select(const char* id, const T value, const L label = P_EMPTY, bool onChange = false, const L exturl = P_EMPTY);
+        template <typename ID, typename T, typename L = const char*>
+        void select(const ID id, const T value, const L label = P_EMPTY, bool onChange = false, const L exturl = P_EMPTY);
 
         /**
          * @brief create spacer line with optional text label
@@ -814,33 +785,33 @@ class Interface {
          * @param value 
          * @param label 
          */
-        template <typename V, typename L>
+        template <typename ID, typename V, typename L>
             typename std::enable_if<embui_traits::is_string_v<L>,void>::type
-        text(const char* id, const V value, const L label){ html_input(id, P_text, value, label); };
+        text(const ID id, const V value, const L label){ html_input(id, P_text, value, label); };
 
         /**
          * элемент интерфейса textarea
          * Template accepts literal types as textarea value
          */
-        template <typename V, typename L>
+        template <typename ID, typename V, typename L>
             typename std::enable_if<embui_traits::is_string_v<V>,void>::type
-        textarea(const char* id, const V value, const L label);
+        textarea(const ID id, const V value, const L label);
 
         /**
          * элемент интерфейса time selector
          * Template accepts literal types as time value
          */
-        template <typename V, typename L>
+        template <typename ID, typename V, typename L>
             typename std::enable_if<embui_traits::is_string_v<V>,void>::type
-        time(const char* id, const V value, const L label){ html_input(id, P_time, value, label); };
+        time(const ID id, const V value, const L label){ html_input(id, P_time, value, label); };
 
         /**
          * @brief - Add 'value' object to the Interface frame
          * used to replace values of existing ui elements on the page
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
          */
-        template <typename T>
-        void value(const char* id, const T val, bool html = false);
+        template <typename ID, typename T>
+        void value(const ID id, const T val, bool html = false);
 
         /**
          * @brief - Add the whole JsonObject to the Interface frame
@@ -856,14 +827,14 @@ class Interface {
 
 
 template <typename T>
-void Interface::button(button_t btype, const char* id, const T label, const char* color){
+void Interface::button(button_t btype, const T id, const T label, const char* color){
     UI_button<TINY_JSON_SIZE> ui(btype, id, label);
     ui.color(color);
     json_frame_add(ui);
 };
 
 template <typename T, typename V>
-void Interface::button_value(button_t btype, const char* id, const V value, const T label, const char* color){
+void Interface::button_value(button_t btype, const T id, const V value, const T label, const char* color){
     UI_button<TINY_JSON_SIZE> ui(btype, id, label);
     ui.obj[P_value] = value;
     ui.color(color);
@@ -871,22 +842,22 @@ void Interface::button_value(button_t btype, const char* id, const V value, cons
     json_frame_add(ui);
 };
 
-template <typename L>
-void Interface::comment(const char* id, const L label){
+template <typename ID, typename L>
+void Interface::comment(const ID id, const L label){
     UIelement<UI_DEFAULT_JSON_SIZE * 2> ui(ui_element_t::comment, id);     // use a bit larger buffer for long texts
     ui.label(label);
     json_frame_add(ui);
 }
 
-template <typename L, typename V>
-void Interface::constant(const char* id, const L label, const V value){
+template <typename ID, typename L, typename V>
+void Interface::constant(const ID id, const L label, const V value){
     UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::constant, id, value);
     ui.obj[P_label] = label;    // implicitly set label to a supplied parameter (could be non-literal)
     json_frame_add(ui);
 };
 
-template <typename V, typename L = const char*>
-void Interface::display(const char* id, V&& value, const L label, String cssclass, const JsonObject params ){
+template <typename ID, typename V, typename L = const char*>
+void Interface::display(const ID id, V&& value, const L label, String cssclass, const JsonObject params ){
     if (cssclass.isEmpty())	// make css selector like 'class "css" "id"', id used as a secondary distinguisher 
         cssclass = P_display;   // "display is the default css selector"
     cssclass += (char)0x20;
@@ -894,8 +865,8 @@ void Interface::display(const char* id, V&& value, const L label, String cssclas
     div(id, P_html, std::forward<V>(value), label, cssclass, params);
 };
 
-template <typename V, typename L = const char*, typename CSS = const char*>
-void Interface::div(const char* id, const char* type, const V value, const L label, const CSS css, const JsonVariantConst params){
+template <typename ID, typename V, typename L = const char*, typename CSS = const char*>
+void Interface::div(const ID id, const ID type, const V value, const L label, const CSS css, const JsonVariantConst params){
     UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::div, id, value);
     ui.obj[P_type] = type;
     ui.label(label);
@@ -908,10 +879,9 @@ void Interface::div(const char* id, const char* type, const V value, const L lab
     json_frame_add(ui);
 };
 
-template <typename V, typename L>
-    ValidString_t<V>
-    //typename std::enable_if<embui_traits::is_string_v<V>,void>::type
-Interface::file_form(const char* id, const V action, const L label, const L opt){
+template <typename ID, typename V, typename L>
+    typename std::enable_if<embui_traits::is_string_v<V>,void>::type
+Interface::file_form(const ID id, const V action, const L label, const L opt){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::file, id);
     ui.obj[P_type] = P_file;
     ui.obj[P_action] = action;
@@ -920,32 +890,10 @@ Interface::file_form(const char* id, const V action, const L label, const L opt)
     json_frame_add(ui);
 }
 
-template <typename V>
-void Interface::hidden(const char* id, const V value){
+template <typename ID, typename V>
+void Interface::hidden(const ID id, const V value){
     UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::hidden, id);
     ui.value(value);
-    json_frame_add(ui);
-};
-
-template <typename TChar, typename V>
-    ValidCharPtr_t<TChar>
-Interface::html_input(const char* id, const char* type, const V value, const TChar* label, bool onChange){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
-    _html_input(ui, type, label, onChange);
-};
-
-template <typename TString, typename V>
-    ValidStringRef_t<TString>
-Interface::html_input(const char* id, const char* type, const V value, const TString& label, bool onChange){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
-    _html_input(ui, type, label, onChange);
-};
-
-template <typename L>
-void Interface::_html_input(UIelement<TINY_JSON_SIZE> &ui, const char* type, const L label, bool onChange){
-    ui.label(label);
-    ui.obj[P_type] = type;
-    if (onChange) ui.obj[P_onChange] = true;
     json_frame_add(ui);
 };
 
@@ -963,16 +911,21 @@ void Interface::json_frame(const char* type, const TChar* section_id){
     json_section_begin(section_id);
 };
 
-template  <typename L>
-void Interface::json_section_begin(const char* name, const L label, bool main, bool hidden, bool line){
+template  <typename TString, typename L>
+void Interface::json_section_begin(const TString& name, const L label, bool main, bool hidden, bool line){
     JsonObject obj(section_stack.size() ? section_stack.tail()->block.createNestedObject() : json.as<JsonObject>());
-    json_section_begin(name, label, main, hidden, line, obj);
+    json_section_begin(detail::adaptString(name), label, main, hidden, line, obj);
+}
+template  <typename TChar, typename L>
+void Interface::json_section_begin(const TChar* name, const L label, bool main, bool hidden, bool line){
+    JsonObject obj(section_stack.size() ? section_stack.tail()->block.createNestedObject() : json.as<JsonObject>());
+    json_section_begin(detail::adaptString(name), label, main, hidden, line, obj);
 }
 
-template  <typename L>
-void Interface::json_section_begin(const char* name, const L label, bool main, bool hidden, bool line, JsonObject &obj){
+template  <typename TAdaptedString, typename L>
+void Interface::json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, JsonObject &obj){
     if (embui_traits::is_empty_string(name))
-        obj[P_section] = String (std::rand()); // need a deep-copy
+        obj[P_section] = String (millis()); // need a deep-copy
     else
         obj[P_section] = name;
 
@@ -989,8 +942,17 @@ void Interface::json_section_begin(const char* name, const L label, bool main, b
     section_stack.add(section);
 }
 
-template  <typename L = const char*>
-void Interface::json_section_manifest(const char* appname, const char* devid, unsigned appjsapi, const L appversion){
+template  <typename ID>
+    typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+Interface::json_section_extend(const ID name){
+    section_stack.tail()->idx--;
+    JsonObject o(section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element
+    json_section_begin(name, P_EMPTY, false, false, false, o);
+};
+
+template  <typename ID, typename L = const char*>
+    typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+Interface::json_section_manifest(const ID appname, const char* devid, unsigned appjsapi, const L appversion){
     json_section_begin("manifest", P_EMPTY, false, false, false);
     JsonObject obj = section_stack.tail()->block.createNestedObject();
     obj[P_uijsapi] = EMBUI_JSAPI;
@@ -1001,9 +963,9 @@ void Interface::json_section_manifest(const char* appname, const char* devid, un
     obj["mc"] = devid;
 }
 
-template <typename T, typename L>
+template <typename ID, typename T, typename L>
     typename std::enable_if<std::is_arithmetic_v<T>, void>::type
-Interface::number_constrained(const char* id, T value, const L label, T step, T min, T max){
+Interface::number_constrained(const ID id, T value, const L label, T step, T min, T max){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
     ui.obj[P_type] = P_number;
     ui.label(label);
@@ -1020,8 +982,9 @@ void Interface::option(const T value, const L label){
     json_frame_add(ui);
 }
 
-template <typename T, typename L>
-void Interface::range(const char* id, T value, T min, T max, T step, const L label, bool onChange){
+template <typename ID, typename T, typename L>
+    typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+Interface::range(const ID id, T value, T min, T max, T step, const L label, bool onChange){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
     ui.obj[P_type] = "range";
     ui.obj[P_min] = min;
@@ -1032,8 +995,8 @@ void Interface::range(const char* id, T value, T min, T max, T step, const L lab
     json_frame_add(ui);
 };
 
-template <typename T, typename L = const char*>
-void Interface::select(const char* id, const T value, const L label, bool onChange, const L exturl){
+template <typename ID, typename T, typename L = const char*>
+void Interface::select(const ID id, const T value, const L label, bool onChange, const L exturl){
     UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::select, id, value);
     ui.label(label);
     if (onChange) ui.obj[P_onChange] = true;
@@ -1051,19 +1014,40 @@ Interface::spacer(const L label){
     json_frame_add(ui);
 }
 
-template <typename V, typename L>
+template <typename ID, typename V, typename L>
     typename std::enable_if<embui_traits::is_string_v<V>,void>::type
-Interface::textarea(const char* id, const V value, const L label){
+Interface::textarea(const ID id, const V value, const L label){
     UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::textarea, id, value);
     ui.label(label);
     json_frame_add(ui);
 };
 
-template <typename T>
-void Interface::value(const char* id, const T val, bool html){
+template <typename ID, typename T>
+void Interface::value(const ID id, const T val, bool html){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::value, id);
     ui.obj[P_value] = val;
     ui.html(html);
     json_frame_add(ui);
 };
 
+template <typename TChar, typename V, typename L>
+    ValidCharPtr_t<TChar>
+Interface::html_input(const TChar* id, const char* type, const V value, const L label, bool onChange){
+    UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
+    _html_input(ui, type, label, onChange);
+};
+
+template <typename TString, typename V, typename L>
+    ValidStringRef_t<TString>
+Interface::html_input(const TString& id, const char* type, const V value, const L label, bool onChange){
+    UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
+    _html_input(ui, type, label, onChange);
+};
+
+template <typename L>
+void Interface::_html_input(UIelement<TINY_JSON_SIZE> &ui, const char* type, const L label, bool onChange){
+    ui.label(label);
+    ui.obj[P_type] = type;
+    if (onChange) ui.obj[P_onChange] = true;
+    json_frame_add(ui);
+};
