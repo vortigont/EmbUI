@@ -62,7 +62,8 @@ struct is_string_obj : public std::disjunction<
         std::is_same<std::string, std::decay_t<T>>,
         std::is_same<String, std::decay_t<T>>,
         std::is_same<StringSumHelper, std::decay_t<T>>,          // String derived helper class
-        std::is_same<detail::StaticStringAdapter, std::decay_t<T>>
+        std::is_same<detail::StaticStringAdapter, std::decay_t<T>>,     // ArduinoJson type
+        std::is_same<detail::SizedRamString, std::decay_t<T>>           // ArduinoJson type
     > {};
 
 // value helper
@@ -88,6 +89,8 @@ is_empty_string(const T &label){
     if constexpr(std::is_same_v<String, std::decay_t<decltype(label)>>)                 // specialisation for String
         return label.isEmpty();
     if constexpr(std::is_same_v<detail::StaticStringAdapter, std::decay_t<decltype(label)>>)
+        return label.isNull();
+    if constexpr(std::is_same_v<detail::SizedRamString, std::decay_t<decltype(label)>>)
         return label.isNull();
 
     return false;   // UB, not a known string type for us

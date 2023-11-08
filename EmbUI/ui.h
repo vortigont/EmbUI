@@ -34,6 +34,12 @@
 // static json doc size
 #define UI_DEFAULT_JSON_SIZE SMALL_JSON_SIZE
 
+template<typename TString>
+using ValidStringRef_t = std::enable_if_t<embui_traits::is_string_obj_v<TString>, void>;
+
+template<typename TChar>
+using ValidCharPtr_t = std::enable_if_t<embui_traits::is_string_ptr_v<TChar*>, void>;
+
 /**
  * @brief a list of available ui elenets
  * changes to this list order MUST be reflected to 'static const char *const UI_T_DICT' in constants.h
@@ -407,8 +413,9 @@ class Interface {
          */
         template <typename TString>
         void json_frame(const char* type, const TString& section_id);
+
         template <typename TChar = const char>
-        void json_frame(const char* type, TChar* section_id = P_EMPTY);
+        void json_frame(const char* type, const TChar* section_id = P_EMPTY);
 
         /**
          * @brief - add object to current Interface frame
@@ -471,7 +478,7 @@ class Interface {
         template  <typename TString, typename L = const char*>
         void json_section_begin(const TString& name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
         template  <typename TChar, typename L = const char*>
-        void json_section_begin(TChar* name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
+        void json_section_begin(const TChar* name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
 
         /**
          * @brief - content section is meant to replace existing data on the page
@@ -564,8 +571,13 @@ class Interface {
          * @brief - элемент интерфейса checkbox
          * @param onChange - значение чекбокса при изменении сразу передается на сервер без отправки формы
          */
-        template <typename ID, typename L>
-        void checkbox(const ID id, bool value, const L label, bool onChange = false){ html_input(id, P_chckbox, value, label, onChange); };
+        template <typename TChar, typename L>
+            ValidCharPtr_t<TChar>
+        checkbox(const TChar* id, bool value, const L label, bool onChange = false){ html_input(id, P_chckbox, value, label, onChange); };
+
+        template <typename TString, typename L>
+            ValidStringRef_t<TString>
+        checkbox(const TString& id, bool value, const L label, bool onChange = false){ html_input(id, P_chckbox, value, label, onChange); };
 
         /**
          * @brief - элемент интерфейса "color selector"
@@ -891,8 +903,9 @@ void Interface::json_frame(const char* type, const TString& section_id){
     json[P_final] = false;
     json_section_begin(section_id);
 };
+
 template <typename TChar>
-void Interface::json_frame(const char* type, TChar* section_id){
+void Interface::json_frame(const char* type, const TChar* section_id){
     json[P_pkg] = type;
     json[P_final] = false;
     json_section_begin(section_id);
@@ -904,7 +917,7 @@ void Interface::json_section_begin(const TString& name, const L label, bool main
     json_section_begin(detail::adaptString(name), label, main, hidden, line, obj);
 }
 template  <typename TChar, typename L>
-void Interface::json_section_begin(TChar* name, const L label, bool main, bool hidden, bool line){
+void Interface::json_section_begin(const TChar* name, const L label, bool main, bool hidden, bool line){
     JsonObject obj(section_stack.size() ? section_stack.tail()->block.createNestedObject() : json.as<JsonObject>());
     json_section_begin(detail::adaptString(name), label, main, hidden, line, obj);
 }
@@ -1018,14 +1031,14 @@ void Interface::value(const ID id, const T val, bool html){
 };
 
 template <typename TChar, typename V, typename L>
-    typename std::enable_if<embui_traits::is_string_ptr_v<TChar*>, void>::type
+    ValidCharPtr_t<TChar>
 Interface::html_input(const TChar* id, const char* type, const V value, const L label, bool onChange){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
     _html_input(ui, type, label, onChange);
 };
 
 template <typename TString, typename V, typename L>
-    typename std::enable_if<embui_traits::is_string_obj_v<TString>, void>::type
+    ValidStringRef_t<TString>
 Interface::html_input(const TString& id, const char* type, const V value, const L label, bool onChange){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
     _html_input(ui, type, label, onChange);
