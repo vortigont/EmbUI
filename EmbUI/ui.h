@@ -40,6 +40,9 @@ using ValidStringRef_t = std::enable_if_t<embui_traits::is_string_obj_v<TString>
 template<typename TChar>
 using ValidCharPtr_t = std::enable_if_t<embui_traits::is_string_ptr_v<TChar*>, void>;
 
+template<typename TString>
+using ValidString_t = std::enable_if_t<embui_traits::is_string_v<TString>, void>;
+
 /**
  * @brief a list of available ui elenets
  * changes to this list order MUST be reflected to 'static const char *const UI_T_DICT' in constants.h
@@ -142,7 +145,16 @@ public:
     };
 
     template <typename T>
-    void param(ui_param_t key, const T value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
+        typename std::enable_if<std::is_fundamental_v<T>, void>::type
+    param(ui_param_t key, const T value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
+
+    template <typename T>
+        typename std::enable_if<!std::is_fundamental_v<T>, void>::type
+    param(ui_param_t key, const T& value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
+
+    template <typename T>
+        typename std::enable_if<!std::is_fundamental_v<T>, void>::type
+    param(ui_param_t key, T* value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
 
     /**
      * @brief set 'html' flag for element
@@ -159,8 +171,12 @@ public:
      * @param label 
      */
     template <typename T>
-        typename std::enable_if<embui_traits::is_string_v<T>,void>::type
-    label(const T string){ if (!embui_traits::is_empty_string(string)) obj[P_label] = string; }
+        ValidCharPtr_t<T>
+    label(const T* string){ if (!embui_traits::is_empty_string(string)) obj[P_label] = string; }
+
+    template <typename T>
+        ValidStringRef_t<T>
+    label(const T& string){ if (!embui_traits::is_empty_string(string)) obj[P_label] = string; }
 
     /**
      * @brief add 'color' key to the UI element
@@ -169,15 +185,27 @@ public:
      * @param label 
      */
     template <typename T>
-        typename std::enable_if<embui_traits::is_string_v<T>,void>::type
-    color(const T color){ if (!embui_traits::is_empty_string(color)) obj[P_color] = color; }
+        ValidStringRef_t<T>
+    color(const T& color){ if (!embui_traits::is_empty_string(color)) obj[P_color] = color; }
+
+    template <typename T>
+        ValidCharPtr_t<T>
+    color(const T* color){ if (!embui_traits::is_empty_string(color)) obj[P_color] = color; }
 
     /**
      * @brief add 'value' key to the UI element
      * 
      */
     template <typename T>
-    void value(const T v){ obj[P_value] = v; }
+        typename std::enable_if<std::is_fundamental_v<T>, void>::type
+    value(const T v){ obj[P_value] = v; }
+
+    template <typename T>
+    void value(const T* v){ obj[P_value] = v; }
+
+    template <typename T>
+        typename std::enable_if<!std::is_fundamental_v<T>, void>::type
+    value(const T& v){ obj[P_value] = v; }
 
 };
 
@@ -188,7 +216,13 @@ public:
     using UIelement<S>::color;
 
     template <typename T, typename L>
-    UI_button(button_t btype, const T id, const L label) : UIelement<S>(ui_element_t::button, id) {
+    UI_button(button_t btype, const T* id, const L label) : UIelement<S>(ui_element_t::button, id) {
+        UIelement<S>::obj[P_type] = static_cast<uint8_t>(btype);
+        UIelement<S>::label(label);
+    };
+
+    template <typename T, typename L>
+    UI_button(button_t btype, const T& id, const L label) : UIelement<S>(ui_element_t::button, id) {
         UIelement<S>::obj[P_type] = static_cast<uint8_t>(btype);
         UIelement<S>::label(label);
     };
@@ -483,7 +517,7 @@ class Interface {
         /**
          * @brief - content section is meant to replace existing data on the page
          */
-        inline void json_section_content(){ json_section_begin("content"); };
+        void json_section_content(){ json_section_begin("content"); };
 
         /**
          * @brief - opens section for UI elements that are aligned in one line on a page
@@ -511,7 +545,7 @@ class Interface {
         /**
          * @brief - start a section with left-side MENU elements
          */
-        inline void json_section_menu(){ json_section_begin(P_menu); };
+        void json_section_menu(){ json_section_begin(P_menu); };
 
         /**
          * @brief - start a section with a new page content
