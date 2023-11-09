@@ -28,9 +28,9 @@ void register_handlers(){
 #endif  // #ifdef EMBUI_NOFTP
     embui.action.add(A_set_sys_cfgclr, set_sys_cfgclear);               // clear sysconfig
     embui.action.add(A_set_sys_datetime, set_sys_datetime);             // set system date/time from a ISO string value
-    embui.action.add(A_set_sys_language, set_language);                       // смена языка интерфейса
+    embui.action.add(A_set_sys_language, set_language);                 // смена языка интерфейса
     embui.action.add(A_set_ntwrk_mqtt, set_settings_mqtt);              // обработка настроек MQTT
-    embui.action.add(A_set_sys_reboot, set_sys_reboot);               // ESP reboot action
+    embui.action.add(A_set_sys_reboot, set_sys_reboot);                 // ESP reboot action
     embui.action.add(A_set_sys_timeoptions, set_settings_time);         // установки даты/времени
     embui.action.add(A_set_ntwrk_wifi, set_settings_wifi);              // обработка настроек WiFi Client
     embui.action.add(A_set_ntwrk_wifiap, set_settings_wifiAP);          // обработка настроек WiFi AP
@@ -103,10 +103,10 @@ void page_system_settings(Interface *interf, JsonObject *data, const char* actio
  * 
  */
 void show_uipage(Interface *interf, JsonObject *data, const char* action){
-    if (!interf || !data || (*data)[A_get_ui_page].isNull()) return;  // bail out if no section specifier
+    if (!interf || !data || (*data)[action].isNull()) return;  // bail out if no section specifier
 
     // find page enum index
-    page idx = static_cast<page>((*data)[A_get_ui_page].as<int>());
+    page idx = static_cast<page>((*data)[action].as<int>());
 
     switch (idx){
         case page::main :    // main page stub

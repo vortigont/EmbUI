@@ -135,8 +135,7 @@ var render = function(){
 				custom_hook(this.id, d, id);
 			}
 			let data = {};
-			if (value !== undefined)
-				data["value"] = value;
+			data[id] = (value !== undefined)? value : null;
 
 			ws.send_post(id, data);
 		},
