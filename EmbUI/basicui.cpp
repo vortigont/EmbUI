@@ -37,7 +37,7 @@ void register_handlers(){
 }
 
 // dummy intro page that cimply calls for "system setup page"
-void page_main(Interface *interf, JsonObject *data, const char* action){
+void page_main(Interface *interf, const JsonObject *data, const char* action){
 
     interf->json_frame_interface();
     interf->json_section_manifest("BasicUI", embui.macid(), 0, "v1");       // app name/version manifest
@@ -67,7 +67,7 @@ void menuitem_settings(Interface *interf){
  * других блоков/обработчиков
  * 
  */
-void page_system_settings(Interface *interf, JsonObject *data, const char* action){
+void page_system_settings(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -102,7 +102,7 @@ void page_system_settings(Interface *interf, JsonObject *data, const char* actio
  * @brief choose UI section to display based on supplied index
  * 
  */
-void show_uipage(Interface *interf, JsonObject *data, const char* action){
+void show_uipage(Interface *interf, const JsonObject *data, const char* action){
     if (!interf || !data || (*data)[action].isNull()) return;  // bail out if no section specifier
 
     // find page enum index
@@ -136,7 +136,7 @@ void show_uipage(Interface *interf, JsonObject *data, const char* action){
 /**
  *  BasicUI блок интерфейса настроек WiFi
  */
-void page_settings_netw(Interface *interf, JsonObject *data, const char* action){
+void page_settings_netw(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -195,7 +195,7 @@ void page_settings_netw(Interface *interf, JsonObject *data, const char* action)
 /**
  *  BasicUI блок настройки даты/времени
  */
-void page_settings_time(Interface *interf, JsonObject *data, const char* action){
+void page_settings_time(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -261,7 +261,7 @@ void page_settings_time(Interface *interf, JsonObject *data, const char* action)
 /**
  *  BasicUI блок интерфейса настроек MQTT
  */
-void page_settings_mqtt(Interface *interf, JsonObject *data, const char* action){
+void page_settings_mqtt(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -307,7 +307,7 @@ void page_settings_mqtt(Interface *interf, JsonObject *data, const char* action)
 /**
  *  BasicUI блок настройки system
  */
-void page_settings_sys(Interface *interf, JsonObject *data, const char* action){
+void page_settings_sys(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -336,7 +336,7 @@ void page_settings_sys(Interface *interf, JsonObject *data, const char* action){
 /**
  * WiFi Client settings handler
  */
-void set_settings_wifi(Interface *interf, JsonObject *data, const char* action){
+void set_settings_wifi(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
 
     embui.var_remove(V_APonly);              // remove "force AP mode" parameter when attempting connection to external AP
@@ -348,7 +348,7 @@ void set_settings_wifi(Interface *interf, JsonObject *data, const char* action){
 /**
  * Обработчик настроек WiFi в режиме AP
  */
-void set_settings_wifiAP(Interface *interf, JsonObject *data, const char* action){
+void set_settings_wifiAP(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
 
     embui.var_dropnulls(V_APonly, (*data)[V_APonly]);     // AP-Only chkbx
@@ -364,7 +364,7 @@ void set_settings_wifiAP(Interface *interf, JsonObject *data, const char* action
 /**
  * Обработчик настроек MQTT
  */
-void set_settings_mqtt(Interface *interf, JsonObject *data, const char* action){
+void set_settings_mqtt(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
     // сохраняем настройки в конфиг
     embui.var_dropnulls(V_mqtt_enable, (*data)[V_mqtt_enable]);
@@ -388,7 +388,7 @@ void set_settings_mqtt(Interface *interf, JsonObject *data, const char* action){
 /**
  * Обработчик настроек даты/времени
  */
-void set_settings_time(Interface *interf, JsonObject *data, const char* action){
+void set_settings_time(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
 
     // save and apply timezone
@@ -414,14 +414,14 @@ void set_settings_time(Interface *interf, JsonObject *data, const char* action){
  * @brief set system date/time from ISO string
  * data obtained through "time":"YYYY-MM-DDThh:mm:ss" param
  */
-void set_sys_datetime(Interface *interf, JsonObject *data, const char* action){
+void set_sys_datetime(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
     TimeProcessor::getInstance().setTime((*data)[P_datetime].as<const char*>());
     if (interf)
         page_settings_time(interf, nullptr, NULL);
 }
 
-void set_language(Interface *interf, JsonObject *data, const char* action){
+void set_language(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
 
     embui.var_dropnulls(V_LANGUAGE, (*data)[V_LANGUAGE]);
@@ -457,7 +457,7 @@ void embuistatus(Interface *interf){
     interf->json_frame_flush();
 }
 
-void set_sys_reboot(Interface *interf, JsonObject *data, const char* action){
+void set_sys_reboot(Interface *interf, const JsonObject *data, const char* action){
     Task *t = new Task(TASK_SECOND*5, TASK_ONCE, nullptr, &ts, false, nullptr, [](){ LOG(println, "Rebooting..."); ESP.restart(); });
     t->enableDelayed();
     if(interf){
@@ -469,7 +469,7 @@ void set_sys_reboot(Interface *interf, JsonObject *data, const char* action){
  * @brief set system hostname
  * if empty/missing param provided, than use autogenerated hostname
  */
-void set_sys_hostname(Interface *interf, JsonObject *data, const char* action){
+void set_sys_hostname(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
 
     embui.hostname((*data)[V_hostname].as<const char*>());
@@ -479,7 +479,7 @@ void set_sys_hostname(Interface *interf, JsonObject *data, const char* action){
 /**
  * @brief clears EmbUI config
  */
-void set_sys_cfgclear(Interface *interf, JsonObject *data, const char* action){
+void set_sys_cfgclear(Interface *interf, const JsonObject *data, const char* action){
     embui.cfgclear();
     if (interf) page_system_settings(interf, nullptr, NULL);
 }

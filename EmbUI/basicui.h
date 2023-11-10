@@ -43,12 +43,12 @@ namespace basicui {
    */
   void menuitem_settings(Interface *interf);
 
-  void show_uipage(Interface *interf, JsonObject *data, const char* action);
-  void page_settings_gnrl(Interface *interf, JsonObject *data, const char* action);
-  void page_settings_netw(Interface *interf, JsonObject *data, const char* action);
-  void page_settings_mqtt(Interface *interf, JsonObject *data, const char* action);
-  void page_settings_time(Interface *interf, JsonObject *data, const char* action);
-  void page_settings_sys(Interface *interf, JsonObject *data, const char* action);
+  void show_uipage(Interface *interf, const JsonObject *data, const char* action);
+  void page_settings_gnrl(Interface *interf, const JsonObject *data, const char* action);
+  void page_settings_netw(Interface *interf, const JsonObject *data, const char* action);
+  void page_settings_mqtt(Interface *interf, const JsonObject *data, const char* action);
+  void page_settings_time(Interface *interf, const JsonObject *data, const char* action);
+  void page_settings_sys(Interface *interf, const JsonObject *data, const char* action);
 
   /**
    * @brief Build WebUI "Settings" page
@@ -59,12 +59,12 @@ namespace basicui {
    * @param data 
    * @param action 
    */
-  void page_system_settings(Interface *interf, JsonObject *data, const char* action);
-  void set_settings_wifi(Interface *interf, JsonObject *data, const char* action);
-  void set_settings_wifiAP(Interface *interf, JsonObject *data, const char* action);
-  void set_settings_mqtt(Interface *interf, JsonObject *data, const char* action);
-  void set_settings_time(Interface *interf, JsonObject *data, const char* action);
-  void set_language(Interface *interf, JsonObject *data, const char* action);
+  void page_system_settings(Interface *interf, const JsonObject *data, const char* action);
+  void set_settings_wifi(Interface *interf, const JsonObject *data, const char* action);
+  void set_settings_wifiAP(Interface *interf, const JsonObject *data, const char* action);
+  void set_settings_mqtt(Interface *interf, const JsonObject *data, const char* action);
+  void set_settings_time(Interface *interf, const JsonObject *data, const char* action);
+  void set_language(Interface *interf, const JsonObject *data, const char* action);
   void embuistatus(Interface *interf);
 
   /**
@@ -72,14 +72,14 @@ namespace basicui {
    * i.e. free ram, uptime, etc... 
    */
   void embuistatus();
-  void set_sys_reboot(Interface *interf, JsonObject *data, const char* action);
-  void set_sys_hostname(Interface *interf, JsonObject *data, const char* action);
-  void set_sys_datetime(Interface *interf, JsonObject *data, const char* action);
-  void set_sys_cfgclear(Interface *interf, JsonObject *data, const char* action);
+  void set_sys_reboot(Interface *interf, const JsonObject *data, const char* action);
+  void set_sys_hostname(Interface *interf, const JsonObject *data, const char* action);
+  void set_sys_datetime(Interface *interf, const JsonObject *data, const char* action);
+  void set_sys_cfgclear(Interface *interf, const JsonObject *data, const char* action);
 
   /**
    * @brief default main_page with a simple "settings" menu entry
    * 
    */
-  void page_main(Interface *interf, JsonObject *data, const char* action);
+  void page_main(Interface *interf, const JsonObject *data, const char* action);
 }   // end of "namespace basicui"

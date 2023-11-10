@@ -25,7 +25,7 @@ bool ftp_status(){ return ftpsrv; };
 
 namespace basicui {
 
-void page_settings_ftp(Interface *interf, JsonObject *data, const char* action){
+void page_settings_ftp(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -43,7 +43,7 @@ void page_settings_ftp(Interface *interf, JsonObject *data, const char* action){
     interf->json_frame_flush(); // main
 }
 
-void set_settings_ftp(Interface *interf, JsonObject *data, const char* action){
+void set_settings_ftp(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
 
     bool newstate = (*data)[P_ftp];

@@ -209,7 +209,8 @@ void EmbUI::begin(){
  * @brief - process posted data for the registered action
  * looks for registered action for the section name and calls the action with post data if found
  */
-void EmbUI::post(JsonObject &data, bool inject){
+void EmbUI::post(const JsonObject &data, bool inject){
+    LOG(print, "EmbUI POST: "); LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
     JsonObject odata = data[P_data].as<JsonObject>();
     Interface interf(&feeders);
 

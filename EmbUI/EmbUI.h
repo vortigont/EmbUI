@@ -57,7 +57,7 @@ String  __attribute__((weak)) httpCallback(const String &param, const String &va
 
 //---------------------- Callbak functions
 using asyncsrv_callback_t = std::function< bool (AsyncWebServerRequest *req)>;
-using actionCallback_t = std::function< void (Interface *interf, JsonObject *data, const char* action)>;
+using actionCallback_t = std::function< void (Interface *interf, const JsonObject *data, const char* action)>;
 
 
 /**
@@ -220,7 +220,7 @@ class EmbUI
      * if post came from some other place - sends data to the WebUI
      * looks for registered action for the section name and calls the action with post data if found
      */
-    void post(JsonObject &data, bool inject = false);
+    void post(const JsonObject &data, bool inject = false);
 
 
 
