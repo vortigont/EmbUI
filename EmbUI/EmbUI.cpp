@@ -214,7 +214,7 @@ void EmbUI::post(JsonObject &data, bool inject){
     Interface interf(&feeders);
 
     //if (inject && feeders.available()){             // echo back injected data to all availbale feeders
-    if (odata.size() && feeders.available()){         // echo back injected data to all availbale feeders
+    if (!odata.isNull() && feeders.available()){         // echo back injected data to all availbale feeders
         interf.json_frame_value(odata, true);
         interf.json_frame_flush();
     }

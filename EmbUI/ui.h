@@ -520,6 +520,17 @@ class Interface {
         void json_section_content(){ json_section_begin("content"); };
 
         /**
+         * @brief opens nested json_section using previous section's index
+         * i.e. extend previous object with nested elements.
+         * used for elements like html 'select'+'option', 'form'+'inputs', etc...
+         * each extended section MUST be closed with json_section_end() prior to opening new section
+         * @param name extended section name
+         */
+        template  <typename ID>
+            typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
+        json_section_extend(const ID name);
+
+        /**
          * @brief - opens section for UI elements that are aligned in one line on a page
          * each json_section_line() must be closed by a json_section_end() call
          */
@@ -561,15 +572,12 @@ class Interface {
         void json_section_hidden(const ID name, const L label){ json_section_begin(name, label, false, true); };
 
         /**
-         * @brief opens nested json_section using previous section's index
-         * i.e. extend previous object with nested elements.
-         * used for elements like html 'select'+'option', 'form'+'inputs', etc...
-         * each extended section MUST be closed with json_section_end() prior to opening new section
-         * @param name extended section name
+         * @brief section that will side-load external data
+         * for any element in section's block where a key 'url' is present
+         * a side-load data will be fetched and put into 'block' object of that element
+         * 
          */
-        template  <typename ID>
-            typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
-        json_section_extend(const ID name);
+        void json_section_xload(){ json_section_begin(P_xload); };
 
         /**
          * @brief - close current UI section
@@ -959,7 +967,7 @@ void Interface::json_section_begin(const TChar* name, const L label, bool main, 
 template  <typename TAdaptedString, typename L>
 void Interface::json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, JsonObject &obj){
     if (embui_traits::is_empty_string(name))
-        obj[P_section] = String (millis()); // need a deep-copy
+        obj[P_section] = String (std::rand()); // need a deep-copy
     else
         obj[P_section] = name;
 
