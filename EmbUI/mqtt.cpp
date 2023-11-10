@@ -122,7 +122,7 @@ void EmbUI::_onMqttConnect(bool sessionPresent){
 }
 
 void EmbUI::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
-    LOG(printf, "UI: Got MQTT msg topic:%s len:%u/%u\n", topic, len, total);
+    LOG(printf, "UI: Got MQTT msg topic: %s len:%u/%u\n", topic, len, total);
     if (index || len != total) return;     // this is chunked message, reassembly is not supported (yet)
 
     std::string_view tpc(topic);
@@ -139,23 +139,22 @@ void EmbUI::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessagePro
         if(payload[i]==0x3a || payload[i]==0x7b)    // считаем ':' и '{' это учитывает и пары k:v и вложенные массивы
             ++objCnt;
 
-    DynamicJsonDocument *res = new DynamicJsonDocument(len + JSON_OBJECT_SIZE(objCnt)); // https://arduinojson.org/v6/assistant/
+    DynamicJsonDocument *res = new DynamicJsonDocument(len + JSON_OBJECT_SIZE(objCnt) + 64); // https://arduinojson.org/v6/assistant/
     if(!res->capacity())
         return;
 
     DeserializationError error = deserializeJson((*res), (const char*)payload, len); // deserialize via copy to prevent dangling pointers in action()'s
     if (error){
-        LOG(printf_P, PSTR("MQTT: msg deserialization err: %d\n"), error.code());
+        LOG(printf, "MQTT: msg deserialization err: %d\n", error.code());
         delete res;
         return;
     }
 
-    tpc.remove_prefix(mqttPrefix().length()+1);     // chop off constant prefix
+    tpc.remove_prefix(mqttPrefix().length());     // chop off constant prefix
 
     if (starts_with(tpc, C_get) || starts_with(tpc, C_set)){
         std::string act(tpc);
         std::replace( act.begin(), act.end(), '/', '_');    // replace topic delimiters into underscores
-
         JsonObject o = res->as<JsonObject>();
         o[P_action] = act;
     }
