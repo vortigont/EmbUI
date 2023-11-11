@@ -32,9 +32,6 @@ void Interface::json_frame_clear(){
 }
 
 bool Interface::json_frame_enqueue(const JsonVariantConst &obj, bool shallow){
-    if (!obj.memoryUsage()) // пустышки не передаем
-        return false;
-
     if(shallow){
         LOG(printf_P, PSTR("UI: Frame add shallow obj %u b, mem:%d/%d\n"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
         JsonVariant nested = section_stack.tail()->block.createNestedObject();

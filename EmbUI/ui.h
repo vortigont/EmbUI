@@ -1066,10 +1066,16 @@ Interface::textarea(const ID id, const V value, const L label){
 
 template <typename ID, typename T>
 void Interface::value(const ID id, const T val, bool html){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::value, id);
-    ui.obj[P_value] = val;
-    ui.html(html);
-    json_frame_add(ui);
+    if (html){
+        UIelement<TINY_JSON_SIZE> ui(ui_element_t::value, id);
+        ui.obj[P_value] = val;
+        ui.html(html);
+        json_frame_add(ui);
+    } else {
+        StaticJsonDocument<TINY_JSON_SIZE> jdoc;
+        jdoc[id] = val;
+        json_frame_add(jdoc);
+    }
 };
 
 template <typename TChar, typename V, typename L>
