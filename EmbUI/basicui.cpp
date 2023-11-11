@@ -18,8 +18,8 @@ void register_handlers(){
      * UI action handlers
      */ 
     // вывод BasicUI секций
-    embui.action.add(A_get_ui_page_settings, page_system_settings);     // generate "settings" UI section
-    embui.action.add(A_get_ui_page,  show_uipage);                      // display UI section template
+    embui.action.add(A_ui_page_settings, page_system_settings);     // generate "settings" UI section
+    embui.action.add(A_ui_page,  show_uipage);                      // display UI section template
 
     // обработка базовых настроек
     embui.action.add(A_set_sys_hostname, set_sys_hostname);             // hostname setup
@@ -58,7 +58,7 @@ void page_main(Interface *interf, const JsonObject *data, const char* action){
  * it is up to you to properly open/close Interface menu json_section
  */
 void menuitem_settings(Interface *interf){
-    interf->option(A_get_ui_page_settings, T_DICT[lang][TD::D_SETTINGS]);     // пункт меню "настройки"
+    interf->option(A_ui_page_settings, T_DICT[lang][TD::D_SETTINGS]);     // пункт меню "настройки"
 }
 
 /**
@@ -71,7 +71,7 @@ void page_system_settings(Interface *interf, const JsonObject *data, const char*
     if (!interf) return;
     interf->json_frame_interface();
 
-    interf->json_section_main(A_get_ui_page_settings, T_DICT[lang][TD::D_SETTINGS]);
+    interf->json_section_main(A_ui_page_settings, T_DICT[lang][TD::D_SETTINGS]);
 
     interf->select(V_LANGUAGE, lang, T_DICT[lang][TD::D_LANG], true);
         interf->option(0, "Eng");
@@ -80,20 +80,20 @@ void page_system_settings(Interface *interf, const JsonObject *data, const char*
 
     interf->spacer();
 
-    //interf->button_value(button_t::generic, A_get_ui_page, 0, T_GNRL_SETUP);                             // кнопка перехода в общие настройки
-    interf->button_value(button_t::generic, A_get_ui_page, e2int(page::network), T_DICT[lang][TD::D_WiFi]);       // кнопка перехода в настройки сети
-    interf->button_value(button_t::generic, A_get_ui_page, e2int(page::datetime), T_DICT[lang][TD::D_DATETIME]);  // кнопка перехода в настройки времени
-    interf->button_value(button_t::generic, A_get_ui_page, e2int(page::mqtt), P_MQTT);                            // кнопка перехода в настройки MQTT
+    //interf->button_value(button_t::generic, A_ui_page, 0, T_GNRL_SETUP);                             // кнопка перехода в общие настройки
+    interf->button_value(button_t::generic, A_ui_page, e2int(page::network), T_DICT[lang][TD::D_WiFi]);       // кнопка перехода в настройки сети
+    interf->button_value(button_t::generic, A_ui_page, e2int(page::datetime), T_DICT[lang][TD::D_DATETIME]);  // кнопка перехода в настройки времени
+    interf->button_value(button_t::generic, A_ui_page, e2int(page::mqtt), P_MQTT);                            // кнопка перехода в настройки MQTT
 
 #ifndef EMBUI_NOFTP
-    interf->button_value(button_t::generic, A_get_ui_page, e2int(page::ftp), "FTP Server");                       // кнопка перехода в настройки FTP
+    interf->button_value(button_t::generic, A_ui_page, e2int(page::ftp), "FTP Server");                       // кнопка перехода в настройки FTP
 #endif
-    interf->button_value(button_t::generic, A_get_ui_page, e2int(page::syssetup), T_DICT[lang][TD::D_SYSSET]);    // кнопка перехода в настройки System
+    interf->button_value(button_t::generic, A_ui_page, e2int(page::syssetup), T_DICT[lang][TD::D_SYSSET]);    // кнопка перехода в настройки System
 
     interf->spacer();
 
     // call for user_defined function that may add more elements to the "settings page"
-    embui.action.exec(interf, nullptr, A_get_ui_blk_usersettings);
+    embui.action.exec(interf, nullptr, A_ui_blk_usersettings);
 
     interf->json_frame_flush();
 }
@@ -141,7 +141,7 @@ void page_settings_netw(Interface *interf, const JsonObject *data, const char* a
     interf->json_frame_interface();
 
     // Headline
-    interf->json_section_main(A_get_ui_page_network, T_EN_WiFi);
+    interf->json_section_main(A_ui_page_network, T_EN_WiFi);
 
     // Hostname setup
     interf->json_section_hidden(A_set_sys_hostname, "Device name");
@@ -187,7 +187,7 @@ void page_settings_netw(Interface *interf, const JsonObject *data, const char* a
     interf->json_section_end(); // Wi-Fi AP
 
     interf->spacer();
-    interf->button(button_t::submit, A_get_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::submit, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
 
     interf->json_frame_flush();
 }
@@ -242,7 +242,7 @@ void page_settings_time(Interface *interf, const JsonObject *data, const char* a
     interf->spacer();
 
     // exit button
-    interf->button(button_t::submit, A_get_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::submit, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
 
     // close and send frame
     interf->json_frame_flush(); // main
@@ -299,7 +299,7 @@ void page_settings_mqtt(Interface *interf, const JsonObject *data, const char* a
     interf->button(button_t::submit, A_set_ntwrk_mqtt, T_DICT[lang][TD::D_SAVE]);
 
     interf->spacer();
-    interf->button(button_t::generic, A_get_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::generic, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
 
     interf->json_frame_flush();
 }
@@ -328,7 +328,7 @@ void page_settings_sys(Interface *interf, const JsonObject *data, const char* ac
     interf->spacer();
 
     // exit button
-    interf->button(button_t::generic, A_get_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::generic, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
 
     interf->json_frame_flush(); // main
 }

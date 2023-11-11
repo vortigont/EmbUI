@@ -153,10 +153,10 @@ void EmbUI::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessagePro
     tpc.remove_prefix(mqttPrefix().length());     // chop off constant prefix
 
     if (starts_with(tpc, C_get) || starts_with(tpc, C_set)){
-        std::string act(tpc);
+        std::string act(tpc.substr(4));                     // chop off 'get/' or 'set/' prefix
         std::replace( act.begin(), act.end(), '/', '_');    // replace topic delimiters into underscores
         JsonObject o = res->as<JsonObject>();
-        o[P_action] = act;
+        o[P_action] = act;                                  // set action identifier
     }
 
     // switch context for processing data

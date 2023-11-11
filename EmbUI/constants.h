@@ -10,11 +10,11 @@
 #define P_EMPTY static_cast<const char*>(0)
 
 // UI blocks generator actions (IDs)
-static constexpr const char* A_get_ui_page = "get_ui_page";
-static constexpr const char* A_get_ui_page_settings = "get_ui_page_settings";
-static constexpr const char* A_get_ui_page_network = "get_ui_page_network";
-static constexpr const char* A_get_ui_page_main = "get_ui_page_main";
-static constexpr const char* A_get_ui_blk_usersettings = "get_ui_blk_usersettings";
+static constexpr const char* A_ui_page = "ui_page";
+static constexpr const char* A_ui_page_settings = "ui_page_settings";
+static constexpr const char* A_ui_page_network = "ui_page_network";
+static constexpr const char* A_ui_page_main = "ui_page_main";
+static constexpr const char* A_ui_blk_usersettings = "ui_blk_usersettings";
 
 // setter actions (IDs)
 static constexpr const char* A_set_ntwrk_ftp = "set_ntwrk_ftp";

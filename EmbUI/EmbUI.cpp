@@ -38,7 +38,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         LOG(printf_P, PSTR("CONNECT ws:%s id:%u\n"), server->url(), client->id());
         {
             Interface interf(client);
-            if (!embui.action.exec(&interf, nullptr, A_get_ui_page_main))    // call user defined mainpage callback
+            if (!embui.action.exec(&interf, nullptr, A_ui_page_main))    // call user defined mainpage callback
                 basicui::page_main(&interf, nullptr, NULL);             // if no callback was registered, then show default stub page
         }
         embui.send_pub();
@@ -410,11 +410,11 @@ size_t ActionHandler::exec(Interface *interf, JsonObject *data, const char* acti
 }
 
 void ActionHandler::set_mainpage_cb(actionCallback_t callback){
-    remove(A_get_ui_page_main);
-    add(A_get_ui_page_main, callback);
+    remove(A_ui_page_main);
+    add(A_ui_page_main, callback);
 }
 
 void ActionHandler::set_settings_cb(actionCallback_t callback){
-    remove(A_get_ui_blk_usersettings);
-    add(A_get_ui_blk_usersettings, callback);
+    remove(A_ui_blk_usersettings);
+    add(A_ui_blk_usersettings, callback);
 }
