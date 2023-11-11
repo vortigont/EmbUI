@@ -214,8 +214,8 @@ void EmbUI::post(const JsonObject &data, bool inject){
     JsonObject odata = data[P_data].as<JsonObject>();
     Interface interf(&feeders);
 
-    //if (inject && feeders.available()){             // echo back injected data to all availbale feeders
-    if (!odata.isNull() && feeders.available()){         // echo back injected data to all availbale feeders
+    // echo back injected data to all available feeders IF request 'data' object is not empty
+    if (odata.size() && feeders.available()){
         interf.json_frame_value(odata, true);
         interf.json_frame_flush();
     }
