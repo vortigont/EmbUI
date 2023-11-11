@@ -48,7 +48,7 @@ void EmbUI::http_set_handlers(){
     server.addHandler(_ajs_handler.get());
 
     // returns run-time system config serialized in JSON
-    server.on(PSTR("/config"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+    server.on("/config", HTTP_ANY, [this](AsyncWebServerRequest *request) {
 
         AsyncResponseStream *response = request->beginResponseStream(PGmimejson);
         response->addHeader(PGhdrcachec, PGnocache);
@@ -59,15 +59,15 @@ void EmbUI::http_set_handlers(){
     });
 
 
-    server.on(PSTR("/version"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+    server.on("/version", HTTP_ANY, [this](AsyncWebServerRequest *request) {
         request->send(200, PGmimetxt, F("EmbUI ver: " TOSTRING(EMBUIVER)));
     });
 
     // postponed reboot (TODO: convert to CMD)
-    server.on(PSTR("/restart"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        Task *t = new Task(TASK_SECOND*5, TASK_ONCE, nullptr, &ts, false, nullptr, [](){ LOG(println, F("Rebooting...")); delay(100); ESP.restart(); });
+    server.on("/restart", HTTP_ANY, [this](AsyncWebServerRequest *request) {
+        Task *t = new Task(TASK_SECOND*5, TASK_ONCE, nullptr, &ts, false, nullptr, [](){ LOG(println, ); delay(100); ESP.restart(); });
         t->enableDelayed();
-        request->redirect(F("/"));
+        request->redirect("/");
     });
 
     // esp32 handles updates via external lib
@@ -76,8 +76,8 @@ void EmbUI::http_set_handlers(){
 
     // serve all static files from LittleFS root /
     server.serveStatic("/", LittleFS, "/")
-        .setDefaultFile(PSTR("index.html"))
-        .setCacheControl(PSTR("max-age=10, must-revalidate"));  // 10 second for caching, then revalidate based on etag/IMS headers
+        .setDefaultFile("index.html")
+        .setCacheControl("max-age=10, must-revalidate");  // 10 second for caching, then revalidate based on etag/IMS headers
 
 
     // 404 handler - disabled to allow override in user code
@@ -95,7 +95,7 @@ uint8_t uploadProgress(size_t len, size_t total){
     uint8_t progress = 100*len/total;
     if (curr != prev) {
         prev = curr;
-        LOG(printf_P, PSTR("%u%%.."), progress );
+        LOG(printf_P, "%u%%..", progress );
     }
     return progress;
 }

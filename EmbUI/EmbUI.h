@@ -526,20 +526,20 @@ class EmbUI
           #else
               chipId = ESP.getChipId();    
           #endif  
-          SSDP.setDeviceType(F("upnp:rootdevice"));
-          SSDP.setSchemaURL(F("description.xml"));
+          SSDP.setDeviceType("upnp:rootdevice");
+          SSDP.setSchemaURL("description.xml");
           SSDP.setHTTPPort(80);
           SSDP.setName(hostname());
           SSDP.setSerialNumber(String(chipId));
-          SSDP.setURL(F("/"));
+          SSDP.setURL("/");
           SSDP.setModelName(PGnameModel);
           SSDP.setModelNumber(PGversion);
-          SSDP.setModelURL(String(F("http://"))+(WiFi.status() != WL_CONNECTED ? WiFi.softAPIP().toString() : WiFi.localIP().toString()));
+          SSDP.setModelURL(String("http://")+(WiFi.status() != WL_CONNECTED ? WiFi.softAPIP().toString() : WiFi.localIP().toString()));
           SSDP.setManufacturer(PGnameManuf);
           SSDP.setManufacturerURL(PGurlManuf);
           SSDP.begin();
 
-          (&server)->on(PSTR("/description.xml"), HTTP_GET, [&](AsyncWebServerRequest *request){
+          (&server)->on("/description.xml", HTTP_GET, [&](AsyncWebServerRequest *request){
             request->send(200, PGmimexml, getSSDPSchema());
           });
     }
@@ -552,47 +552,47 @@ class EmbUI
             chipId = ESP.getChipId();    
         #endif  
       String s = "";
-        s +=F("<?xml version=\"1.0\"?>\n");
-        s +=F("<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\n");
-        s +=F("\t<specVersion>\n");
-        s +=F("\t\t<major>1</major>\n");
-        s +=F("\t\t<minor>0</minor>\n");
-        s +=F("\t</specVersion>\n");
-        s +=F("<URLBase>");
-        s +=String(F("http://"))+(WiFi.status() != WL_CONNECTED ? WiFi.softAPIP().toString() : WiFi.localIP().toString());
-        s +=F("</URLBase>");
-        s +=F("<device>\n");
-        s +=F("\t<deviceType>upnp:rootdevice</deviceType>\n");
-        s +=F("\t<friendlyName>");
-        s += param(F("hostname"));
-        s +=F("</friendlyName>\r\n");
-        s +=F("\t<presentationURL>index.html</presentationURL>\r\n");
-        s +=F("\t<serialNumber>");
+        s +="<?xml version=\"1.0\"?>\n";
+        s +="<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\n";
+        s +="\t<specVersion>\n";
+        s +="\t\t<major>1</major>\n";
+        s +="\t\t<minor>0</minor>\n";
+        s +="\t</specVersion>\n";
+        s +="<URLBase>";
+        s +=String("http://")+(WiFi.status() != WL_CONNECTED ? WiFi.softAPIP().toString() : WiFi.localIP().toString());
+        s +="</URLBase>";
+        s +="<device>\n";
+        s +="\t<deviceType>upnp:rootdevice</deviceType>\n";
+        s +="\t<friendlyName>";
+        s += param("hostname");
+        s +="</friendlyName>\r\n";
+        s +="\t<presentationURL>index.html</presentationURL>\r\n";
+        s +="\t<serialNumber>";
         s += String(chipId);
-        s +=F("</serialNumber>\r\n");
-        s +=F("\t<modelName>");
+        s +="</serialNumber>\r\n";
+        s +="\t<modelName>";
         s += PGnameModel;
-        s +=F("</modelName>\r\n");
-        s +=F("\t<modelNumber>");
+        s +="</modelName>\r\n";
+        s +="\t<modelNumber>";
         s += PGversion;
-        s +=F("</modelNumber>\r\n");
-        s +=F("\t<modelURL>");
+        s +="</modelNumber>\r\n";
+        s +="\t<modelURL>";
         s += PGurlModel;
-        s +=F("</modelURL>\r\n");
-        s +=F("\t<manufacturer>");
+        s +="</modelURL>\r\n";
+        s +="\t<manufacturer>";
         s += PGnameManuf;
-        s +=F("</manufacturer>\r\n");
-        s +=F("\t<manufacturerURL>");
+        s +="</manufacturer>\r\n";
+        s +="\t<manufacturerURL>";
         s += PGurlManuf;
-        s +=F("</manufacturerURL>\r\n");
-        //s +=F("\t<UDN>0543bd4e-53c2-4f33-8a25-1f75583a19a2");
-        s +=F("\t<UDN>0543bd4e-53c2-4f33-8a25-1f7558");
+        s +="</manufacturerURL>\r\n";
+        //s +="\t<UDN>0543bd4e-53c2-4f33-8a25-1f75583a19a2";
+        s +="\t<UDN>0543bd4e-53c2-4f33-8a25-1f7558";
         char cn[7];
-        sprintf_P(cn, PSTR("%02x%02x%02x"), ((chipId >> 16) & 0xff), ((chipId >>  8) & 0xff), chipId & 0xff);
+        sprintf_P(cn, "%02x%02x%02x", ((chipId >> 16) & 0xff), ((chipId >>  8) & 0xff), chipId & 0xff);
         s += cn;
-        s +=F("</UDN>\r\n");
-        s +=F("\t</device>\n");
-        s +=F("</root>\r\n\r\n");
+        s +="</UDN>\r\n";
+        s +="\t</device>\n";
+        s +="</root>\r\n\r\n";
       return s;
     }
 #endif

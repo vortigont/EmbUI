@@ -33,16 +33,16 @@ void Interface::json_frame_clear(){
 
 bool Interface::json_frame_enqueue(const JsonVariantConst &obj, bool shallow){
     if(shallow){
-        LOG(printf_P, PSTR("UI: Frame add shallow obj %u b, mem:%d/%d\n"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
+        LOG(printf_P, "UI: Frame add shallow obj %u b, mem:%d/%d\n", obj.memoryUsage(), json.memoryUsage(), json.capacity());
         JsonVariant nested = section_stack.tail()->block.createNestedObject();
         nested.shallowCopy(obj);
         return true;
     }
 
-    LOG(printf_P, PSTR("UI: Frame add obj %u b, mem:%d/%d"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
+    LOG(printf_P, "UI: Frame add obj %u b, mem:%d/%d", obj.memoryUsage(), json.memoryUsage(), json.capacity());
 
     if ( ( json.capacity() - json.memoryUsage() > obj.memoryUsage() + 16 ) && section_stack.tail()->block.add(obj)) {
-        LOG(printf_P, PSTR("...OK idx:%u\tmem free: %u\n"), section_stack.tail()->idx, ESP.getFreeHeap());
+        LOG(printf_P, "...OK idx:%u\tmem free: %u\n", section_stack.tail()->idx, ESP.getFreeHeap());
         section_stack.tail()->idx++;        // incr idx for next obj
         return true;
     }

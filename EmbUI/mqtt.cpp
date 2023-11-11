@@ -36,7 +36,7 @@ void EmbUI::_mqttConnTask(bool state){
 }
 
 void EmbUI::_connectToMqtt() {
-    LOG(println, PSTR("Connecting to MQTT..."));
+    LOG(println, "Connecting to MQTT...");
 
     if (cfg[V_mqtt_topic]){
         mqtt_topic = cfg[V_mqtt_topic].as<const char*>();
