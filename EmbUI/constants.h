@@ -187,6 +187,7 @@ static constexpr const char* C_get = "get/";              // mqtt 'get/' prefix
 static constexpr const char* C_set = "set/";              // mqtt 'set/' prefix
 static constexpr const char* C_sys = "sys/";              // mqtt 'sys/' suffix
 static constexpr const char* C_post = "post";             // mqtt 'post' suffix
+static constexpr const char* C_pub = "pub/";              // mqtt 'pub/' suffix
 static constexpr const char* C_pub_etc = "pub/etc";       // mqtt 'pub/etc' suffix
 static constexpr const char* C_pub_iface = "pub/interface";   // mqtt 'pub/interface' suffix
 static constexpr const char* C_pub_post = "pub/post";     // mqtt 'pub/post' suffix

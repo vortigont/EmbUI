@@ -183,15 +183,13 @@ void EmbUI::_mqttSubscribe(){
 
 void EmbUI::publish(const char* topic, const char* payload, bool retained){
     if (!mqttAvailable()) return;
-    std::string t(mqttPrefix().c_str());
-    t += topic;    // make topic string "~/{$topic}/"
     /*
     LOG(print, "MQTT pub: topic:");
     LOG(print, topic);
     LOG(print, " payload:");
     LOG(println, payload);
     */
-    mqttClient->publish(t.data(), 0, retained, payload);
+    mqttClient->publish(_mqttMakeTopic(topic).data(), 0, retained, payload);
 }
 
 void EmbUI::publish(const char* topic, const JsonVariantConst& data, bool retained){
@@ -199,9 +197,7 @@ void EmbUI::publish(const char* topic, const JsonVariantConst& data, bool retain
     auto s = measureJson(data);
     std::vector<uint8_t> buff(s);
     serializeJson(data, static_cast<unsigned char*>(buff.data()), s);
-    std::string t(mqttPrefix().c_str());
-    t += topic;
-    mqttClient->publish(t.data(), 0, retained, reinterpret_cast<const char*>(buff.data()), buff.size());
+    mqttClient->publish(_mqttMakeTopic(topic).data(), 0, retained, reinterpret_cast<const char*>(buff.data()), buff.size());
 }
 
 void EmbUI::_mqtt_pub_sys_status(){
@@ -212,6 +208,13 @@ void EmbUI::_mqtt_pub_sys_status(){
     publish((t + "heap_free").c_str(), ESP.getFreeHeap()/1024);
     publish((t + "uptime").c_str(), esp_timer_get_time() / 1000000);
     publish((t + "rssi").c_str(), WiFi.RSSI());
+}
+
+std::string EmbUI::_mqttMakeTopic(const char* topic){
+    std::string t(mqttPrefix().c_str());
+    t += topic;    // make topic string "~/{$topic}/"
+    std::replace( t.begin(), t.end(), '_', '/');    // replace topic delimiters into underscores
+    return t;
 }
 
 void FrameSendMQTT::send(const JsonVariantConst& data){

@@ -514,6 +514,17 @@ class EmbUI
     void _mqtt_pub_sys_status();
 
     void _mqttSubscribe();
+
+    /**
+     * @brief makes an EmbUI-compatible topic from a provided suffix
+     *  - prepends EmbUI's configured prefix
+     *  - replaces all '_' with '/'
+     * 
+     * @param topic 
+     * @return std::string 
+     */
+    std::string _mqttMakeTopic(const char* topic);
+
     //void _onMqttSubscribe(uint16_t packetId, uint8_t qos);
     //void _onMqttUnsubscribe(uint16_t packetId);
     //void _onMqttPublish(uint16_t packetId);
