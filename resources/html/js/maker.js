@@ -8,7 +8,7 @@ var global = {menu_id:0, menu: [], value:{}};
  * EmbUI's js api version
  * used to set compatibilty dependency between backend firmware and WebUI js
  */
-const ui_jsapi = 2;
+const ui_jsapi = 3;
 
 /**
  * User application versions - frontend/backend
@@ -52,6 +52,146 @@ var customFuncs = {
 	}//,
 	//func2: function () {     console.log('Called func 2'); }
 };
+
+/**
+ * rawdata callback - Stub function to handle rawdata messages from controller
+ * Data could be sent from the controller via json_frame_custom(String("rawdata")) method
+ * and handled in a custom user js script via redefined function
+ */
+function rawdata_cb(msg){
+    console.log('Got raw data, redefine rawdata_cb(msg) func to handle it.', msg);
+}
+
+/**
+ * User Callback for xload() function. Вызывается после завершения загрузки внешних данных, но
+ * перед предачей объекта обработчику шаблона. Если коллбек возвращает false, то вызов шаблонизатора не происходит.
+ * Может быть перенакрыта пользовательским скриптом для доп обработки загруженных данных
+ */
+function xload_cb(obj){
+//    console.log('redefine xload_cb(obj) func to handle it.', msg);
+	return true;
+}
+
+/**
+ * @brief - Loads JSON objects via http request
+ * @param {*} url - URI to load
+ * @param {*} ok - callback on success
+ * @param {*} err - callback on error
+ */
+function ajaxload(url, ok, err){
+	var xhr = new XMLHttpRequest();
+	xhr.overrideMimeType("application/json");
+	xhr.responseType = 'json';
+	xhr.open('GET', url, true);
+	xhr.onreadystatechange = function(){
+		if (xhr.readyState == 4 && xhr.status == "200") {
+			ok && ok(xhr.response);
+		} else if (xhr.status != "200"){
+			err && err(xhr.status)
+		}
+	};
+	xhr.send(null);
+}
+
+/**
+ * 	"pkg":"xload" messages are used to make ajax requests for external JSON objects that could be used as data/interface templates
+ * используется для загрузки контента/шаблонов из внешних источников - "флеш" контроллера, интернет ресурсы с погодой и т.п.,
+ * объекты должны сохранять структуру как если бы они пришли от контроллера. Просмариваются рекурсивно все секции у которых есть ключ 'url',
+ * этот урл запрашивается и результат записывается в ключ 'block' текущей секции. Ожидается что по URL будет доступен корректный JSON.
+ * Результат передается в рендерер и встраивается в страницу /Vortigont/
+ * @param { * } msg - framework content/interface object
+ * @returns 
+ */
+function xload(msg){
+    if (!msg.block){
+        console.log('Message has no data block!');
+        return;
+    }
+
+	console.log('Run deepfetch');
+	deepfetch(msg.block).then(() => {
+		 //console.log(msg);
+		 if (xload_cb(msg)){
+			var rdr = this.rdr = render();	// Interface rederer to pass updated objects to
+			rdr.make(msg);
+		 }
+	})
+}
+
+/**
+ * async function to traverse object and fetch all 'url' in sections,
+ * this must be done in async mode till the last end, since there could be multiple recursive ajax requests
+ * including in sections that were just fetched /Vortigont/
+ * @param {*} obj - EmbUI data object
+ */
+async function deepfetch (obj) {
+	for (let i = 0; i < obj.length; i++) if (typeof obj[i] == "object") {
+		let element = obj[i];
+		if (element.url){
+			console.log('xload URL: ' + element.url);
+			await new Promise(next=> {
+					ajaxload(element.url,
+						function(response) {
+							element['block'] = response;
+							delete section.url;	// удаляем url из элемента т.к. работает рекурсия
+							// пробегаемся рекурсивно по новым/вложенным объектам
+							if (element.block && typeof element.block == "object") {
+								deepfetch(element.block).then(() => {
+									//console.log("Diving deeper");
+									next();
+							   })
+							} else {
+								next();
+							}
+						},
+						function(errstatus) {
+							//console.log('Error loading external content');
+							next();
+						}
+					);
+			})
+		} else if ( element.block && typeof element.block == "object" ){
+			await new Promise(next=> {
+				deepfetch(element.block).then(() => {
+					next();
+				})
+			})
+		}
+	}
+}
+
+/**
+ * this function recoursevily looks through sections and picks ones with name 'xload'
+ * for such sections all html elements with 'url' object key will be side-load with object content into
+ * and object named 'block'. Same way as for xload() function.
+ * @param {*} msg - object with UI sections
+ * @returns 
+ */
+async function section_xload(msg){
+    if (!msg.block) return;
+	for (let i = 0; i < msg.block.length; i++){
+		let el = msg.block[i];
+		if (msg.section == "xload" && el.url){
+			// do side load for all elements of the section
+			console.log('section xload URL: ', el.url);
+			await new Promise(next=> {
+				ajaxload(el.url,
+					function(response) {
+						el['block'] = response;
+						next();
+					},
+					function(errstatus) {
+						next();
+						//console.log('Error loading external content');
+					}
+				);
+			})
+		} else if (el.section){
+			// recourse into nested secions
+			await new Promise( next => { section_xload(el).then(() => { next(); }) } )
+		}
+	}
+} 
 
 /* Color gradients calculator. Source is from https://gist.github.com/joocer/bf1626d38dd74fef9d9e5fb18fef517c */
 function colorGradient(colors, fadeFraction) {
@@ -110,17 +250,15 @@ var render = function(){
 					return v;
 			};
 
-			var value;
-			var type = this.type;
+			let value;
 
 			// check if value has been supplied by templater
 			if (val !== undefined){
 				value = val;
 			} else {
-				switch (type){
+				switch (this.type){
 					case 'checkbox':
-						var chbox=document.getElementById(id);
-						value = chbox.checked ? true : false;		// send 'checked' state as boolean true/false
+						value = document.getElementById(id).checked;
 						break;
 					case 'input':
 					case 'select-one':
@@ -128,11 +266,7 @@ var render = function(){
 						value = chkNumeric(this.value);
 						break;
 					case 'textarea':	// cast empty strings to null
-						if (typeof this.value == 'string' && this.value == "")
-							value = null;
-						else
-							value = this.value;
-						break;
+						value = (typeof this.value == 'string' && this.value == "") ? null : this.value;
 					default:
 						value = this.value;
 				}
@@ -140,8 +274,9 @@ var render = function(){
 			if (this.id != id){
 				custom_hook(this.id, d, id);
 			}
+			let data = {};
+			data[id] = value;
 
-			var data = {}; data[id] = (value !== undefined)? value : null;
 			ws.send_post(id, data);
 		},
 		on_showhide: function(d, id) {
@@ -196,16 +331,11 @@ var render = function(){
 		// process "pkg":"interface" messages and render template
 		make: function(obj){
 			if (!obj.block) return;
-			var frame = obj.block;
-			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
-				if (frame[i].section == "menu") {
-					global.menu =  frame[i].block;
-					if (!global.menu_id) global.menu_id = global.menu[0].value
-					this.menu();
-					continue;
-				}
+			let frame = obj.block;
+			for (let i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
+				// check top-level section type for any predefined ID that must processed in a specific way
 				if (frame[i].section == "content") {
-					for (var n = 0; n < frame[i].block.length; n++) {
+					for (let n = 0; n < frame[i].block.length; n++) {
 						go("#"+frame[i].block[n].id).replace(tmpl_content.parse(frame[i].block[n]));
 					}
 					continue;
@@ -221,8 +351,15 @@ var render = function(){
 					global.appjsapi = manifest.appjsapi;
 					continue;
 				}
-				// fallback to normal section
-				this.section(frame[i]);
+				if (frame[i].section == "menu"){
+					global.menu =  frame[i].block;
+					if (!global.menu_id) global.menu_id = global.menu[0].value
+					this.menu();
+					continue;
+				}
+
+				// look for nested xload sections and await for side-load, if found
+				section_xload(frame[i]).then( () => { this.section(frame[i]); } );
 			}
 			out.lockhist = false;
 		},
@@ -300,112 +437,6 @@ var render = function(){
 	return out;
 };
 
-/**
- * rawdata callback - Stub function to handle rawdata messages from controller
- * Data could be sent from the controller via json_frame_custom(String("rawdata")) method
- * and handled in a custom user js script via redefined function
- */
-function rawdata_cb(msg){
-    console.log('Got raw data, redefine rawdata_cb(msg) func to handle it.', msg);
-}
-
-/**
- * User Callback for xload() function. Вызывается после завершения загрузки внешних данных, но
- * перед предачей объекта обработчику шаблона. Если коллбек возвращает false, то вызов шаблонизатора не происходит.
- * Может быть перенакрыта пользовательским скриптом для доп обработки загруженных данных
- */
-function xload_cb(obj){
-//    console.log('redefine xload_cb(obj) func to handle it.', msg);
-	return true;
-}
-
-/**
- * @brief - Loads JSON objects via http request
- * @param {*} url - URI to load
- * @param {*} ok - callback on success
- * @param {*} err - callback on error
- */
-function ajaxload(url, ok, err){
-	var xhr = new XMLHttpRequest();
-	xhr.overrideMimeType("application/json");
-	xhr.responseType = 'json';
-	xhr.open('GET', url, true);
-	xhr.onreadystatechange = function(){
-		if (xhr.readyState == 4 && xhr.status == "200") {
-			ok && ok(xhr.response);
-		} else if (xhr.status != "200"){
-			err && err(xhr.status)
-		}
-	};
-	xhr.send(null);
-}
-
-/**
- * 	"pkg":"xload" messages are used to make ajax requests for external JSON objects that could be used as data/interface templates
- * используется для загрузки контента/шаблонов из внешних источников - "флеш" контроллера, интернет ресурсы с погодой и т.п.,
- * объекты должны сохранять структуру как если бы они пришли от контроллера. Просмариваются рекурсивно все секции у которых есть ключ 'url',
- * этот урл запрашивается и результат записывается в ключ 'block' текущей секции. Ожидается что по URL будет доступен корректный JSON.
- * Результат передается в рендерер и встраивается в страницу /Vortigont/
- * @param { * } msg - framework content/interface object
- * @returns 
- */
-function xload(msg){
-    if (!msg.block){
-        console.log('Message has no data block!');
-        return;
-    }
-
-	console.log('Run deepfetch');
-	deepfetch(msg.block).then(() => {
-		 //console.log(msg);
-		 if (xload_cb(msg)){
-			var rdr = this.rdr = render();	// Interface rederer to pass updated objects to
-			rdr.make(msg);
-		 }
-	})
-}
-
-/**
- * async function to traverse object and fetch all 'url' in sections,
- * this must be done in async mode till the last end, since there could be multiple recursive ajax requests
- * including in sections that were just fetched /Vortigont/
- * @param {*} obj - EmbUI data object
- */
-async function deepfetch (obj) {
-	for (let i = 0; i < obj.length; i++) if (typeof obj[i] == "object") {
-		var section = obj[i];
-		if (section.url){
-			console.log('Fetching URL"' + section.url);
-			await new Promise(next=> {
-					ajaxload(section.url,
-						function(response) {
-							section['block'] = response;
-							delete section.url;	// удаляем url из элемента т.к. работает рекурсия
-							// пробегаемся рекурсивно по новым/вложенным объектам
-							if (section.block && typeof section.block == "object") { 
-								deepfetch(section.block).then(() => {
-									//console.log("Diving deeper");
-									next();
-							   })
-							} else {
-								next();
-							}
-						},
-						function(errstatus) {
-							//console.log('Error loading external content');
-							next();
-						}
-					);
-			})
-		} else if ( section.block && typeof section.block == "object" ){
-			await new Promise(next=> {
-				deepfetch(section.block).then(() => {
-					next();
-				})
-			})			
-		}
-	}
-}
 
 
 window.addEventListener("load", function(ev){

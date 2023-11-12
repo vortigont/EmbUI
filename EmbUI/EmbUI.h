@@ -15,6 +15,7 @@
 #include "ui.h"
 
 #include <ESPAsyncWebServer.h>
+#include <AsyncJson.h>
 #include <AsyncMqttClient.h>
 
 #define U_FS   U_SPIFFS
@@ -56,7 +57,7 @@ String  __attribute__((weak)) httpCallback(const String &param, const String &va
 
 //---------------------- Callbak functions
 using asyncsrv_callback_t = std::function< bool (AsyncWebServerRequest *req)>;
-using actionCallback_t = std::function< void (Interface *interf, JsonObject *data, const char* action)>;
+using actionCallback_t = std::function< void (Interface *interf, const JsonObject *data, const char* action)>;
 
 
 /**
@@ -219,7 +220,7 @@ class EmbUI
      * if post came from some other place - sends data to the WebUI
      * looks for registered action for the section name and calls the action with post data if found
      */
-    void post(JsonObject &data, bool inject = false);
+    void post(const JsonObject &data, bool inject = false);
 
 
 
@@ -263,7 +264,7 @@ class EmbUI
      * beware of dangling pointers here passing non-static char*, use JsonVariant or String instead 
      */
     template <typename V>
-    void var(const char* key, const V& value, bool force = false);
+    void var(const char* key, const V& value);
 
     /**
      * @brief - create config varialbe if it does not exist yet
@@ -272,7 +273,7 @@ class EmbUI
      * it's value won't be replaced
      */
     template <typename T>
-    inline void var_create(const char* key, const T& value){ if(!cfg.containsKey(key)){var(key, value, true );} }
+    inline void var_create(const char* key, const T& value){ if(!cfg.containsKey(key)){var(key, value);} }
 
     /**
      * @brief - remove key from config
@@ -425,6 +426,10 @@ class EmbUI
     // external handler for 404 not found 
     asyncsrv_callback_t cb_not_found = nullptr;
 
+    // AsyncJson handler (for HTTP REST API)
+    std::unique_ptr<AsyncCallbackJsonWebHandler> _ajs_handler;
+
+
 
     /*** WiFi-related methods ***/
 
@@ -441,6 +446,15 @@ class EmbUI
 
     // default callback for http 404 responces
     void _notFound(AsyncWebServerRequest *request);
+    
+    /**
+     * @brief HTTP rest api req handler
+     * executes action for posted json data and hooks to the feeder chain to get the reply
+     * ONLY value type packets are responded back to http request since http can't handle section packets as ws/mqtt feedrs 
+     * @param request - async http request
+     * @param json - json request body
+     */
+    void _http_api_hndlr(AsyncWebServerRequest *request, JsonVariant &json);
 
     // *** MQTT Private Methods and members ***
 
@@ -499,6 +513,18 @@ class EmbUI
      */
     void _mqtt_pub_sys_status();
 
+    void _mqttSubscribe();
+
+    /**
+     * @brief makes an EmbUI-compatible topic from a provided suffix
+     *  - prepends EmbUI's configured prefix
+     *  - replaces all '_' with '/'
+     * 
+     * @param topic 
+     * @return std::string 
+     */
+    std::string _mqttMakeTopic(const char* topic);
+
     //void _onMqttSubscribe(uint16_t packetId, uint8_t qos);
     //void _onMqttUnsubscribe(uint16_t packetId);
     //void _onMqttPublish(uint16_t packetId);
@@ -511,20 +537,20 @@ class EmbUI
           #else
               chipId = ESP.getChipId();    
           #endif  
-          SSDP.setDeviceType(F("upnp:rootdevice"));
-          SSDP.setSchemaURL(F("description.xml"));
+          SSDP.setDeviceType("upnp:rootdevice");
+          SSDP.setSchemaURL("description.xml");
           SSDP.setHTTPPort(80);
           SSDP.setName(hostname());
           SSDP.setSerialNumber(String(chipId));
-          SSDP.setURL(F("/"));
+          SSDP.setURL("/");
           SSDP.setModelName(PGnameModel);
           SSDP.setModelNumber(PGversion);
-          SSDP.setModelURL(String(F("http://"))+(WiFi.status() != WL_CONNECTED ? WiFi.softAPIP().toString() : WiFi.localIP().toString()));
+          SSDP.setModelURL(String("http://")+(WiFi.status() != WL_CONNECTED ? WiFi.softAPIP().toString() : WiFi.localIP().toString()));
           SSDP.setManufacturer(PGnameManuf);
           SSDP.setManufacturerURL(PGurlManuf);
           SSDP.begin();
 
-          (&server)->on(PSTR("/description.xml"), HTTP_GET, [&](AsyncWebServerRequest *request){
+          (&server)->on("/description.xml", HTTP_GET, [&](AsyncWebServerRequest *request){
             request->send(200, PGmimexml, getSSDPSchema());
           });
     }
@@ -537,47 +563,47 @@ class EmbUI
             chipId = ESP.getChipId();    
         #endif  
       String s = "";
-        s +=F("<?xml version=\"1.0\"?>\n");
-        s +=F("<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\n");
-        s +=F("\t<specVersion>\n");
-        s +=F("\t\t<major>1</major>\n");
-        s +=F("\t\t<minor>0</minor>\n");
-        s +=F("\t</specVersion>\n");
-        s +=F("<URLBase>");
-        s +=String(F("http://"))+(WiFi.status() != WL_CONNECTED ? WiFi.softAPIP().toString() : WiFi.localIP().toString());
-        s +=F("</URLBase>");
-        s +=F("<device>\n");
-        s +=F("\t<deviceType>upnp:rootdevice</deviceType>\n");
-        s +=F("\t<friendlyName>");
-        s += param(F("hostname"));
-        s +=F("</friendlyName>\r\n");
-        s +=F("\t<presentationURL>index.html</presentationURL>\r\n");
-        s +=F("\t<serialNumber>");
+        s +="<?xml version=\"1.0\"?>\n";
+        s +="<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\n";
+        s +="\t<specVersion>\n";
+        s +="\t\t<major>1</major>\n";
+        s +="\t\t<minor>0</minor>\n";
+        s +="\t</specVersion>\n";
+        s +="<URLBase>";
+        s +=String("http://")+(WiFi.status() != WL_CONNECTED ? WiFi.softAPIP().toString() : WiFi.localIP().toString());
+        s +="</URLBase>";
+        s +="<device>\n";
+        s +="\t<deviceType>upnp:rootdevice</deviceType>\n";
+        s +="\t<friendlyName>";
+        s += param("hostname");
+        s +="</friendlyName>\r\n";
+        s +="\t<presentationURL>index.html</presentationURL>\r\n";
+        s +="\t<serialNumber>";
         s += String(chipId);
-        s +=F("</serialNumber>\r\n");
-        s +=F("\t<modelName>");
+        s +="</serialNumber>\r\n";
+        s +="\t<modelName>";
         s += PGnameModel;
-        s +=F("</modelName>\r\n");
-        s +=F("\t<modelNumber>");
+        s +="</modelName>\r\n";
+        s +="\t<modelNumber>";
         s += PGversion;
-        s +=F("</modelNumber>\r\n");
-        s +=F("\t<modelURL>");
+        s +="</modelNumber>\r\n";
+        s +="\t<modelURL>";
         s += PGurlModel;
-        s +=F("</modelURL>\r\n");
-        s +=F("\t<manufacturer>");
+        s +="</modelURL>\r\n";
+        s +="\t<manufacturer>";
         s += PGnameManuf;
-        s +=F("</manufacturer>\r\n");
-        s +=F("\t<manufacturerURL>");
+        s +="</manufacturer>\r\n";
+        s +="\t<manufacturerURL>";
         s += PGurlManuf;
-        s +=F("</manufacturerURL>\r\n");
-        //s +=F("\t<UDN>0543bd4e-53c2-4f33-8a25-1f75583a19a2");
-        s +=F("\t<UDN>0543bd4e-53c2-4f33-8a25-1f7558");
+        s +="</manufacturerURL>\r\n";
+        //s +="\t<UDN>0543bd4e-53c2-4f33-8a25-1f75583a19a2";
+        s +="\t<UDN>0543bd4e-53c2-4f33-8a25-1f7558";
         char cn[7];
-        sprintf_P(cn, PSTR("%02x%02x%02x"), ((chipId >> 16) & 0xff), ((chipId >>  8) & 0xff), chipId & 0xff);
+        sprintf_P(cn, "%02x%02x%02x", ((chipId >> 16) & 0xff), ((chipId >>  8) & 0xff), chipId & 0xff);
         s += cn;
-        s +=F("</UDN>\r\n");
-        s +=F("\t</device>\n");
-        s +=F("</root>\r\n\r\n");
+        s +="</UDN>\r\n";
+        s +="\t</device>\n";
+        s +="</root>\r\n\r\n";
       return s;
     }
 #endif
@@ -606,12 +632,8 @@ extern EmbUI embui;
 /* Templated methods implementation follows */
 /* ======================================== */
 template <typename V>
-void EmbUI::var(const char* key, const V& value, bool force){
+void EmbUI::var(const char* key, const V& value){
     LOG(print, "UI Key:"); LOG(print, key);
-    if (!force && !cfg.containsKey(key)) {
-        LOG(println, " is NOT initialized!\n");
-        return;
-    }
 
     // do not update key if new value is the same as existing one
     if (cfg[key] == value){
@@ -647,7 +669,7 @@ void EmbUI::var_dropnulls(const char* key, const T& value){
     }
 
     // deduce further???
-    var(key, value, true ); // save value as-is
+    var(key, value); // save value as-is
 }
 
 template <typename P>

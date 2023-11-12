@@ -25,7 +25,7 @@ bool ftp_status(){ return ftpsrv; };
 
 namespace basicui {
 
-void page_settings_ftp(Interface *interf, JsonObject *data, const char* action){
+void page_settings_ftp(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -37,13 +37,13 @@ void page_settings_ftp(Interface *interf, JsonObject *data, const char* action){
     interf->text(P_ftp_usr, embui.paramVariant(P_ftp_usr) ? embui.paramVariant(P_ftp_usr) : P_ftp, "FTP login");
     interf->password(P_ftp_pwd, embui.paramVariant(P_ftp_pwd) ? embui.paramVariant(P_ftp_pwd) : P_ftp, T_DICT[lang][TD::D_Password]);
     interf->button(button_t::submit, A_set_ntwrk_ftp, T_DICT[lang][TD::D_SAVE], P_BLUE);
-    interf->button(button_t::submit, A_get_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
+    interf->button(button_t::submit, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
 
     // close and send frame
     interf->json_frame_flush(); // main
 }
 
-void set_settings_ftp(Interface *interf, JsonObject *data, const char* action){
+void set_settings_ftp(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
 
     bool newstate = (*data)[P_ftp];

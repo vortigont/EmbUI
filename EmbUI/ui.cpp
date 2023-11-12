@@ -12,7 +12,7 @@
 /**
  * @brief - add object to frame with mem overflow protection 
  */
-void Interface::json_frame_add(const JsonObject &jobj){
+void Interface::json_frame_add(const JsonVariantConst &jobj){
     size_t _cnt = FRAME_ADD_RETRY;
 
     do {
@@ -31,21 +31,18 @@ void Interface::json_frame_clear(){
     json.clear();
 }
 
-bool Interface::json_frame_enqueue(const JsonObject &obj, bool shallow){
-    if (!obj.memoryUsage()) // пустышки не передаем
-        return false;
-
+bool Interface::json_frame_enqueue(const JsonVariantConst &obj, bool shallow){
     if(shallow){
-        LOG(printf_P, PSTR("UI: Frame add shallow obj %u b, mem:%d/%d\n"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
+        LOG(printf_P, "UI: Frame add shallow obj %u b, mem:%d/%d\n", obj.memoryUsage(), json.memoryUsage(), json.capacity());
         JsonVariant nested = section_stack.tail()->block.createNestedObject();
         nested.shallowCopy(obj);
         return true;
     }
 
-    LOG(printf_P, PSTR("UI: Frame add obj %u b, mem:%d/%d"), obj.memoryUsage(), json.memoryUsage(), json.capacity());
+    LOG(printf_P, "UI: Frame add obj %u b, mem:%d/%d", obj.memoryUsage(), json.memoryUsage(), json.capacity());
 
     if ( ( json.capacity() - json.memoryUsage() > obj.memoryUsage() + 16 ) && section_stack.tail()->block.add(obj)) {
-        LOG(printf_P, PSTR("...OK idx:%u\tmem free: %u\n"), section_stack.tail()->idx, ESP.getFreeHeap());
+        LOG(printf_P, "...OK idx:%u\tmem free: %u\n", section_stack.tail()->idx, ESP.getFreeHeap());
         section_stack.tail()->idx++;        // incr idx for next obj
         return true;
     }
@@ -95,6 +92,10 @@ void Interface::json_section_end(){
     }
     LOG(printf, "UI: section end #%u '%s'\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
     delete section;
+}
+
+JsonObject Interface::get_last_object(){
+    return JsonObject (section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element and return it as an Jobject
 }
 
 /**
@@ -161,4 +162,27 @@ void FrameSendChain::send(const JsonVariantConst& data){
 void FrameSendChain::send(const String& data){
     for (auto &i : _hndlr_chain)
         i.handler->send(data);
+}
+
+void FrameSendAsyncJS::send(const JsonVariantConst& data){
+    if (flushed) return;    // we can send only ONCE!
+
+    if (data[P_pkg] == P_value){
+        JsonVariant& root = response->getRoot();
+        root.shallowCopy(data[P_block]);
+    } else
+        return;     // won't reply with non-value packets
+
+    response->setLength();
+    req->send(response);
+    flushed = true;
+};
+
+FrameSendAsyncJS::~FrameSendAsyncJS() {
+    if (!flushed){
+        // there were no usefull data, let's reply with empty obj
+        response->setLength();
+        req->send(response);        
+    }
+    req = nullptr;
 }

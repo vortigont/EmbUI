@@ -35,10 +35,10 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         return wsDataHandler(server, client, type, arg, data, len);
 
     if(type == WS_EVT_CONNECT){
-        LOG(printf_P, PSTR("CONNECT ws:%s id:%u\n"), server->url(), client->id());
+        LOG(printf, "CONNECT ws:%s id:%u\n", server->url(), client->id());
         {
             Interface interf(client);
-            if (!embui.action.exec(&interf, nullptr, A_get_ui_page_main))    // call user defined mainpage callback
+            if (!embui.action.exec(&interf, nullptr, A_ui_page_main))    // call user defined mainpage callback
                 basicui::page_main(&interf, nullptr, NULL);             // if no callback was registered, then show default stub page
         }
         embui.send_pub();
@@ -46,18 +46,18 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     }
 
     if(type == WS_EVT_DISCONNECT){
-        LOG(printf_P, PSTR("ws[%s][%u] disconnect\n"), server->url(), client->id());
+        LOG(printf, "ws[%s][%u] disconnect\n", server->url(), client->id());
         return;
     }
 
     if(type == WS_EVT_ERROR){
-        LOG(printf_P, PSTR("ws[%s][%u] error(%u): %s\n"), server->url(), client->id(), *((uint16_t*)arg), (char*)data);
-        httpCallback(F("sys_WS_EVT_ERROR"), "", false); // сообщим об ошибке сокета
+        LOG(printf, "ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
+        httpCallback("sys_WS_EVT_ERROR", "", false); // сообщим об ошибке сокета
         return;
     }
 
     if(type == WS_EVT_PONG){
-        LOG(printf_P, PSTR("ws[%s][%u] pong[%u]: %s\n"), server->url(), client->id(), len, (len)?(char*)data:"");
+        LOG(printf, "ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
         return;
     }
 }
@@ -70,7 +70,7 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
     if(!info->final || info->index != 0 || info->len != len)
         return;
 
-    LOG(printf_P, PSTR("UI: =WS MSG= data len: %u\n"), len);
+    LOG(printf, "UI: =WS MSG= data len: %u\n", len);
 
     // ignore packets without "pkg":"post" marker
     std::string_view payload((const char *)data, len);
@@ -89,7 +89,7 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
 
     DeserializationError error = deserializeJson((*res), (const char*)data, len); // deserialize via copy to prevent dangling pointers in action()'s
     if (error){
-        LOG(printf_P, PSTR("UI: WS_EVT_DATA deserialization err: %d\n"), error.code());
+        LOG(printf, "UI: WS_EVT_DATA deserialization err: %d\n", error.code());
         delete res;
         return;
     }
@@ -120,7 +120,7 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
 EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), server(80), ws(EMBUI_WEBSOCK_URI){
         _getmacid();
 
-        tAutoSave.set(EMBUI_AUTOSAVE_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){LOG(println, F("UI: AutoSave")); save();} );    // config autosave timer
+        tAutoSave.set(EMBUI_AUTOSAVE_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){LOG(println, "UI: AutoSave"); save();} );    // config autosave timer
         ts.addTask(tAutoSave);
 }
 
@@ -146,14 +146,14 @@ void EmbUI::begin(){
         --retry_cnt;
         delay(100);
         if (!retry_cnt){
-            LOG(println, F("FS dirty, I Give up!"));
+            LOG(println, "FS dirty, I Give up!");
             return;
         }
     }
 
     load();                 // load embui's config from json file
 
-    LOG(print, F("UI CONFIG: "));
+    LOG(print, "UI CONFIG: ");
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
 
     // restore Time settings
@@ -197,7 +197,7 @@ void EmbUI::begin(){
     // create and start MQTT client if properly configured
     mqttStart();
 #ifdef USE_SSDP
-    ssdp_begin(); LOG(println, F("Start SSDP"));
+    ssdp_begin(); LOG(println, "Start SSDP");
 #endif
 // FTP server
 #ifndef EMBUI_NOFTP
@@ -209,19 +209,20 @@ void EmbUI::begin(){
  * @brief - process posted data for the registered action
  * looks for registered action for the section name and calls the action with post data if found
  */
-void EmbUI::post(JsonObject &data, bool inject){
+void EmbUI::post(const JsonObject &data, bool inject){
+    LOG(print, "EmbUI POST: "); LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
     JsonObject odata = data[P_data].as<JsonObject>();
     Interface interf(&feeders);
 
-    //if (inject && feeders.available()){             // echo back injected data to all availbale feeders
-    if (odata.size() && feeders.available()){         // echo back injected data to all availbale feeders
+    // echo back injected data to all available feeders IF request 'data' object is not empty
+    if (odata.size() && feeders.available()){
         interf.json_frame_value(odata, true);
         interf.json_frame_flush();
     }
 
     // reflect post'ed data to MQTT (todo: do this on-demand)
     JsonVariantConst jvc(data);
-    publish("jpub/post", jvc);
+    publish(C_pub_post, jvc);
 
     // execute callback actions
     action.exec(&interf, &odata, data[P_action].as<const char*>());
@@ -242,13 +243,13 @@ void EmbUI::send_pub(){
  */
 const char* EmbUI::param(const char* key)
 {
-    LOG(printf_P, PSTR("UI READ KEY: '%s'"), key);
+    LOG(printf, "UI READ KEY: '%s'", key);
 
     const char* value = cfg[key] | "";
     if (value){
-        LOG(printf_P, PSTR(" value (%s)\n"), value);
+        LOG(printf, " value (%s)\n", value);
     } else {
-        LOG(println, F(" key is missing or not a *char\n"));
+        LOG(println, " key is missing or not a *char\n");
     }
     return value;
 }
@@ -262,14 +263,14 @@ const char* EmbUI::param(const char* key)
  */
 String EmbUI::param(const String &key)
 {
-    LOG(printf_P, PSTR("UI READ KEY: '%s'"), key.c_str());
+    LOG(printf, "UI READ KEY: '%s'", key.c_str());
     String v;
     if (cfg[key].is<int>()){ v += cfg[key].as<int>(); }
     else if (cfg[key].is<float>()) { v += cfg[key].as<float>(); }
     else if (cfg[key].is<bool>())  { v += cfg[key] ? 1 : 0; }
     else { v = cfg[key] | ""; } // откат, все что не специальный тип, то строка (пустая если null)
 
-    LOG(printf_P, PSTR(" VAL: '%s'\n"), v.c_str());
+    LOG(printf, " VAL: '%s'\n", v.c_str());
     return v;
 }
 
@@ -328,8 +329,8 @@ const char* EmbUI::hostname(){
         return autohostname.get();
 
     autohostname.reset(new char[sizeof(EMBUI_IDPREFIX) + sizeof(mc) * 2]);
-    sprintf_P(autohostname.get(), PSTR(EMBUI_IDPREFIX "-%s"), mc);
-    LOG(printf_P, PSTR("generate autohostname: %s\n"), autohostname.get());
+    sprintf(autohostname.get(), PSTR(EMBUI_IDPREFIX "-%s"), mc);
+    LOG(printf, "generate autohostname: %s\n", autohostname.get());
 
     return autohostname.get();
 }
@@ -346,8 +347,8 @@ void EmbUI::_getmacid(){
     MacID _mac;
     _mac.u64 = ESP.getEfuseMac();
 
-    sprintf_P(mc, PSTR("%02X%02X%02X%02X%02X%02X"), _mac.mc[0],_mac.mc[1],_mac.mc[2], _mac.mc[3], _mac.mc[4], _mac.mc[5]);
-    LOG(printf_P,PSTR("UI ID:%s\n"), mc);
+    sprintf(mc, "%02X%02X%02X%02X%02X%02X", _mac.mc[0],_mac.mc[1],_mac.mc[2], _mac.mc[3], _mac.mc[4], _mac.mc[5]);
+    LOG(printf,"UI ID:%s\n", mc);
 }
 
 void EmbUI::var_remove(const char* key){
@@ -386,12 +387,18 @@ size_t ActionHandler::exec(Interface *interf, JsonObject *data, const char* acti
         std::string_view item(i.action);
         if (a.length() < item.length()) continue;  // skip handlers with longer names, obviously a mismatch
 
-        // check if action has a wildcard suffix "*"
-        if (std::char_traits<char>::eq(item.back(), 0x2a)){       // 0x2a  == '*'
-            if (a.compare(0, item.length()-1, item, 0, item.length()-1) != 0)  continue;
-        } else {
-            if (a.compare(item) != 0) continue;     // full string compare
-        }
+        // check if action has a wildcard suffix "*" and it does not match
+        if (std::char_traits<char>::eq(item.back(), 0x2a) && !starts_with(a, item.substr(0, item.size()-1) ))       // 0x2a  == '*'
+            continue;
+
+        // check if action has a wildcard prefix "*" and it does not match
+        if (std::char_traits<char>::eq(item.front(), 0x2a) && !ends_with(a, item.substr(1) ))
+            continue;
+
+        if (!std::char_traits<char>::eq(item.back(), 0x2a) &&
+            !std::char_traits<char>::eq(item.front(), 0x2a) &&
+            a.compare(item) != 0
+        ) continue;     // full string compare
 
         // execute action callback
         LOG(printf, "UI: exec act:%s hndlr:%s\n", action, item.data());
@@ -403,11 +410,11 @@ size_t ActionHandler::exec(Interface *interf, JsonObject *data, const char* acti
 }
 
 void ActionHandler::set_mainpage_cb(actionCallback_t callback){
-    remove(A_get_ui_page_main);
-    add(A_get_ui_page_main, callback);
+    remove(A_ui_page_main);
+    add(A_ui_page_main, callback);
 }
 
 void ActionHandler::set_settings_cb(actionCallback_t callback){
-    remove(A_get_ui_blk_usersettings);
-    add(A_get_ui_blk_usersettings, callback);
+    remove(A_ui_blk_usersettings);
+    add(A_ui_blk_usersettings, callback);
 }

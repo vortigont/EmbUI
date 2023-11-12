@@ -10,11 +10,11 @@
 #define P_EMPTY static_cast<const char*>(0)
 
 // UI blocks generator actions (IDs)
-static constexpr const char* A_get_ui_page = "get_ui_page";
-static constexpr const char* A_get_ui_page_settings = "get_ui_page_settings";
-static constexpr const char* A_get_ui_page_network = "get_ui_page_network";
-static constexpr const char* A_get_ui_page_main = "get_ui_page_main";
-static constexpr const char* A_get_ui_blk_usersettings = "get_ui_blk_usersettings";
+static constexpr const char* A_ui_page = "ui_page";
+static constexpr const char* A_ui_page_settings = "ui_page_settings";
+static constexpr const char* A_ui_page_network = "ui_page_network";
+static constexpr const char* A_ui_page_main = "ui_page_main";
+static constexpr const char* A_ui_blk_usersettings = "ui_blk_usersettings";
 
 // setter actions (IDs)
 static constexpr const char* A_set_ntwrk_ftp = "set_ntwrk_ftp";
@@ -39,7 +39,7 @@ static constexpr const char* A_publish = "publish";
 static constexpr const char* T_DO_OTAUPD = "update";    // http OTA update URL /update
 
 
-// Interface elements
+// Interface class elements
 static constexpr const char* P_action = "action";
 static constexpr const char* P_app = "app";
 static constexpr const char* P_appjsapi = "appjsapi";
@@ -55,7 +55,6 @@ static constexpr const char* P_date = "date";
 static constexpr const char* P_datetime = "datetime-local";
 static constexpr const char* P_display = "display";
 static constexpr const char* P_div = "div";
-static constexpr const char* P_directly = "directly";
 static constexpr const char* P_dtime = "dtime";
 static constexpr const char* P_email = "email";
 static constexpr const char* P_empty_quotes = "";
@@ -80,6 +79,7 @@ static constexpr const char* P_max = "max";
 static constexpr const char* P_menu = "menu";
 static constexpr const char* P_min = "min";
 static constexpr const char* P_number = "number";
+static constexpr const char* P_onChange = "onChange";
 static constexpr const char* P_options = "options";
 static constexpr const char* P_params = "params";
 static constexpr const char* P_password = "password";
@@ -183,8 +183,15 @@ static constexpr const char* V_mqtt_port = "mqtt_port";
 static constexpr const char* V_mqtt_topic = "mqtt_topic";
 static constexpr const char* V_mqtt_user = "mqtt_user";
 static constexpr const char* V_mqtt_ka = "mqtt_ka";       // mqtt keep-alive interval
+static constexpr const char* C_get = "get/";              // mqtt 'get/' prefix
+static constexpr const char* C_set = "set/";              // mqtt 'set/' prefix
 static constexpr const char* C_sys = "sys/";              // mqtt 'sys/' suffix
+static constexpr const char* C_post = "post";             // mqtt 'post' suffix
 static constexpr const char* C_pub = "pub/";              // mqtt 'pub/' suffix
+static constexpr const char* C_pub_etc = "pub/etc";       // mqtt 'pub/etc' suffix
+static constexpr const char* C_pub_iface = "pub/interface";   // mqtt 'pub/interface' suffix
+static constexpr const char* C_pub_post = "pub/post";     // mqtt 'pub/post' suffix
+static constexpr const char* C_pub_value = "pub/value";   // mqtt 'pub/value' suffix
 
 // http-related constants
 static constexpr const char* PGgzip = "gzip";
