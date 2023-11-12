@@ -94,6 +94,10 @@ void Interface::json_section_end(){
     delete section;
 }
 
+JsonObject Interface::get_last_object(){
+    return JsonObject (section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element and return it as an Jobject
+}
+
 /**
  * @brief - serialize and send json obj directly to the ws buffer
  */

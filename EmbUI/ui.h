@@ -359,13 +359,14 @@ class FrameSendAsyncJS: public FrameSend {
         bool available() const override { return flushed; }
 };
 
+struct section_stack_t{
+    JsonArray block;
+    String name;
+    int idx{0};
+};
+
 class Interface {
 
-    struct section_stack_t{
-      JsonArray block;
-      String name;
-      int idx{0};
-    };
 
     DynamicJsonDocument json;
     bool _delete_handler_on_destruct;
@@ -402,7 +403,7 @@ class Interface {
      * A section contains DOM UI elements, this is generic one
      */
     template  <typename TAdaptedString, typename L>
-    void json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, JsonObject &obj);
+    JsonArrayConst json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, JsonObject &obj);
 
     template <typename L>
     void _html_input(UIelement<TINY_JSON_SIZE> &ui, const char* type, const L label, bool onChange);
@@ -510,9 +511,9 @@ class Interface {
          * @param line  -  all elements of the section will be alligned in a line
          */
         template  <typename TString, typename L = const char*>
-        void json_section_begin(const TString& name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
+        JsonArrayConst json_section_begin(const TString& name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
         template  <typename TChar, typename L = const char*>
-        void json_section_begin(const TChar* name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
+        JsonArrayConst json_section_begin(const TChar* name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
 
         /**
          * @brief - content section is meant to replace existing data on the page
@@ -585,6 +586,25 @@ class Interface {
         void json_section_end();
 
 
+        /* *** Object getters *** */
+
+        /**
+         * @brief Get the last section object, i.e. it gives RO access to current section array
+         * 
+         * @return const section_stack_t 
+         */
+        const section_stack_t* get_last_section(){ return section_stack.tail(); };
+
+        /**
+         * @brief Get last html object in interface stack
+         * this method could be used to add/extend html object with arbitrary key:value objects that are
+         * not present in existing html element creation methods
+         * NOTE: returned object might get INVALIDATED on next object addition when frame is flushed.
+         * A care should be taken not to overflow memory pool of Interface object
+         * 
+         * @return JsonObject 
+         */
+        JsonObject get_last_object();
 
 
         /* *** HTML Elements *** */
@@ -954,18 +974,18 @@ void Interface::json_frame(const char* type, const TChar* section_id){
 };
 
 template  <typename TString, typename L>
-void Interface::json_section_begin(const TString& name, const L label, bool main, bool hidden, bool line){
+JsonArrayConst Interface::json_section_begin(const TString& name, const L label, bool main, bool hidden, bool line){
     JsonObject obj(section_stack.size() ? section_stack.tail()->block.createNestedObject() : json.as<JsonObject>());
-    json_section_begin(detail::adaptString(name), label, main, hidden, line, obj);
+    return json_section_begin(detail::adaptString(name), label, main, hidden, line, obj);
 }
 template  <typename TChar, typename L>
-void Interface::json_section_begin(const TChar* name, const L label, bool main, bool hidden, bool line){
+JsonArrayConst Interface::json_section_begin(const TChar* name, const L label, bool main, bool hidden, bool line){
     JsonObject obj(section_stack.size() ? section_stack.tail()->block.createNestedObject() : json.as<JsonObject>());
-    json_section_begin(detail::adaptString(name), label, main, hidden, line, obj);
+    return json_section_begin(detail::adaptString(name), label, main, hidden, line, obj);
 }
 
 template  <typename TAdaptedString, typename L>
-void Interface::json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, JsonObject &obj){
+JsonArrayConst Interface::json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, JsonObject &obj){
     if (embui_traits::is_empty_string(name))
         obj[P_section] = String (std::rand()); // need a deep-copy
     else
@@ -982,6 +1002,7 @@ void Interface::json_section_begin(TAdaptedString name, const L label, bool main
 
     LOG(printf, "UI: section begin #%u '%s', %ub free\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0, so I print in fo BEFORE adding section to stack
     section_stack.add(section);
+    return JsonArrayConst(section->block);
 }
 
 template  <typename ID>
