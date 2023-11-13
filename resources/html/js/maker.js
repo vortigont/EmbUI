@@ -133,7 +133,7 @@ async function deepfetch (obj) {
 					ajaxload(element.url,
 						function(response) {
 							element['block'] = response;
-							delete section.url;	// удаляем url из элемента т.к. работает рекурсия
+							delete element.url;	// удаляем url из элемента т.к. работает рекурсия
 							// пробегаемся рекурсивно по новым/вложенным объектам
 							if (element.block && typeof element.block == "object") {
 								deepfetch(element.block).then(() => {
