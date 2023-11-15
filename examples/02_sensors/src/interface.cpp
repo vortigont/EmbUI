@@ -31,23 +31,21 @@ Task tDisplayUpdater(SENSOR_UPDATE_RATE * TASK_SECOND, TASK_FOREVER, &sensorPubl
  * переопределенный метод фреймфорка, который начинает строить корень нашего Web-интерфейса
  * 
  */
-void section_main_frame(Interface *interf, JsonObject *data, const char* action){
+void section_main_frame(Interface *interf, const JsonObject *data, const char* action){
 
   interf->json_frame_interface();
 
-  interf->json_section_manifest("EmbUI Example", 0, "v1.0");      // app name/jsapi/version manifest
+  interf->json_section_manifest("EmbUI Example", embui.macid(), 0, "v1.0");      // app name/jsapi/version manifest
   interf->json_section_end();                                     // manifest section MUST be closed!
 
   block_menu(interf, data, NULL);                         // Строим UI блок с меню выбора других секций
+  interf->json_frame_flush();                       // flush frame, we will create a new one later
 
-  if(!(WiFi.getMode() & WIFI_MODE_STA)){            // if WiFI is no connected to external AP, than show page with WiFi setup
-    interf->json_frame_flush();                     // MUST Close previous interface frame, because basicui::block_settings_netw will open and send it's own frame
-
-    LOG(println, "UI: Opening network setup page");
-    basicui::block_settings_netw(interf, data, NULL);
-  } else {
+  if(WiFi.getMode() & WIFI_MODE_STA){            // if WiFI is no connected to external AP, than show page with WiFi setup
     block_demopage(interf, data, NULL);                   // Строим блок с demo переключателями
-    interf->json_frame_flush();                     // Close and send interface section
+  } else {
+    LOG(println, "UI: Opening network setup page");
+    basicui::page_settings_netw(interf, data, NULL);
   }
 
 };
@@ -57,7 +55,7 @@ void section_main_frame(Interface *interf, JsonObject *data, const char* action)
  * This code builds UI section with menu block on the left
  * 
  */
-void block_menu(Interface *interf, JsonObject *data, const char* action){
+void block_menu(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     // создаем меню
     interf->json_section_menu();
@@ -72,7 +70,7 @@ void block_menu(Interface *interf, JsonObject *data, const char* action){
      * это автоматически даст доступ ко всем связанным секциям с интерфейсом для системных настроек
      * 
      */
-    basicui::menuitem_settings(interf, data, NULL);       // пункт меню "настройки"
+    basicui::menuitem_settings(interf);       // пункт меню "настройки"
     interf->json_section_end();
 }
 
@@ -80,7 +78,7 @@ void block_menu(Interface *interf, JsonObject *data, const char* action){
  * Demo controls
  * 
  */
-void block_demopage(Interface *interf, JsonObject *data, const char* action){
+void block_demopage(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -89,7 +87,7 @@ void block_demopage(Interface *interf, JsonObject *data, const char* action){
     interf->json_section_main(T_SET_DEMO, "Some demo sensors");
 
     // переключатель, связанный со светодиодом. Изменяется синхронно
-    interf->checkbox_cfg(V_LED, "Onboard LED", true);
+    interf->checkbox(V_LED, embui.paramVariant(V_LED), "Onboard LED", true);
 
     interf->comment("A comment: simple live-displays");     // комментарий-описание секции
 
@@ -139,7 +137,7 @@ void block_demopage(Interface *interf, JsonObject *data, const char* action){
  * @brief interactive handler for LED switchbox
  * every change of a checkbox triggers this action
  */
-void action_blink(Interface *interf, JsonObject *data, const char* action){
+void action_blink(Interface *interf, const JsonObject *data, const char* action){
   if (!data) return;  // process only data
 
   SETPARAM(V_LED);  // save new LED state to the config
@@ -182,8 +180,8 @@ void sensorPublisher() {
     if (!embui.ws.count())    // send new values only if there are WebSocket clients
       return;
 
-    Interface *interf = new Interface(&embui, &embui.ws, SMALL_JSON_SIZE);
-    interf->json_frame_value();
+    Interface interf(&embui.ws, SMALL_JSON_SIZE);
+    interf.json_frame_value();
     // Update voltage sensor
 #ifdef ESP8266
     float v = ESP.getVcc();
@@ -194,22 +192,21 @@ void sensorPublisher() {
     //  id, value, html=true
     // html must be set 'true' so this value could be handeled properly for div elements
     // add some random voltage spikes to make display change it's value
-    interf->value("vcc", (100*v + random(-15,15))/100.0, true);
+    interf.value("vcc", (100*v + random(-15,15))/100.0, true);
 
     // add some random spikes to the temperature :)
-    interf->value("temp", 24 + random(-30,30)/10.0, true);
+    interf.value("temp", 24 + random(-30,30)/10.0, true);
 
     String clk; TimeProcessor::getInstance().getDateTimeString(clk);
-    interf->value("clk", clk, true); // Current date/time for Clock display
+    interf.value("clk", clk, true); // Current date/time for Clock display
 
-    interf->json_frame_flush();
-    delete interf;
+    interf.json_frame_flush();
 }
 
 /**
  * Change sensor update rate callback
  */
-void setRate(Interface *interf, JsonObject *data, const char* action) {
+void setRate(Interface *interf, const JsonObject *data, const char* action) {
   if (!data) return;
 
   if (!(*data)[V_UPDRATE]){    // disable update on interval '0'
