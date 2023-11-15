@@ -1,5 +1,99 @@
 ## Changelog
 
+### v3.0.0 - 2023.11.15
++ implement getters for Interface class
+  - Interface::json_section_begin() methods now returns an JsonArrayConst object that points to the newly created section
+    it could be used to inspect existing objects or serialize part of the Interface object
+  - Interface::get_last_section() method return a const pointer to the last section in a stack
+  - JsonObject Interface::get_last_object() method return and object of a recently created html element
+    this method could be used to add/extend html object with arbitrary key:value objects that are not present in existing html element creation methods
+
+
+* Interface::value(const ID id, const T val, bool html) will make a simple key:value pairs if 'html' is false
+  -  i.e. if html parameter is false, an added items will be constructed {"device_pwrswitch":false},
+    otherwise old behavior is used {"id":"device_pwrswitch", "value":false, "html": true}
+
+* add constness to actionCallback_t parameter
+  -  from now it's 'const JsonObject *data' to ensure that action data object can't not be changed inside action callbacks
+
++ implement section_xload()
+    this function recoursevily looks through sections and picks ones with name 'xload'
+    for such sections all html elements with 'url' object key will be side-load with object content into
+    and object named 'block'. Same way as for xload() function.
+
+* Interface - all member functions accept only 'const char*' as id parameter
+  -  since js lib uses stringified id, it makes no sence for any other templaed types
+
++ add action id matching with wildcard prefix "*_some_id"
+  -  works same way as wildcard suffix
+
++ FrameSendAsyncJS http API handler
+  -  feeder is hooked to /api URI and processes API requests via HTTP
+  -  only 'value' frame replies are supported due to inability to pipe multiple json onjects via single http request
+
++ implement FrameSendMQTT class for EmbUI feeders
+  -  a transport class to send Interface object data to MQTT server
+  -  default configuration is:
+    - "value" packets are sent to ~/jpub/value topic
+    - "interface", "xload", "section" packets are sent to ~/jpub/interface topic
+
+    all other packets are sent to "jpub/etc" (could be removed in future)
+
++   unbind class Interface out of EmbUI class, implement FrameSend chain
+  -  Interface is no longer uses EmbUI pointer, removed all deps on config-related vars
+  -  EmbUI instance now has FrameSendChain feeders member, where various downstream transports could be regitered and used by Interface instances
+
+
++   replace weak functions with funtional callbacks
+  -  implement user definable callbacks for the following weak functions
+  -  section_main_frame()
+  -  pubCallback()
+  -  create_parameters()
+  -  replaced with callbacks via ActionHandler class
+
++ FrameSend class refactoring
+  - implement FrameSend chain list
+  -  FrameSend abstract class has a member availabe() that allows to find if downstream is ready to send data
+  -  FrameSendChain is a chained list of FrameSend objects that could send data over mutiple downstreams.
+  -  Could be used as a common EmbUI data feeder with attachable plugins.
+  - FrameSend::send() accepts generic type JsonVariantConst instead of only JsonObject
+
++ mDNS setup callback
+  -  it is required to run mDNS service registration in proper order, so hooking to WiFi events does not work on system startup
+
+**Major MQTT reimplementation**
+mqttClient member is made public, User could use a flexibility to access it and set it's own hooks and features
+     - make configuration have a flag to enable/disable mqtt clietn
+     - rework a connector task that configures and connects the client
+     - removed some ugly hangle() from a loop()
+     - removed useless bool flags
+     - removed tons of useless overloads
+     - make default topic based on efuse MAC
+     - user defined callbacks are completely removed
+     - mqttClient is created on demand from now on, only of enabled and configured properly
+     - EmbUI::publish() has templated overload to accept String contructable types for payload
+     - _mqtt_pub_sys_status() pulishes life system params to mqtt in scope of send_pub() call
+     - _onMqttConnect() will publish system data to ~/sys/ topic
+
+    BasicUI - update MQTT setup form
+    - add field to show current MQTT topicprefix
+    - add comment for topic setup and $id macro
+
+
+*   EmbUI::var* methods refactoring
+     - methods use const char* as key params, removed String& overload
+     - using string type traits for value evaluation and discarding null/zero valued keys
+
++ publish psram, rssi, uptime info in a more readable way
+* basicui: fix save button on ftp page
+* fix: when config variable was set false oom message was generated
+* replace 'directly' with 'onChange', update ui templated methods
+
+-  obsolete EmbUI::sysData struct
+- disable uploadProgress() function
+- remove mandatory creation of config varibales
+
+
 ### v2.8.1 - 2023.10.04
 * fix issues with Interface::display() Interface::div
 *  basicui: fix NTP servers button labels

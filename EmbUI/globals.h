@@ -35,9 +35,12 @@
 #endif
 
 
-#define EMBUI_VERSION_MAJOR     2
-#define EMBUI_VERSION_MINOR     8
-#define EMBUI_VERSION_REVISION  1  // '999' here is current dev version
+#define EMBUI_VERSION_MAJOR     3
+#define EMBUI_VERSION_MINOR     0
+#define EMBUI_VERSION_REVISION  0  // '999' here is current dev version
+
+// API version for JS frontend
+#define EMBUI_JSAPI             2
 
 #define EMBUI_VERSION_VALUE     (MAJ, MIN, REV) ((MAJ) << 16 | (MIN) << 8 | (REV))
 
@@ -49,7 +52,5 @@
 // compat definiton
 #define EMBUIVER                EMBUI_VERSION_STRING
 
-// API version for JS frontend
-#define EMBUI_JSAPI             2
 
 typedef std::function<void(void)> callback_function_t;
