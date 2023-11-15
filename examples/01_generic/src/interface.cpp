@@ -21,24 +21,22 @@
  * переопределенный метод фреймфорка, который начинает строить корень нашего Web-интерфейса
  * 
  */
-void section_main_frame(Interface *interf, JsonObject *data, const char* action){
+void section_main_frame(Interface *interf, const JsonObject *data, const char* action){
   if (!interf) return;
 
   interf->json_frame_interface();                                 // open interface frame
 
-  interf->json_section_manifest("EmbUI Example", 0, "v1.0");      // app name/jsapi/version manifest
+  interf->json_section_manifest("EmbUI Example", embui.macid(), 0, "v1.0");      // app name/device id/jsapi/version manifest
   interf->json_section_end();                                     // manifest section MUST be closed!
 
-  block_menu(interf, data, NULL);                         // Строим UI блок с меню выбора других секций
+  block_menu(interf, data, NULL);                   // Строим UI блок с меню выбора других секций
+  interf->json_frame_flush();                       // close frame
 
-  if(!(WiFi.getMode() & WIFI_MODE_STA)){            // if WiFI is no connected to external AP, than show page with WiFi setup
-    interf->json_frame_flush();                     // MUST Close previous interface frame, because basicui::block_settings_netw will open and send it's own frame
-
-    LOG(println, "UI: Opening network setup page");
-    basicui::block_settings_netw(interf, data, NULL);
-  } else {
+  if(WiFi.getMode() & WIFI_MODE_STA){            // if WiFI is no connected to external AP, than show page with WiFi setup
     block_demopage(interf, data, NULL);                   // Строим блок с demo переключателями
-    interf->json_frame_flush();                     // Close and send interface section
+  } else {
+    LOG(println, "UI: Opening network setup page");
+    basicui::page_settings_netw(interf, nullptr, NULL);
   }
 
 };
@@ -48,7 +46,7 @@ void section_main_frame(Interface *interf, JsonObject *data, const char* action)
  * This code builds UI section with menu block on the left
  * 
  */
-void block_menu(Interface *interf, JsonObject *data, const char* action){
+void block_menu(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     // создаем меню
     interf->json_section_menu();
@@ -63,7 +61,7 @@ void block_menu(Interface *interf, JsonObject *data, const char* action){
      * это автоматически даст доступ ко всем связанным секциям с интерфейсом для системных настроек
      * 
      */
-    basicui::menuitem_settings(interf, data, NULL);       // пункт меню "настройки"
+    basicui::menuitem_settings(interf);       // пункт меню "настройки"
     interf->json_section_end();
 }
 
@@ -71,14 +69,14 @@ void block_menu(Interface *interf, JsonObject *data, const char* action){
  * Demo controls
  * 
  */
-void block_demopage(Interface *interf, JsonObject *data, const char* action){
+void block_demopage(Interface *interf, const JsonObject *data, const char* action){
     // Headline
     // параметр FPSTR(T_SET_DEMO) определяет зарегистрированный обработчик данных для секции
     interf->json_section_main(T_SET_DEMO, "Some demo controls");
     interf->comment("Комментарий: набор контролов для демонстрации");     // комментарий-описание секции
 
     // переключатель, связанный с переменной конфигурации V_LED - Изменяется синхронно
-    interf->checkbox_cfg(V_LED, "Onboard LED", true);
+    interf->checkbox(V_LED, embui.paramVariant(V_LED),"Onboard LED", true);
 
     interf->text(V_VAR1, embui.paramVariant(V_VAR1), "text field label");   // create text field with value from the system config
     interf->text(V_VAR2, "some default val", "another text label");         // текстовое поле со значением "по-умолчанию"
@@ -89,13 +87,14 @@ void block_demopage(Interface *interf, JsonObject *data, const char* action){
      */ 
     interf->button(button_t::submit, T_SET_DEMO, T_DICT[lang][TD::D_Send], P_GRAY);   // button color
     interf->json_section_end(); // close json_section_main
+    interf->json_frame_flush();
 }
 
 /**
  * @brief action handler for demo form data
  * 
  */
-void action_demopage(Interface *interf, JsonObject *data, const char* action){
+void action_demopage(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
 
     LOG(println, "processing section demo");
@@ -119,7 +118,7 @@ void action_demopage(Interface *interf, JsonObject *data, const char* action){
  * @brief interactive handler for LED switchbox
  * 
  */
-void action_blink(Interface *interf, JsonObject *data, const char* action){
+void action_blink(Interface *interf, const JsonObject *data, const char* action){
   if (!data) return;  // здесь обрабатывает только данные
 
   SETPARAM(V_LED);  // save new LED state to the config
