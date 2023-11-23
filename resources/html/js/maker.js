@@ -1,3 +1,4 @@
+
 /**
  * global objects placeholder
  */
@@ -17,6 +18,12 @@ const ui_jsapi = 3;
  */
 var app_jsapi = 0;
 
+/**
+ * An object with loadable UI blocks that could be stored on client's side
+ * blocks could be requested to render on-demand from the backend side, so it could
+ * save backend from generating block objects every time and sending it to Front-End 
+ */
+var uiblocks = {};
 
 /**
  * A placeholder array for user js-functions that could be executed on button click
@@ -39,13 +46,13 @@ var customFuncs = {
 		var data = {};
 		if (typeof v == 'undefined' || typeof v == 'object'){
 			// if there was no 'value' given, than simply post the date string to MCU that triggers time/date setup
-			data["set_datetime"] = isodate;
-			ws.send_post("set_datetime", data);
+			data["set_sys_datetime"] = isodate;
+			ws.send_post("set_sys_datetime", data);
 		} else {
 			// if there was a param 'value', then paste the date string into doc element with id='value'
 			// let's do this via simulating MCU value frame
 			data["block"] = [];
-			data.block.push({[v] : isodate});
+			data.block.push({"date" : isodate});
 			var r = render();
 			r.value(data);
 		}
@@ -137,7 +144,6 @@ async function deepfetch (obj) {
 							// пробегаемся рекурсивно по новым/вложенным объектам
 							if (element.block && typeof element.block == "object") {
 								deepfetch(element.block).then(() => {
-									//console.log("Diving deeper");
 									next();
 							   })
 							} else {
@@ -145,7 +151,6 @@ async function deepfetch (obj) {
 							}
 						},
 						function(errstatus) {
-							//console.log('Error loading external content');
 							next();
 						}
 					);
@@ -333,6 +338,28 @@ var render = function(){
 			if (!obj.block) return;
 			let frame = obj.block;
 			for (let i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
+				if (frame[i].section == "uidata"){
+					// process section with uidata objects
+					let newblock = []	// an array for sideloaded blocks
+					frame[i].block.forEach(function(v, idx, arr){
+						if (v.action == "pick"){
+							newblock.push(_.get(uiblocks, v.key))
+							return
+						}
+					})
+					// a function that will replace current section item with uidata items
+					function replaceArrayAt(array, idx, arrayToInsert) {
+						Array.prototype.splice.apply(array, [idx, 1].concat(arrayToInsert));
+						return array;
+					}
+					if (newblock.length)
+						replaceArrayAt(frame, i, newblock)
+					else
+						obj.splice(i, 1)
+
+					return this.make(obj)	// since array length has changed, we just restart make() again over changed object	
+				}
+
 				// check top-level section type for any predefined ID that must processed in a specific way
 				if (frame[i].section == "content") {
 					for (let n = 0; n < frame[i].block.length; n++) {
@@ -357,7 +384,6 @@ var render = function(){
 					this.menu();
 					continue;
 				}
-
 				// look for nested xload sections and await for side-load, if found
 				section_xload(frame[i]).then( () => { this.section(frame[i]); } );
 			}
@@ -366,7 +392,7 @@ var render = function(){
 		// processing packets with values - "pkg":"value"
 		// блок разбирается на объекты по id и их value применяются к элементам шаблона на html странице
 		value: function(obj){
-			var frame = obj.block;
+			let frame = obj.block;
 			if (!obj.block) return;
 
 			/*
@@ -377,12 +403,10 @@ var render = function(){
 			*/
 			function setValue(key, val, html = false){
 				if (val == null || typeof val == "object") return;	// skip undef/null or (empty) objects
-				var el = go("#"+key);
+				let el = go("#"+key);
 				if (!el.length) return;
 				if (html === true ){ el.html(val); return; }
 
-				//console.log("Element is: ", el[0], " class is: ", el[0].className);
-				el[0].value = val;
 				if (el[0].type == "range") { go("#"+el[0].id+"-val").html(": "+el[0].value); return; }		// update span with range's label
 				// проверяем чекбоксы на значение вкл/выкл
 				if (el[0].type == "checkbox") {
@@ -413,6 +437,9 @@ var render = function(){
 					//console.log("progress upd ", el[0], " color: ", bar_color);
 					return;
 				}
+
+				//console.log("Element is: ", el[0], " class is: ", el[0].className);
+				el[0].value = val;
 			}
 
 			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
@@ -442,7 +469,7 @@ var render = function(){
 window.addEventListener("load", function(ev){
 	var rdr = this.rdr = render();
 	var ws = this.ws = wbs("ws://"+location.host+"/ws");
-	//var ws = this.ws = wbs("ws://embuitst/ws");
+
 	ws.oninterface = function(msg) {
 		rdr.make(msg);
 	}
@@ -463,6 +490,10 @@ window.addEventListener("load", function(ev){
 		xload(mgs);
 	}
 
+	// load sys UI objects
+	ajaxload("/js/ui_sys.json", function(response) {
+		uiblocks['sys'] = response;
+	});
 
 	ws.connect();
 
@@ -480,7 +511,8 @@ window.addEventListener("load", function(ev){
 			return false;
 		}
 	});
-}.bind(window));
+}.bind(window)
+);
 
 window.addEventListener("popstate", function(e){
 	if (e = e.state && e.state.hist) {

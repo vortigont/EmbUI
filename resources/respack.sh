@@ -56,7 +56,17 @@ cat html/css/*_dark.css | gzip -9 > ./data/css/style_dark.css.gz
 cp -u html/css/*.jpg ./data/css/
 cp -u html/css/*.webp ./data/css/
 
-cat html/js/*.js | gzip -9 > ./data/js/embui.js.gz
+embui_js="dyncss.js lib.js maker.js"
+# combine and compress js files in one bundle
+for f in ${embui_js}
+do
+    cat html/js/${f} >> data/js/embui.js
+done
+gzip -9f data/js/embui.js
+
+cp html/js/lodash.custom.js.gz data/js/
+
+cat html/js/ui_sys.json | gzip -9 > ./data/js/ui_sys.json.gz
 cat html/index.html | gzip -9 > ./data/index.html.gz
 cat html/favicon.ico | gzip -9 > ./data/favicon.ico.gz
 

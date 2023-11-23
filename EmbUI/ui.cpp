@@ -98,6 +98,22 @@ JsonObject Interface::get_last_object(){
     return JsonObject (section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element and return it as an Jobject
 }
 
+void Interface::uidata_xload(const char* key, const char* url, bool merge){
+    StaticJsonDocument<UI_DEFAULT_JSON_SIZE> obj;
+    obj[P_action] = P_xload;
+    obj[P_key] = key;
+    obj[P_url] = url;
+    obj[P_merge] = merge;
+    json_frame_add(obj);
+}
+
+void Interface::uidata_pick(const char* key){
+    StaticJsonDocument<UI_DEFAULT_JSON_SIZE> obj;
+    obj[P_action] = P_pick;
+    obj[P_key] = key;
+    json_frame_add(obj);
+}
+
 /**
  * @brief - serialize and send json obj directly to the ws buffer
  */
