@@ -337,30 +337,48 @@ var render = function(){
 		make: function(obj){
 			if (!obj.block) return;
 			let frame = obj.block;
-			for (let i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
-				if (frame[i].section == "uidata"){
-					// process section with uidata objects
-					let newblock = []	// an array for sideloaded blocks
-					frame[i].block.forEach(function(v, idx, arr){
-						if (v.action == "pick"){
-							newblock.push(_.get(uiblocks, v.key))
-							return
+
+			function recourseUIData(arr){
+				for (let i = 0; i != arr.length; ++i){
+					if(arr[i].section == "uidata" && arr[i].block.length){
+						let newblocks = []	// an array for sideloaded blocks
+						arr[i].block.forEach(function(v, idx, array){
+							if(v.action == "xload"){
+								ajaxload(v.url, function(response) {
+									_.set(uiblocks, v.key, response);
+								});
+								return
+							}
+							if (v.action == "pick"){
+								newblocks.push(_.get(uiblocks, v.key))
+								return
+							}
+						})
+						// a function that will replace current section item with uidata items
+						function implaceArrayAt(array, idx, arrayToInsert) {
+							Array.prototype.splice.apply(array, [idx, 1].concat(arrayToInsert));
+							return array;
 						}
-					})
-					// a function that will replace current section item with uidata items
-					function replaceArrayAt(array, idx, arrayToInsert) {
-						Array.prototype.splice.apply(array, [idx, 1].concat(arrayToInsert));
-						return array;
+						if (newblocks.length)
+							implaceArrayAt(arr, i, newblocks)
+						else
+							arr.splice(i, 1)
+						// since array has changed, I must reiterate it
+						recourseUIData(arr)
+						break
 					}
-					if (newblock.length)
-						replaceArrayAt(frame, i, newblock)
-					else
-						obj.splice(i, 1)
 
-					return this.make(obj)	// since array length has changed, we just restart make() again over changed object	
+					// dive into nested section
+					if (arr[i].section && arr[i].block.length)
+						recourseUIData(arr[i].block)
 				}
+			}
 
-				// check top-level section type for any predefined ID that must processed in a specific way
+			// deep iterate and process "uidata" sections
+			recourseUIData(frame);
+
+			// go through 1-st level section and render it according to type of data
+			for (let i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
 				if (frame[i].section == "content") {
 					for (let n = 0; n < frame[i].block.length; n++) {
 						go("#"+frame[i].block[n].id).replace(tmpl_content.parse(frame[i].block[n]));
