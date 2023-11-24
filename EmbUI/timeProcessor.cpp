@@ -49,7 +49,8 @@ time_t TimeProcessor::setTime(const char *datetimestr){
     LOG(print, "Set datetime to: "); LOG(println, datetimestr);
 
     struct tm tmStruct;
-    strptime(datetimestr, "YYYY-MM-DDThh:mm:ss", &tmStruct);
+    memset(&tmStruct, 0, sizeof(tmStruct));
+    strptime(datetimestr, strlen(datetimestr) < 19 ? "%Y-%m-%dT%H:%M" : "%Y-%m-%dT%H:%M:%S", &tmStruct);
 
     time_t time = mktime(&tmStruct);
     timeval tv = { time, 0 };

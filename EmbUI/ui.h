@@ -504,7 +504,8 @@ class Interface {
          * @param name - name identifies a group of DOM objects, could be arbitrary name.
          *               Some names are reserved:
          *                  'menu' - contains left-side menu elements
-         *                  'content' - updates values for exiting DOM elements  
+         *                  'content' - updates values for exiting DOM elements
+         *                  'xload' - load section object from external json via ajax request
          * @param label - a headliner for a group of section elements
          * @param main  - main section starts a blank page, may contain other nested sections
          * @param hidden - creates section hidden under 'spoiler' button, user needs to press the button to unfold it
@@ -540,6 +541,13 @@ class Interface {
         json_section_line(const ID name = P_EMPTY){ json_section_begin(name, P_EMPTY, false, false, true); };
 
         /**
+         * @brief - start a section with a new page content
+         * it replaces current page from scratch, may contain other nested sections
+         */
+        template  <typename ID, typename L>
+        void json_section_main(const ID name, const L label){ json_section_begin(name, label, true); };
+
+        /**
          * @brief - section with manifest data
          * it contains manifest data for WebUI, like fw name, version, Chip ID
          * and any arbitrary json'ed data that could be processed in user js code
@@ -560,17 +568,12 @@ class Interface {
         void json_section_menu(){ json_section_begin(P_menu); };
 
         /**
-         * @brief - start a section with a new page content
-         * it replaces current page from scratch, may contain other nested sections
-         */
-        template  <typename ID, typename L>
-        void json_section_main(const ID name, const L label){ json_section_begin(name, label, true); };
-
-        /**
          * @brief - start hidden UI section with button to hide/unhide elements
          */
         template  <typename ID, typename L>
         void json_section_hidden(const ID name, const L label){ json_section_begin(name, label, false, true); };
+
+        void json_section_uidata(){ json_section_begin("uidata"); };
 
         /**
          * @brief section that will side-load external data
@@ -868,6 +871,25 @@ class Interface {
         time(const ID id, const V value, const L label){ html_input(id, P_time, value, label); };
 
         /**
+         * @brief load uidata on the front-end side
+         * this medothod generates object with instruction to load uidata object structure from specified url
+         * and save it under specified key
+         * this method should be wrapped in json_section_uidata()
+         * 
+         * @param key - a key to load data to, a dot sepparated notation (i.e. "app.page.controls")
+         * @param url - url to fetch json from, could be relative to /
+         * @param merge - if 'true', then try to merge/update data under existing key, otherwise replace it
+         */
+        void uidata_xload(const char* key, const char* url, bool merge = false);
+
+        /**
+         * @brief pick and implace UI structured data objects from front-end side-storage
+         * 
+         * @param key - a key to load data from, a dot sepparated notation (i.e. "app.page.controls")
+         */
+        void uidata_pick(const char* key);
+
+        /**
          * @brief - Add 'value' object to the Interface frame
          * used to replace values of existing ui elements on the page
          * Template accepts types suitable to be added to the ArduinoJson document used as a dictionary
@@ -1020,6 +1042,7 @@ Interface::json_section_manifest(const ID appname, const char* devid, unsigned a
     JsonObject obj = section_stack.tail()->block.createNestedObject();
     obj[P_uijsapi] = EMBUI_JSAPI;
     obj[P_uiver] = EMBUI_VERSION_STRING;
+    obj["uiobjects"] = EMBUI_UIOBJECTS;
     obj[P_app] = appname;
     obj[P_appjsapi] = appjsapi;
     if (!embui_traits::is_empty_string(appversion)) obj["appver"] = appversion;

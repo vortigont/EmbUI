@@ -26,9 +26,19 @@ bool ftp_status(){ return ftpsrv; };
 namespace basicui {
 
 void page_settings_ftp(Interface *interf, const JsonObject *data, const char* action){
-    if (!interf) return;
     interf->json_frame_interface();
+        interf->json_section_uidata();
+        interf->uidata_pick("sys.settings.ftp");
+    interf->json_frame_flush();
 
+    interf->json_frame_value();
+        interf->value(P_ftp, ftp_status());    // enable FTP checkbox
+        interf->value(P_ftp_usr, embui.paramVariant(P_ftp_usr) ? embui.paramVariant(P_ftp_usr) : P_ftp );
+        interf->value(P_ftp_pwd, embui.paramVariant(P_ftp_pwd) ? embui.paramVariant(P_ftp_pwd) : P_ftp );
+    interf->json_frame_flush();
+
+/*
+    interf->json_frame_interface();
     // Headline
     interf->json_section_main(A_set_ntwrk_ftp, T_DICT[lang][TD::D_FTPSRV]);
 
@@ -41,6 +51,7 @@ void page_settings_ftp(Interface *interf, const JsonObject *data, const char* ac
 
     // close and send frame
     interf->json_frame_flush(); // main
+*/
 }
 
 void set_settings_ftp(Interface *interf, const JsonObject *data, const char* action){

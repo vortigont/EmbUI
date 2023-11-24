@@ -73,14 +73,14 @@ void page_system_settings(Interface *interf, const JsonObject *data, const char*
 
     interf->json_section_main(A_ui_page_settings, T_DICT[lang][TD::D_SETTINGS]);
 
-    interf->select(V_LANGUAGE, lang, T_DICT[lang][TD::D_LANG], true);
+    interf->select(A_set_sys_language, lang, T_DICT[lang][TD::D_LANG], true);
         interf->option(0, "Eng");
         interf->option(1, "Rus");
     interf->json_section_end();
 
     interf->spacer();
 
-    //interf->button_value(button_t::generic, A_ui_page, 0, T_GNRL_SETUP);                             // кнопка перехода в общие настройки
+    //interf->button_value(button_t::generic, A_ui_page, 0, T_GNRL_SETUP);                                    // кнопка перехода в общие настройки
     interf->button_value(button_t::generic, A_ui_page, e2int(page::network), T_DICT[lang][TD::D_WiFi]);       // кнопка перехода в настройки сети
     interf->button_value(button_t::generic, A_ui_page, e2int(page::datetime), T_DICT[lang][TD::D_DATETIME]);  // кнопка перехода в настройки времени
     interf->button_value(button_t::generic, A_ui_page, e2int(page::mqtt), P_MQTT);                            // кнопка перехода в настройки MQTT
@@ -139,7 +139,22 @@ void show_uipage(Interface *interf, const JsonObject *data, const char* action){
 void page_settings_netw(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
+        interf->json_section_uidata();
+            interf->uidata_pick("sys.settings.network");
+    interf->json_frame_flush();     // frame must be closed before content/value could be alterred on rendered page
 
+    interf->json_frame_interface();
+        interf->json_section_content();
+            interf->constant(P_hostname_const, embui.hostname());       // device hostname section
+            interf->constant(P_apssid, embui.hostname());               // WiFi AP-SSID
+    interf->json_frame_flush();
+
+    interf->json_frame_value();
+        interf->value(V_WCSSID, WiFi.SSID());                           // connected SSID
+        interf->value(V_NOCaptP, embui.paramVariant(V_NOCaptP));        // checkbox "Disable Captive-portal"
+    interf->json_frame_flush();
+
+/*
     // Headline
     interf->json_section_main(A_ui_page_network, T_EN_WiFi);
 
@@ -188,8 +203,7 @@ void page_settings_netw(Interface *interf, const JsonObject *data, const char* a
 
     interf->spacer();
     interf->button(button_t::submit, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
-
-    interf->json_frame_flush();
+*/
 }
 
 /**
@@ -198,7 +212,22 @@ void page_settings_netw(Interface *interf, const JsonObject *data, const char* a
 void page_settings_time(Interface *interf, const JsonObject *data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
+        interf->json_section_uidata();
+        interf->uidata_pick("sys.settings.datetime");
+    interf->json_frame_flush();
 
+    interf->json_frame_interface();
+        interf->json_section_content();
+            String clk("Device date/time: "); TimeProcessor::getDateTimeString(clk);
+            interf->constant(P_date, clk.c_str());
+        interf->json_section_end();
+
+        // replace section with NTP servers information
+        interf->json_section_begin(P_ntp_servers, "Configured NTP Servers", false, false, true);
+            for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
+                interf->constant(TimeProcessor::getInstance().getserver(i));
+    interf->json_frame_flush();
+/*
     // Headline
     interf->json_section_main(A_set_sys_timeoptions, T_DICT[lang][TD::D_DATETIME]);
 
@@ -246,12 +275,12 @@ void page_settings_time(Interface *interf, const JsonObject *data, const char* a
 
     // close and send frame
     interf->json_frame_flush(); // main
-
+*/
     // формируем и отправляем кадр с запросом подгрузки внешнего ресурса со списком правил временных зон
     // полученные данные заместят предыдущее поле выпадающим списком с данными о всех временных зонах
     interf->json_frame(P_xload);
     interf->json_section_content();
-                    //id           val                                 label    direct  URL for external data
+                   //id        val                             label    direct  URL for external data
     interf->select(V_timezone, embui.paramVariant(V_timezone), P_EMPTY, false,  "/js/tz.json");
     interf->json_section_end(); // select
     interf->json_frame_flush(); // xload
@@ -262,7 +291,30 @@ void page_settings_time(Interface *interf, const JsonObject *data, const char* a
  *  BasicUI блок интерфейса настроек MQTT
  */
 void page_settings_mqtt(Interface *interf, const JsonObject *data, const char* action){
-    if (!interf) return;
+    interf->json_frame_interface();
+        interf->json_section_uidata();
+        interf->uidata_pick("sys.settings.mqtt");
+    interf->json_frame_flush();
+
+    interf->json_frame_interface();
+        interf->json_section_content();
+            interf->constant(P_MQTTTopic, embui.mqttPrefix().c_str());
+    interf->json_frame_flush();
+
+    interf->json_frame_value();
+        interf->value(V_mqtt_enable, embui.paramVariant(V_mqtt_enable));    // enable MQTT checkbox
+        interf->value(V_mqtt_host, embui.paramVariant(V_mqtt_host));        // MQTT host text field
+        interf->value(V_mqtt_port, embui.paramVariant(V_mqtt_port).as<int>());        // MQTT port
+        interf->value(V_mqtt_user, embui.paramVariant(V_mqtt_user).as<const char*>());        // MQTT user
+        interf->value(V_mqtt_pass, embui.paramVariant(V_mqtt_pass).as<const char*>());        // MQTT passwd
+        interf->value(V_mqtt_topic, embui.paramVariant(V_mqtt_topic).as<const char*>());
+        int t = embui.paramVariant(V_mqtt_ka);
+        if (!t){    // default mqtt interval 30
+            interf->value(V_mqtt_ka, t);
+        }
+    interf->json_frame_flush();
+
+/*
     interf->json_frame_interface();
 
     // Headline
@@ -302,15 +354,20 @@ void page_settings_mqtt(Interface *interf, const JsonObject *data, const char* a
     interf->button(button_t::generic, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
 
     interf->json_frame_flush();
+*/
 }
 
 /**
  *  BasicUI блок настройки system
  */
 void page_settings_sys(Interface *interf, const JsonObject *data, const char* action){
-    if (!interf) return;
     interf->json_frame_interface();
+        interf->json_section_uidata();
+        interf->uidata_pick("sys.settings.system");
+    interf->json_frame_flush();
 
+/*
+    interf->json_frame_interface();
     // Headline
     interf->json_section_main("sys", T_DICT[lang][TD::D_SYSSET]);
 
@@ -331,6 +388,7 @@ void page_settings_sys(Interface *interf, const JsonObject *data, const char* ac
     interf->button(button_t::generic, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
 
     interf->json_frame_flush(); // main
+*/
 }
 
 /**
@@ -416,7 +474,7 @@ void set_settings_time(Interface *interf, const JsonObject *data, const char* ac
  */
 void set_sys_datetime(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
-    TimeProcessor::getInstance().setTime((*data)[P_datetime].as<const char*>());
+    TimeProcessor::getInstance().setTime((*data)[A_set_sys_datetime].as<const char*>());
     if (interf)
         page_settings_time(interf, nullptr, NULL);
 }
@@ -424,9 +482,9 @@ void set_sys_datetime(Interface *interf, const JsonObject *data, const char* act
 void set_language(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
 
-    embui.var_dropnulls(V_LANGUAGE, (*data)[V_LANGUAGE]);
-    lang = (*data)[V_LANGUAGE];
-    page_system_settings(interf, data, NULL);
+    embui.var_dropnulls(V_LANGUAGE, (*data)[A_set_sys_language]);
+    lang = (*data)[A_set_sys_language];
+    page_system_settings(interf, nullptr, NULL);
 }
 
 void embuistatus(Interface *interf){
