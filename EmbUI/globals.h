@@ -40,7 +40,7 @@
 #define EMBUI_VERSION_REVISION  0  // '999' here is current dev version
 
 // API version for JS frontend
-#define EMBUI_JSAPI             2
+#define EMBUI_JSAPI             3
 // loadable UI blocks version requirement (loaded from js/ui_sys.json)
 #define EMBUI_UIOBJECTS         1
 

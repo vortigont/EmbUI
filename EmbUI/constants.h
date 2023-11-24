@@ -111,6 +111,7 @@ static constexpr const char* P_uijsapi = "uijsapi";
 static constexpr const char* P_url = "url";
 static constexpr const char* P_uiver = "uiver";
 static constexpr const char* P_value = "value";
+static constexpr const char* P_version = "version";
 static constexpr const char* P_wifi = "wifi";
 static constexpr const char* P_xload ="xload";
 

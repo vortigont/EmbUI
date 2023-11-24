@@ -98,12 +98,13 @@ JsonObject Interface::get_last_object(){
     return JsonObject (section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element and return it as an Jobject
 }
 
-void Interface::uidata_xload(const char* key, const char* url, bool merge){
+void Interface::uidata_xload(const char* key, const char* url, bool merge, unsigned version){
     StaticJsonDocument<UI_DEFAULT_JSON_SIZE> obj;
     obj[P_action] = P_xload;
     obj[P_key] = key;
     obj[P_url] = url;
-    obj[P_merge] = merge;
+    if (merge) obj[P_merge] = true;
+    if (version) obj[P_version] = version;
     json_frame_add(obj);
 }
 
