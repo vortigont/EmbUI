@@ -330,7 +330,13 @@ var render = function(){
 				go("#main").append(tmpl_section_main.parse(obj));
 				if (!out.lockhist) out.history(obj.section);
 			} else {
-				go("#"+obj.section).replace(tmpl_section.parse(obj));
+				if ( Object.keys(go("#"+obj.section)).length === 0 ){
+					//console.log("append to main:", obj.section)
+					go("#main").append(tmpl_section_main.parse(obj));
+				} else {
+					//console.log("replacing section:", obj.section)
+					go("#"+obj.section).replace(tmpl_section.parse(obj));
+				}
 			}
 		},
 		// process "pkg":"interface" messages and render template
@@ -339,18 +345,24 @@ var render = function(){
 			let frame = obj.block;
 
 			function recourseUIData(arr){
+				console.log("reUIDATA:", arr)
 				for (let i = 0; i != arr.length; ++i){
+					if (typeof arr[i] != "object") continue;
 					if(arr[i].section == "uidata" && arr[i].block.length){
 						let newblocks = []	// an array for sideloaded blocks
 						arr[i].block.forEach(function(v, idx, array){
 							if(v.action == "xload"){
 								ajaxload(v.url, function(response) {
 									_.set(uiblocks, v.key, response);
+									//console.log("loaded uiobj:", _.get(uiblocks, v.key));
 								});
 								return
 							}
 							if (v.action == "pick"){
-								newblocks.push(_.get(uiblocks, v.key))
+								//console.log("pick obj:", v.key);
+								let ui_obj = _.get(uiblocks, v.key)
+								if (Object.keys(ui_obj).length !== 0)
+									newblocks.push(ui_obj)
 								return
 							}
 						})
