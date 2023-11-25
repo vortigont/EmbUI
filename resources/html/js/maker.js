@@ -345,17 +345,26 @@ var render = function(){
 			let frame = obj.block;
 
 			function recourseUIData(arr){
-				console.log("reUIDATA:", arr)
 				for (let i = 0; i != arr.length; ++i){
 					if (typeof arr[i] != "object") continue;
 					if(arr[i].section == "uidata" && arr[i].block.length){
 						let newblocks = []	// an array for sideloaded blocks
-						arr[i].block.forEach(function(v, idx, array){
+						arr[i].block.forEach(async function(v, idx, array){
 							if(v.action == "xload"){
-								ajaxload(v.url, function(response) {
+								let response = await fetch(v.url, {method: 'GET'});
+								if (!response.ok) return;
+								response = await response.json();
+								if(v.merge)
+									_.merge(_.get(uiblocks, v.key), response)
+								else
 									_.set(uiblocks, v.key, response);
-									//console.log("loaded uiobj:", _.get(uiblocks, v.key));
-								});
+								//console.log("loaded uiobj:", response, " ver:", response.version);
+								// check if loaded data is older then requested from backend
+								//console.log("Req ver: ", v.version, " vs loaded ver:", _.get(uiblocks, v.key).version)
+								if (v.version > _.get(uiblocks, v.key).version){
+									console.log("Opening update alert msg");
+									document.getElementById("update_alert").style.display = "block";
+								}
 								return
 							}
 							if (v.action == "pick"){
@@ -404,8 +413,11 @@ var render = function(){
 					global.macid = manifest.mc;
 					global.uiver = manifest.uiver;
 					global.uijsapi = manifest.uijsapi;
+					global.uiobjects = manifest.uiobjects;
 					global.appver = manifest.appver;
 					global.appjsapi = manifest.appjsapi;
+					if (global.uijsapi > ui_jsapi || global.appjsapi > app_jsapi || global.uiobjects > uiblocks.sys.version)
+						document.getElementById("update_alert").style.display = "block";
 					continue;
 				}
 				if (frame[i].section == "menu"){

@@ -880,7 +880,7 @@ class Interface {
          * @param url - url to fetch json from, could be relative to /
          * @param merge - if 'true', then try to merge/update data under existing key, otherwise replace it
          */
-        void uidata_xload(const char* key, const char* url, bool merge = false);
+        void uidata_xload(const char* key, const char* url, bool merge = false, unsigned version = 0);
 
         /**
          * @brief pick and implace UI structured data objects from front-end side-storage
