@@ -13,26 +13,23 @@
  * otherwise a general pool "pool.ntp.org" is used as a fallback and vniiftri.ru's ntp is used as a primary
  * 
  */
-#if !defined NTP1ADDRESS && !defined NTP2ADDRESS
+#if !defined NTP1SERVER && !defined NTP2SERVER
 #ifdef CONTRY
-    #define NTP1ADDRESS        COUNTRY ".pool.ntp.org"      // пул серверов времени для NTP
-    #define NTP2ADDRESS        "ntp3.vniiftri.ru"           // https://vniiftri.ru/catalog/services/sinkhronizatsiya-vremeni-cherez-ntp-servera/
+    #define NTP1SERVER        COUNTRY ".pool.ntp.org"      // пул серверов времени для NTP
+    #define NTP2SERVER        "ntp3.vniiftri.ru"           // https://vniiftri.ru/catalog/services/sinkhronizatsiya-vremeni-cherez-ntp-servera/
 #else
-    #define NTP1ADDRESS        "ntp3.vniiftri.ru"
-    #define NTP2ADDRESS        ("pool.ntp.org")
+    #define NTP1SERVER        "ntp3.vniiftri.ru"
+    #define NTP2SERVER        ("pool.ntp.org")
 #endif
 #endif
 
-#if defined ESP_ARDUINO_VERSION
-    #define CUSTOM_NTP_INDEX    2
-#else       // older Arduino core <2.0
-    #define CUSTOM_NTP_INDEX    0
-#endif
+#define CUSTOM_NTP_INDEX    2
 
 #define TM_BASE_YEAR        1900
 #define DAYSECONDS          (86400U)
 #define DATETIME_STRLEN     (20U)   // ISO data/time string "YYYY-MM-DDThh:mm:ss", seconds optional
 
+using callback_function_t = std::function<void(void)>;
 
 // TimeProcessor class is a Singleton
 class TimeProcessor
@@ -40,8 +37,8 @@ class TimeProcessor
 private:
     TimeProcessor();
 
-    const char* ntp1 = NTP1ADDRESS;
-    const char* ntp2 = NTP2ADDRESS;
+    const char* ntp1 = NTP1SERVER;
+    const char* ntp2 = NTP2SERVER;
     std::string* userntp = nullptr;          // user defined NTP server
 
     /**
@@ -189,7 +186,7 @@ public:
  * and should NOT be used except for compatibility or some
  * special cases like networks with blocked ntp service
  */
-#ifdef USE_WORLDTIMEAPI
+#ifdef EMBUI_WORLDTIMEAPI
 #include "ts.h"
 
 #define TIMEAPI_BUFSIZE     600
@@ -237,4 +234,4 @@ public:
     void httprefreshtimer(const uint32_t delay=0);
 
 };
-#endif // end of USE_WORLDTIMEAPI
+#endif // end of EMBUI_WORLDTIMEAPI

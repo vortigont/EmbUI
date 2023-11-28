@@ -37,7 +37,7 @@
 
 #define EMBUI_VERSION_MAJOR     3
 #define EMBUI_VERSION_MINOR     0
-#define EMBUI_VERSION_REVISION  0  // '999' here is current dev version
+#define EMBUI_VERSION_REVISION  0
 
 // API version for JS frontend
 #define EMBUI_JSAPI             3
@@ -53,6 +53,3 @@
 #define EMBUI_VERSION_STRING    TOSTRING(EMBUI_VERSION_MAJOR) "." TOSTRING(EMBUI_VERSION_MINOR) "." TOSTRING(EMBUI_VERSION_REVISION)
 // compat definiton
 #define EMBUIVER                EMBUI_VERSION_STRING
-
-
-typedef std::function<void(void)> callback_function_t;
