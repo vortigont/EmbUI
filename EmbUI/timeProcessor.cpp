@@ -7,10 +7,9 @@
 
 #include <time.h>
 #include <esp_sntp.h>
-#include <HTTPClient.h>
 
 #ifndef TZONE
-#define TZONE PSTR("GMT0")         // default Time-Zone
+#define TZONE "GMT0"         // default Time-Zone
 #endif
 
 // stub zone for a  <+-nn> names
@@ -202,7 +201,7 @@ void TimeProcessor::ntpodhcp(bool enable){
 };
 
 
-#ifdef USE_WORLDTIMEAPI
+#ifdef EMBUI_WORLDTIMEAPI
 
 #include <ArduinoJson.h>
 #ifdef ESP32
@@ -320,4 +319,4 @@ void WorldTimeAPI::httpTimezone(const char *var){
     return;
   tzone = var;
 }
-#endif // end of USE_WORLDTIMEAPI
+#endif // end of EMBUI_WORLDTIMEAPI

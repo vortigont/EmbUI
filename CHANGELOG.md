@@ -1,5 +1,32 @@
 ## Changelog
 
+### v3.1.0 - 2023.11.28
++ introduce UI objects storage on front-end
+  This feature allows to pre-compile UI objects and store it in json file on file system.
+  Front-end will fetch this data and keep the objects, while back-end could send a specific section with a request
+  to get UI objects from the local storage on the front-end side.
+  This will allow to save codespace on the backend for generating UI objects structure and just
+  simply update retrieved objects with value data.
+
++ implement 'merge' strategy for uidata_xload sections (not fully tested yet)
+
+* minor fixes and improvements in TimeProcessor
+ - TimeProcessor::setTime() method accept value string with or withour seconds
+
++ render unknown non-main sections appending it to 'main'
+    'interface' frame could contain 1st level sections without 'mian' flag,
+    those sections were considered as a replacement content for the existing sections with same ID in DOM,
+    so, if any non-main sections were found without any existing matching ID, those sections were silently dropped.
+    From now on such sections are appended to 'main' and rendered below existing conted on the main page block
+
++ implement js api / uidata versioning checking
+ - if version number  supplied in manifest/uidata_xload frames is newer then defined in js/json resource files,
+   then notification message will be displayed at the top of main page letting user know that resource FS files are outdated
+
+* bump jsapi to ver 3
+
+
+
 ### v3.0.0 - 2023.11.15
 + implement getters for Interface class
   - Interface::json_section_begin() methods now returns an JsonArrayConst object that points to the newly created section
