@@ -485,21 +485,17 @@ var render = function(){
 			}
 
 			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
-
 				// check if the object contains just an array with key:value pairs (comes from echo-back packets)
-				if (!frame[i].id && !frame[i].value){
-					for(var k in frame[i]) {
+				if ('id' in frame[i] && 'value' in frame[i]){
+					/* otherwise it must be a dict
+						{ "id": "someid", "value": "somevalue", "html": true }
+					*/
+					setValue(frame[i].id, frame[i].value, frame[i].html);
+				} else {
+					for(let k in frame[i]) {
 						setValue(k, frame[i][k]);
 					}
-					continue;
 				}
-
-				/* otherwise it must be a dict
-					{ "id": "someid",
-					  "value": "somevalue"
-					},
-				*/
-				setValue(frame[i].id, frame[i].value, frame[i].html);
 			}
 		}
 	};
@@ -508,7 +504,7 @@ var render = function(){
 
 
 
-window.addEventListener("load", function(ev){
+window.addEventListener("load", async function(ev){
 	var rdr = this.rdr = render();
 	var ws = this.ws = wbs("ws://"+location.host+"/ws");
 
@@ -533,9 +529,12 @@ window.addEventListener("load", function(ev){
 	}
 
 	// load sys UI objects
-	ajaxload("/js/ui_sys.json", function(response) {
+	let response = await fetch("/js/ui_sys.json", {method: 'GET'});
+	if (response.ok){
+		response = await response.json();
 		uiblocks['sys'] = response;
-	});
+		//console.log("loaded obj:", uiblocks.sys);
+	}
 
 	ws.connect();
 
