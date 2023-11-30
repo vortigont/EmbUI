@@ -609,6 +609,26 @@ class EmbUI
 #endif
 };
 
+
+class FrameSendMQTT: public FrameSend {
+protected:
+    EmbUI *_eu;
+public:
+    FrameSendMQTT(EmbUI *emb) : _eu(emb){}
+    virtual ~FrameSendMQTT() { _eu = nullptr; }
+    bool available() const override { return _eu->mqttAvailable(); }
+    virtual void send(const String &data) override {};     // a do-nothig overload
+
+    /**
+     * @brief method will publish to MQTT json-serialized data for EmbUI packets
+     * packets with keys "interface" and "xload" are published to EmbUI's topic '~/pub/interface'
+     * packets with key "value" is published to EmbUI's topic '~/pub/value'
+     * @param data object to publish
+     */
+    virtual void send(const JsonVariantConst& data) override;
+};
+
+
 // Global EmbUI instance
 extern EmbUI embui;
 

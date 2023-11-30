@@ -242,7 +242,7 @@ class FrameSend {
 };
 
 class FrameSendWSServer: public FrameSend {
-    private:
+    protected:
         AsyncWebSocket *ws;
     public:
         FrameSendWSServer(AsyncWebSocket *server) : ws(server){}
@@ -253,7 +253,7 @@ class FrameSendWSServer: public FrameSend {
 };
 
 class FrameSendWSClient: public FrameSend {
-    private:
+    protected:
         AsyncWebSocketClient *cl;
     public:
         FrameSendWSClient(AsyncWebSocketClient *client) : cl(client){}
@@ -267,7 +267,7 @@ class FrameSendWSClient: public FrameSend {
 };
 
 class FrameSendHttp: public FrameSend {
-    private:
+    protected:
         AsyncWebServerRequest *req;
         AsyncResponseStream *stream;
     public:

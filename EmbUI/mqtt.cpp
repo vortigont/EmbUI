@@ -13,7 +13,7 @@
     and others people
 */
 
-#include "mqtt.h"
+#include "EmbUI.h"
 
 #define MQTT_RECONNECT_PERIOD    15
 
@@ -224,10 +224,11 @@ void FrameSendMQTT::send(const JsonVariantConst& data){
     }
 
     // objects like "interface", "xload", "section" are related to WebUI interface
-    if (data[P_pkg] == P_interface || data[P_pkg] == P_xload || data.containsKey(P_section) ){
+    if (data[P_pkg] == P_interface || data[P_pkg] == P_xload){
         _eu->publish(C_pub_iface, data);
         return;
     }
 
-    _eu->publish(C_pub_etc, data);
+    // all other packet types are ignored, user supposed to create it's own FrameSendMQTT instances if required 
+    //_eu->publish(C_pub_etc, data);
 }
