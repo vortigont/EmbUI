@@ -793,6 +793,16 @@ class Interface {
         number(const ID id, T value, const L label){ number_constrained(id, value, label); };
 
         /**
+         * @brief add any user-constructed object to the frame
+         * accepts arbitrary structured objects, it is up to the front-end js engine to process it properly
+         * 
+         * @param data - user object to add
+         * @param shallow - use shallow copy when adding data to the frame
+         * NOTE: if shallow-copy is used, then 'data' object MUST be retained intact until json_frame_flush() is executed to purge linked data
+         */
+        void jobject(const JsonVariantConst data, bool shallow = false){ if (shallow) json_frame_enqueue(data, true); else json_frame_add(data); };
+
+        /**
          * @brief - create an option element for "select" drop-down list
          */
         template <typename T, typename L>
@@ -901,8 +911,13 @@ class Interface {
          * @brief - Add the whole JsonObject to the Interface frame
          * actualy it is a copy-object method used to echo back the data to the WebSocket in one-to-many scenarios
          * also could be used to update multiple elements at a time with a dict of key:value pairs
+         * Might be 
+         * 1) an array of objects, i.e. [{"key1": "val1", "key2":42}, {"key3":"val3"}]
+         * 2) an array of labeled objects [{"id":"someid", "value":"someval", "html": true}] - used to update template placeholders
+         * 
+         * @param data - object to add as values. Might be an arrray 
          */
-        void value(JsonVariant data){ json_frame_add(data); }
+        void value(const JsonVariantConst data){ json_frame_add(data); }
 
 };
 
