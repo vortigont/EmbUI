@@ -450,18 +450,23 @@ var wbs = function(url){
 			}
 		}
 		ws.onmessage = function(msg){
-			try{ msg = JSON.parse(msg.data); } catch(e){ console.log('Error message', e); return; }
-			console.log('Received message:', msg);
-			if (!(msg instanceof Object)) return;
-			if (msg.section) {
-				if (!frame[msg.section]) frame[msg.section] = {};
-				go.merge(frame[msg.section], msg);
-				if (msg.final) {
-					receiv_msg(frame[msg.section]);
-					delete frame[msg.section];
+			let m = {};
+			try{ m = JSON.parse(msg.data); } catch(e){ console.log('Error message', e); return; }
+			console.log('Received message:', m);
+			if (!(m instanceof Object)) return;
+			if (m.section && !(m.section in frame) && m.final){
+				receiv_msg(m);
+				return;
+			}
+			if (m.section) {
+				if (!frame[m.section]) frame[m.section] = {};
+				go.merge(frame[m.section], m);
+				if (m.final) {
+					receiv_msg(frame[m.section]);
+					delete frame[m.section];
 				}
 			} else {
-				receiv_msg(msg);
+				receiv_msg(m);
 			}
 		}
 	},
