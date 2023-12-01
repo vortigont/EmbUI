@@ -474,6 +474,8 @@ var wbs = function(url){
 		console.log('Received packet:', msg);
 		if (msg.pkg && typeof out["on"+msg.pkg] == "function"){
 			try{ out["on"+msg.pkg](msg); } catch(e){ console.log('Error on'+msg.pkg, e); }
+		} else {
+			try{ out["onUnknown"](msg); } catch(e){ console.log('Error on'+msg.pkg, e); }
 		}
 	},
 	send = function(msg){ try{ ws.send(msg); }catch(e){} },

@@ -26,6 +26,16 @@ var app_jsapi = 0;
 var uiblocks = {};
 
 /**
+ * callback for unknown pkg types - Stub function to handle user-defined types messages.
+ * Data could be sent from the controller with any 'pkg' types except internal ones used by EmnUI
+ * and handled in a user-define js function via reassigning this value
+ */
+var unknown_pkg_callback = function (msg){
+    console.log('Got unknown pkg data, redefine "unknown_pkg_callback" to handle it.', msg);
+}
+
+
+/**
  * A placeholder array for user js-functions that could be executed on button click
  * any user-specific funcs could be appended/removed/replaced to this array later on
  * 
@@ -59,15 +69,6 @@ var customFuncs = {
 	}//,
 	//func2: function () {     console.log('Called func 2'); }
 };
-
-/**
- * rawdata callback - Stub function to handle rawdata messages from controller
- * Data could be sent from the controller via json_frame_custom(String("rawdata")) method
- * and handled in a custom user js script via redefined function
- */
-function rawdata_cb(msg){
-    console.log('Got raw data, redefine rawdata_cb(msg) func to handle it.', msg);
-}
 
 /**
  * User Callback for xload() function. Вызывается после завершения загрузки внешних данных, но
@@ -508,25 +509,15 @@ window.addEventListener("load", async function(ev){
 	var rdr = this.rdr = render();
 	var ws = this.ws = wbs("ws://"+location.host+"/ws");
 
-	ws.oninterface = function(msg) {
-		rdr.make(msg);
-	}
-	ws.onvalue = function(msg){
-		rdr.value(msg);
-	}
-	ws.onclose = ws.onerror = function(){
-		ws.connect();
-	}
-
-	// any messages with "pkg":"rawdata" are handled here bypassing interface/value handlers
-	ws.onrawdata = function(mgs){
-		rawdata_cb(mgs);
-	}
+	ws.oninterface = function(msg) { rdr.make(msg) }
+	ws.onvalue = function(msg){ rdr.value(msg) }
+	ws.onclose = ws.onerror = function(){ ws.connect() }
 
 	// "pkg":"xload" messages are used to make ajax requests for external JSON objects that could be used as data/interface templates
-	ws.onxload = function(mgs){
-		xload(mgs);
-	}
+	ws.onxload = function(mgs){ xload(mgs) }
+
+	// any Packets with unknown "pkg":"type" are handled here via user-redefinable callback
+	ws.onUnknown = function(msg){ unknown_pkg_callback(msg) }
 
 	// load sys UI objects
 	let response = await fetch("/js/ui_sys.json", {method: 'GET'});
