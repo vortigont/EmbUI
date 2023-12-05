@@ -473,6 +473,28 @@ class Interface {
         void json_frame_flush();
 
         /**
+         * @brief frame that executes arbitrary js function on a page providing it a constructed object as an argument
+         * opening this frame user can build any object with a structure supported by sectioned engine of EmbUI.
+         * On reassembly that object will be passed as an input parametner to executed function
+         * 
+         * @tparam TString 
+         * @param function - function name to execute on scope of a page
+         */
+        template <typename TString>
+        void json_frame_jscall(const TString& function);
+
+        /**
+         * @brief frame that executes arbitrary js function on a page providing it a constructed object as an argument
+         * opening this frame user can build any object with a structure supported by sectioned engine of EmbUI.
+         * On reassembly that object will be passed as an input parametner to executed function
+         * 
+         * @tparam TString 
+         * @param function - function name to execute on scope of a page
+         */
+        template <typename TChar = const char>
+        void json_frame_jscall(const TChar* function);
+
+        /**
          * @brief - begin Interface UI secton
          * used to construct WebUI html elements
          */
@@ -1008,6 +1030,22 @@ void Interface::json_frame(const char* type, const TChar* section_id){
     json[P_pkg] = type;
     json[P_final] = false;
     json_section_begin(section_id);
+};
+
+template <typename TString>
+void Interface::json_frame_jscall(const TString& function){
+    json[P_pkg] = P_jscall;
+    json[P_jsfunc] = function;
+    json[P_final] = false;
+    json_section_begin(P_EMPTY);
+};
+
+template <typename TChar = const char>
+void Interface::json_frame_jscall(const TChar* function){
+    json[P_pkg] = P_jscall;
+    json[P_jsfunc] = function;
+    json[P_final] = false;
+    json_section_begin(P_EMPTY);
 };
 
 template  <typename TString, typename L>

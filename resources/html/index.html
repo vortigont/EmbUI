@@ -108,8 +108,8 @@
 				value - becomes js-function name to call
 				label - becomes span "comment" element
 			-->
-			{{#if2 label}}<span class="comment">{{label}}</span>{{/if2}}
-			<div id="{{id}}" name="{{id}}" {{#if2 class}}class="{{class}}"{{/if2}}><img src onerror='{{value}}("{{id}}","{{params.arg1}}")'></div>
+			{{#if2 label}}<span id="{{id}}-lbl" class="comment">{{label}}</span>{{/if2}}
+			<div id="{{id}}" {{#if2 class}}class="{{class}}"{{/if2}}><img src onerror='{{value}}("{{id}}","{{params.arg1}}")'></div>
 		{{/if}}
 		{{#if html == "div" && type == "html"}}
 			<!-- Custom div with text content,
@@ -118,8 +118,8 @@
 				label - becomes div css class selector
 				param.* - reserved
 			-->
-			{{#if2 label}}<span class="comment">{{label}}</span>{{/if2}}
-			<div {{#if2 class}}class="{{class}}"{{/if2}}><div id="{{id}}">{{value}}</div></div>
+           {{#if2 label}}<span id="{{id}}-lbl" class="comment">{{label}}</span>{{/if2}}
+           <div id="{{id}}-out" {{#if2 class}}class="{{class}}"{{/if2}}><div id="{{id}}">{{value}}</div></div>
 		{{/if}}
 		{{#if html == "div" && type == "pbar"}}
 			<!-- live progressbar -->

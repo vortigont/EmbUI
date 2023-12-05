@@ -510,6 +510,16 @@ window.addEventListener("load", async function(ev){
 	var ws = this.ws = wbs("ws://"+location.host+"/ws");
 
 	ws.oninterface = function(msg) { rdr.make(msg) }
+
+	// run any js function in window context
+	ws.onjscall = function(msg) {
+		if ( msg.jsfunc && typeof window[msg.jsfunc] == "function"){
+			try { 	console.log("JSCall: ", msg.jsfunc);
+					window[msg.jsfunc](msg);
+				} catch(e){ console.log('Error on calling function:'+msg.function, e); }
+		};
+	}
+
 	ws.onvalue = function(msg){ rdr.value(msg) }
 	ws.onclose = ws.onerror = function(){ ws.connect() }
 
