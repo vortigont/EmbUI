@@ -498,7 +498,7 @@ void embuistatus(Interface *interf){
     if(psramFound())
         std::snprintf(buff, 20, "%uk/%uk", ESP.getFreeHeap()/1024, ESP.getFreePsram()/1024);
     else
-        std::snprintf(buff, 20, "%ok", ESP.getFreeHeap()/1024);
+        std::snprintf(buff, 20, "%uk", ESP.getFreeHeap()/1024);
 
     interf->value(P_pMem, buff, true);
 
