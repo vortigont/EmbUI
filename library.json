@@ -34,7 +34,7 @@
          "version": "~6.21"},
         {"owner": "vortigont",
          "name": "ESP Async WebServer",
-         "version": "https://github.com/vortigont/ESPAsyncWebServer#hotfixes"},
+         "version": "https://github.com/vortigont/ESPAsyncWebServer"},
         {"owner": "bblanchon",
          "name": "StreamUtils",
          "version": "https://github.com/bblanchon/ArduinoStreamUtils"},
