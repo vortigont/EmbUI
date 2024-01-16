@@ -450,7 +450,6 @@ var render = function(){
 				if (!el.length) return;
 				if (html === true ){ el.html(val); return; }
 
-				if (el[0].type == "range") { go("#"+el[0].id+"-val").html(": "+el[0].value); return; }		// update span with range's label
 				// проверяем чекбоксы на значение вкл/выкл
 				if (el[0].type == "checkbox") {
 					// allow multiple types of TRUE value for checkboxes
@@ -480,6 +479,8 @@ var render = function(){
 					//console.log("progress upd ", el[0], " color: ", bar_color);
 					return;
 				}
+
+				if (el[0].type == "range") { go("#"+el[0].id+"-val").html(": "+val); }		// update span with range's label
 
 				//console.log("Element is: ", el[0], " class is: ", el[0].className);
 				el[0].value = val;
