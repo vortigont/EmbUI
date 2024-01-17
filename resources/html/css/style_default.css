@@ -2,8 +2,8 @@ label {white-space: nowrap;}
 .left-block{margin-top: 25px; padding-top: 25px; border-top: 1px solid #777; font-weight: bold;}
 .left-block div {display: flex; padding: 5px 10px 5px 5px; justify-content: space-between;}
 .menu-value {color: #fff;}
-.checkbox-label{margin-left: 3em; position: relative; top: -2px;}
-.switch-block {margin: 20px 0px 15px 0px;}
+.checkbox-label{margin-left: 2em; position: relative; top: -2px;}
+.switch-block {margin: 10px 0px 10px 0px;}
 .header-block {color: #777;}
 .nested {padding: 0px 10px 0px 10px; border: 1px solid #777;}
 .mr {margin: 5px 0px 5px 0px !important;}
@@ -15,8 +15,8 @@ label {white-space: nowrap;}
 .switch {
   position: relative;
   display: inline-block;
-  width: 40px;
-  height: 20px;
+  width: 30px;
+  height: 16px;
   background-color: rgba(0, 0, 0, 0.25);
   border-radius: 20px;
   transition: all 0.3s;
@@ -24,8 +24,8 @@ label {white-space: nowrap;}
 .switch::after {
   content: '';
   position: absolute;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border-radius:50%;
   background-color: white;
   top: 1px;
@@ -34,7 +34,7 @@ label {white-space: nowrap;}
 }
 
 .checkbox:checked + .switch::after {
-  left : 20px;
+  left : 14px;
 }
 .checkbox:checked + .switch {
   background-color: #7983ff;
@@ -80,6 +80,41 @@ button:hover:before,button:hover:after{
   transition:1000ms ease all;
 }
 
+.pure-form input[type=color],
+.pure-form input[type=date],
+.pure-form input[type=datetime-local],
+.pure-form input[type=datetime],
+.pure-form input[type=email],
+.pure-form input[type=month],
+.pure-form input[type=number],
+.pure-form input[type=password],
+.pure-form input[type=search],
+.pure-form input[type=tel],
+.pure-form input[type=text],
+.pure-form input[type=time],
+.pure-form input[type=url],
+.pure-form input[type=week],
+.pure-form select,
+.pure-form textarea{
+  padding: 0% 0.5em;
+	display: inline-block;
+	border: 1px #777;
+	border-radius: 10px;
+	box-shadow: inset 3px 0px 15px #aaa;
+	vertical-align: middle;
+	box-sizing: border-box;
+	background-color: #d6e2f4;
+}
+
+.pure-form input[type=number]{
+  margin: 0 0.5em;
+  width: 25%;
+}
+  
+.pure-form select{
+  height: 1.5em;
+}
+  
 /* Sensor displays
  style inspired by https://github.com/viperet/esp8266-power-monitor */
 .display {
