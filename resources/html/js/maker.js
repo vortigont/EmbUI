@@ -331,7 +331,7 @@ var render = function(){
 				go("#main").append(tmpl_section_main.parse(obj));
 				if (!out.lockhist) out.history(obj.section);
 			} else {
-				if ( Object.keys(go("#"+obj.section)).length === 0 ){
+				if ( Object.keys(go("#"+obj.section)).length === 0 && !obj.noappend ){
 					//console.log("append to main:", obj.section)
 					go("#main").append(tmpl_section_main.parse(obj));
 				} else {

@@ -403,7 +403,7 @@ class Interface {
      * A section contains DOM UI elements, this is generic one
      */
     template  <typename TAdaptedString, typename L>
-    JsonArrayConst json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, JsonObject &obj);
+    JsonArrayConst json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, bool noappend, JsonObject &obj);
 
     template <typename L>
     void _html_input(UIelement<TINY_JSON_SIZE> &ui, const char* type, const L label, bool onChange);
@@ -532,11 +532,12 @@ class Interface {
          * @param main  - main section starts a blank page, may contain other nested sections
          * @param hidden - creates section hidden under 'spoiler' button, user needs to press the button to unfold it
          * @param line  -  all elements of the section will be alligned in a line
+         * @param noappend - if true, than new frame section will only replace existing section on a page and won't append to main section
          */
         template  <typename TString, typename L = const char*>
-        JsonArrayConst json_section_begin(const TString& name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
+        JsonArrayConst json_section_begin(const TString& name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false, bool noappend = false );
         template  <typename TChar, typename L = const char*>
-        JsonArrayConst json_section_begin(const TChar* name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false);
+        JsonArrayConst json_section_begin(const TChar* name, const L label = P_EMPTY, bool main = false, bool hidden = false, bool line = false, bool noappend = false );
 
         /**
          * @brief - content section is meant to replace existing data on the page
@@ -1049,18 +1050,18 @@ void Interface::json_frame_jscall(const TChar* function){
 };
 
 template  <typename TString, typename L>
-JsonArrayConst Interface::json_section_begin(const TString& name, const L label, bool main, bool hidden, bool line){
+JsonArrayConst Interface::json_section_begin(const TString& name, const L label, bool main, bool hidden, bool line, bool noappend){
     JsonObject obj(section_stack.size() ? section_stack.tail()->block.createNestedObject() : json.as<JsonObject>());
-    return json_section_begin(detail::adaptString(name), label, main, hidden, line, obj);
+    return json_section_begin(detail::adaptString(name), label, main, hidden, line, noappend, obj);
 }
 template  <typename TChar, typename L>
-JsonArrayConst Interface::json_section_begin(const TChar* name, const L label, bool main, bool hidden, bool line){
+JsonArrayConst Interface::json_section_begin(const TChar* name, const L label, bool main, bool hidden, bool line, bool noappend){
     JsonObject obj(section_stack.size() ? section_stack.tail()->block.createNestedObject() : json.as<JsonObject>());
-    return json_section_begin(detail::adaptString(name), label, main, hidden, line, obj);
+    return json_section_begin(detail::adaptString(name), label, main, hidden, line, noappend, obj);
 }
 
 template  <typename TAdaptedString, typename L>
-JsonArrayConst Interface::json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, JsonObject &obj){
+JsonArrayConst Interface::json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, bool noappend, JsonObject &obj){
     if (embui_traits::is_empty_string(name))
         obj[P_section] = String (std::rand()); // need a deep-copy
     else
@@ -1070,6 +1071,7 @@ JsonArrayConst Interface::json_section_begin(TAdaptedString name, const L label,
     if (main) obj["main"] = true;
     if (hidden) obj[P_hidden] = true;
     if (line) obj["line"] = true;
+    if (noappend) obj["noappend"] = true;
 
     section_stack_t *section = new section_stack_t;
     section->name = obj[P_section].as<const char*>();
@@ -1085,13 +1087,13 @@ template  <typename ID>
 Interface::json_section_extend(const ID name){
     section_stack.tail()->idx--;
     JsonObject o(section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element
-    json_section_begin(name, P_EMPTY, false, false, false, o);
+    json_section_begin(name, P_EMPTY, false, false, false, false, o);
 };
 
 template  <typename ID, typename L = const char*>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
 Interface::json_section_manifest(const ID appname, const char* devid, unsigned appjsapi, const L appversion){
-    json_section_begin("manifest", P_EMPTY, false, false, false);
+    json_section_begin("manifest");
     JsonObject obj = section_stack.tail()->block.createNestedObject();
     obj[P_uijsapi] = EMBUI_JSAPI;
     obj[P_uiver] = EMBUI_VERSION_STRING;
