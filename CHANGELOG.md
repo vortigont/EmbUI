@@ -1,5 +1,20 @@
 ## Changelog
 
+### v3.1.1
++ add noappend parameter to Interface::json_section_begin
+* update default styles with more compact input fields
+* switch AsynWebServer branch to master
++ implement Interface::json_frame_jscall() method
++ maker js lib - allow user defined function to process all unknown packer types
+* js/maker.js update renderer.value, make sys UI objects loading async
+* ws.onmessage skip reassembly for new  messages that arrives with 'final' flag
++ add Interface::jobject() method, add any user-constructed object to the frame
++ add RSSI value display on left-side menu
+! fix bug when range sliders were not updated with 'value' packets
+* update purecss to 3.0.0
+
+
+
 ### v3.1.0 - 2023.11.28
 + introduce UI objects storage on front-end
   This feature allows to pre-compile UI objects and store it in json file on file system.
