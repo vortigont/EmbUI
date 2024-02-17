@@ -26,7 +26,7 @@
         "url": "https://github.com/vortigont/EmbUI.git"
     },
     "platforms": ["espressif32"],
-    "version": "3.1.1",
+    "version": "3.1.0",
     "dependencies":
     [
         {"owner": "bblanchon",
@@ -34,7 +34,7 @@
          "version": "~6.21"},
         {"owner": "vortigont",
          "name": "ESP Async WebServer",
-         "version": "https://github.com/vortigont/ESPAsyncWebServer"},
+         "version": "https://github.com/vortigont/ESPAsyncWebServer#yubxmod"},
         {"owner": "bblanchon",
          "name": "StreamUtils",
          "version": "https://github.com/bblanchon/ArduinoStreamUtils"},
