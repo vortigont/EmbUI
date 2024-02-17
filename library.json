@@ -34,7 +34,7 @@
          "version": "~6.21"},
         {"owner": "vortigont",
          "name": "ESP Async WebServer",
-         "version": "https://github.com/vortigont/ESPAsyncWebServer#yubxmod"},
+         "version": "https://github.com/vortigont/ESPAsyncWebServer#yubxmc"},
         {"owner": "bblanchon",
          "name": "StreamUtils",
          "version": "https://github.com/bblanchon/ArduinoStreamUtils"},
