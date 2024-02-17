@@ -19,7 +19,7 @@ void Interface::json_frame_add(const JsonVariantConst &jobj){
         --_cnt;
         #ifdef EMBUI_DEBUG
             if (!_cnt)
-                LOG(println, P_ERR_obj2large);
+                LOGE(P_EmbUI, println, P_ERR_obj2large);
         #endif
     } while (!json_frame_enqueue(jobj) && _cnt );
 };
@@ -33,20 +33,20 @@ void Interface::json_frame_clear(){
 
 bool Interface::json_frame_enqueue(const JsonVariantConst &obj, bool shallow){
     if(shallow){
-        LOG(printf_P, "UI: Frame add shallow obj %u b, mem:%d/%d\n", obj.memoryUsage(), json.memoryUsage(), json.capacity());
+        LOGD(P_EmbUI, printf, "Frame add shallow obj %u b, mem:%d/%d\n", obj.memoryUsage(), json.memoryUsage(), json.capacity());
         JsonVariant nested = section_stack.tail()->block.createNestedObject();
         nested.shallowCopy(obj);
         return true;
     }
 
-    LOG(printf_P, "UI: Frame add obj %u b, mem:%d/%d", obj.memoryUsage(), json.memoryUsage(), json.capacity());
+    LOGV(P_EmbUI, printf, "Frame add obj %u b, mem:%d/%d\n", obj.memoryUsage(), json.memoryUsage(), json.capacity());
 
     if ( ( json.capacity() - json.memoryUsage() > obj.memoryUsage() + 16 ) && section_stack.tail()->block.add(obj)) {
-        LOG(printf_P, "...OK idx:%u\tmem free: %u\n", section_stack.tail()->idx, ESP.getFreeHeap());
+        LOGV(P_EmbUI, printf, "...OK idx:%u\theap free: %u\n", section_stack.tail()->idx, ESP.getFreeHeap());
         section_stack.tail()->idx++;        // incr idx for next obj
         return true;
     }
-    LOG(printf, " - Frame full! Heap free: %u\n", ESP.getFreeHeap());
+    LOGW(P_EmbUI, printf, " - Frame full! Heap free: %u\n", ESP.getFreeHeap());
 
     json_frame_send();
     json_frame_next();
@@ -57,9 +57,9 @@ void Interface::json_frame_flush(){
     if (!section_stack.size()) return;
     json[P_final] = true;
     json_section_end();
+    LOGI(P_EmbUI, println, "json_frame_flush");
     json_frame_send();
     json_frame_clear();
-    LOG(println, "UI: json_frame_flush");
 }
 
 void Interface::json_frame_next(){
@@ -70,9 +70,9 @@ void Interface::json_frame_next(){
         obj[P_section] = section_stack[i]->name;
         obj["idx"] = section_stack[i]->idx;
         section_stack[i]->block = obj.createNestedArray(P_block);
-        //LOG(printf, "UI: nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
+        //LOG(printf, "nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
     }
-    LOG(printf, "json_frame_next: [#%u], mem:%u/%u\n", section_stack.size()-1, obj.memoryUsage(), json.capacity());   // section index counts from 0
+    LOGI(P_EmbUI, printf, "json_frame_next: [#%u], mem:%u/%u\n", section_stack.size()-1, obj.memoryUsage(), json.capacity());   // section index counts from 0
 }
 
 void Interface::json_frame_value(const JsonVariant val, bool shallow){
@@ -90,7 +90,7 @@ void Interface::json_section_end(){
     if (section_stack.size()) {
         section_stack.tail()->idx++;
     }
-    LOG(printf, "UI: section end #%u '%s'\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
+    LOGI(P_EmbUI, printf, "section end #%u '%s'\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
     delete section;
 }
 
@@ -119,12 +119,14 @@ void Interface::uidata_pick(const char* key){
  * @brief - serialize and send json obj directly to the ws buffer
  */
 void FrameSendWSServer::send(const JsonVariantConst& data){
-    if (!available()) return;   // no need to do anything if there is no clients connected
+    if (!available()) { LOGW(P_EmbUI, println, "FrameSendWSServer::send - not available!"); return; }   // no need to do anything if there is no clients connected
 
     size_t length = measureJson(data);
     auto buffer = ws->makeBuffer(length);
-    if (!buffer)
+    if (!buffer){
+        LOGW(P_EmbUI, println, "FrameSendWSServer::send - no buffer!");
         return;
+    }
 
 #ifndef YUBOXMOD
     serializeJson(data, (char*)buffer->get(), length);

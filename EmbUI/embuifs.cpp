@@ -21,11 +21,11 @@ namespace embuifs {
         if (!filepath || !*filepath)
             return false;
 
-        //LOG(printf_P, PSTR("Load file: %s\n"), filepath);
+        LOGV(P_EmbUI, printf, "Load file: %s\n", filepath);
         File jfile = LittleFS.open(filepath, "r");
 
         if (!jfile){
-            LOG(printf_P, PSTR("Can't open file: %s\n"), filepath);
+            LOGD(P_EmbUI, printf,"Can't open file: %s\n", filepath);
             return false;
         }
 
@@ -33,8 +33,8 @@ namespace embuifs {
         jfile.close();
 
         if (!error) return true;
-        LOG(printf_P, PSTR("File: failed to load json file: %s, deserialize error: "), filepath);
-        LOG(println, error.code());
+        LOGE(P_EmbUI, printf, "File: failed to load json file: %s, deserialize error: ", filepath);
+        LOGE(P_EmbUI, println, error.code());
         return false;
     }
 

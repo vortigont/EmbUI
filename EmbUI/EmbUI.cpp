@@ -35,7 +35,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         return wsDataHandler(server, client, type, arg, data, len);
 
     if(type == WS_EVT_CONNECT){
-        LOG(printf, "CONNECT ws:%s id:%u\n", server->url(), client->id());
+        LOGD(P_EmbUI, printf, "WS connect:%s id:%u\n", server->url(), client->id());
         {
             Interface interf(client);
             if (!embui.action.exec(&interf, nullptr, A_ui_page_main))    // call user defined mainpage callback
@@ -46,18 +46,18 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     }
 
     if(type == WS_EVT_DISCONNECT){
-        LOG(printf, "ws[%s][%u] disconnect\n", server->url(), client->id());
+        LOGD(P_EmbUI, printf, "WS disconnect:%s id:%u\n", server->url(), client->id());
         return;
     }
 
     if(type == WS_EVT_ERROR){
-        LOG(printf, "ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
-        httpCallback("sys_WS_EVT_ERROR", "", false); // сообщим об ошибке сокета
+        LOGD(P_EmbUI, printf, "ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
+        //httpCallback("sys_WS_EVT_ERROR", "", false); // сообщим об ошибке сокета
         return;
     }
 
     if(type == WS_EVT_PONG){
-        LOG(printf, "ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
+        LOGE(P_EmbUI, printf, "ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
         return;
     }
 }
@@ -70,7 +70,7 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
     if(!info->final || info->index != 0 || info->len != len)
         return;
 
-    LOG(printf, "UI: =WS MSG= data len: %u\n", len);
+    LOGD(P_EmbUI, printf, "=WS MSG= data len: %u\n", len);
 
     // ignore packets without "pkg":"post" marker
     std::string_view payload((const char *)data, len);
@@ -89,7 +89,7 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
 
     DeserializationError error = deserializeJson((*res), (const char*)data, len); // deserialize via copy to prevent dangling pointers in action()'s
     if (error){
-        LOG(printf, "UI: WS_EVT_DATA deserialization err: %d\n", error.code());
+        LOGE(P_EmbUI, printf, "WS_EVT_DATA deserialization err: %d\n", error.code());
         delete res;
         return;
     }
@@ -120,7 +120,7 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
 EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), server(80), ws(EMBUI_WEBSOCK_URI){
         _getmacid();
 
-        tAutoSave.set(EMBUI_AUTOSAVE_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){LOG(println, "UI: AutoSave"); save();} );    // config autosave timer
+        tAutoSave.set(EMBUI_AUTOSAVE_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){LOGD(P_EmbUI, println, "AutoSave"); save();} );    // config autosave timer
         ts.addTask(tAutoSave);
 }
 
@@ -142,18 +142,18 @@ void EmbUI::begin(){
 
     // монтируем ФС только один раз при старте
     while(!LittleFS.begin(true)){   // format FS if corrupted
-        LOG(println, "UI: LittleFS initialization error, retrying...");
+        LOGE(P_EmbUI, println, "LittleFS initialization error, retrying...");
         --retry_cnt;
         delay(100);
         if (!retry_cnt){
-            LOG(println, "FS dirty, I Give up!");
+            LOGE(P_EmbUI, println, "FS dirty, I Give up!");
             return;
         }
     }
 
     load();                 // load embui's config from json file
 
-    LOG(print, "UI CONFIG: ");
+    LOGD(P_EmbUI, print, "UI CONFIG: ");
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
 
     // restore Time settings
@@ -210,7 +210,7 @@ void EmbUI::begin(){
  * looks for registered action for the section name and calls the action with post data if found
  */
 void EmbUI::post(const JsonObject &data, bool inject){
-    LOG(print, "EmbUI POST: "); LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
+    LOGD(P_EmbUI, print, "EmbUI::post "); LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
     JsonObject odata = data[P_data].as<JsonObject>();
     Interface interf(&feeders);
 
@@ -243,13 +243,13 @@ void EmbUI::send_pub(){
  */
 const char* EmbUI::param(const char* key)
 {
-    LOG(printf, "UI READ KEY: '%s'", key);
+    LOGV(P_EmbUI, printf, "UI READ KEY: '%s'", key);
 
     const char* value = cfg[key] | "";
     if (value){
-        LOG(printf, " value (%s)\n", value);
+        LOGV(P_EmbUI, printf, " value (%s)\n", value);
     } else {
-        LOG(println, " key is missing or not a *char\n");
+        LOGV(P_EmbUI, println, " key is missing or not a *char\n");
     }
     return value;
 }
@@ -263,14 +263,14 @@ const char* EmbUI::param(const char* key)
  */
 String EmbUI::param(const String &key)
 {
-    LOG(printf, "UI READ KEY: '%s'", key.c_str());
+    LOGV(P_EmbUI, printf, "UI READ KEY: '%s'", key.c_str());
     String v;
     if (cfg[key].is<int>()){ v += cfg[key].as<int>(); }
     else if (cfg[key].is<float>()) { v += cfg[key].as<float>(); }
     else if (cfg[key].is<bool>())  { v += cfg[key] ? 1 : 0; }
     else { v = cfg[key] | ""; } // откат, все что не специальный тип, то строка (пустая если null)
 
-    LOG(printf, " VAL: '%s'\n", v.c_str());
+    LOGV(P_EmbUI, printf, " VAL: '%s'\n", v.c_str());
     return v;
 }
 
@@ -330,7 +330,7 @@ const char* EmbUI::hostname(){
 
     autohostname.reset(new char[sizeof(EMBUI_IDPREFIX) + sizeof(mc) * 2]);
     sprintf(autohostname.get(), PSTR(EMBUI_IDPREFIX "-%s"), mc);
-    LOG(printf, "generate autohostname: %s\n", autohostname.get());
+    LOGD(P_EmbUI, printf, "generate autohostname: %s\n", autohostname.get());
 
     return autohostname.get();
 }
@@ -348,12 +348,12 @@ void EmbUI::_getmacid(){
     _mac.u64 = ESP.getEfuseMac();
 
     sprintf(mc, "%02X%02X%02X%02X%02X%02X", _mac.mc[0],_mac.mc[1],_mac.mc[2], _mac.mc[3], _mac.mc[4], _mac.mc[5]);
-    LOG(printf,"UI ID:%s\n", mc);
+    LOGD(P_EmbUI, printf,"UI ID:%s\n", mc);
 }
 
 void EmbUI::var_remove(const char* key){
     if (cfg.containsKey(key)){
-        LOG(printf, "UI cfg REMOVE key:'%s'\n", key);
+        LOGD(P_EmbUI, printf, "UI cfg REMOVE key:'%s'\n", key);
         cfg.remove(key);
         autosave();
     }
@@ -362,7 +362,7 @@ void EmbUI::var_remove(const char* key){
 
 void ActionHandler::add(const char* id, actionCallback_t callback){
     actions.emplace_back(id, callback);
-    LOG(print, "Action REGISTER: "); LOG(println, id);
+    LOGD(P_EmbUI, print, "Action REGISTER: "); LOG(println, id);
 }
 
 void ActionHandler::replace(const char* id, actionCallback_t callback){
@@ -401,7 +401,7 @@ size_t ActionHandler::exec(Interface *interf, JsonObject *data, const char* acti
         ) continue;     // full string compare
 
         // execute action callback
-        LOG(printf, "UI: exec act:%s hndlr:%s\n", action, item.data());
+        LOGI(P_EmbUI, printf, "exec act:%s hndlr:%s\n", action, item.data());
         i.cb(interf, data, action);
         ++cnt;
     }

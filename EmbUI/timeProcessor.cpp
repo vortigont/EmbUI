@@ -220,14 +220,14 @@ unsigned int WorldTimeAPI::getHttpData(String &payload, const String &url)
 {
   WiFiClient client;
   HTTPClient http;
-  LOG(println, F("TimeZone updating via HTTP..."));
+  LOGI(P_EmbUI_time, println, F("TimeZone updating via HTTP..."));
   http.begin(client, url);
 
   int httpCode = http.GET();
   if (httpCode == HTTP_CODE_OK){
     payload = http.getString(); 
   } else {
-    LOG(printf_P, PSTR("Time HTTPCode=%d\n"), httpCode);
+    LOGD(P_EmbUI_time, printf, "Time HTTPCode=%d\n", httpCode);
   }
   http.end();
   return payload.length();
@@ -249,14 +249,14 @@ void WorldTimeAPI::getTimeHTTP()
             return;
     }
 
-    LOG(println, result);
+    LOGV(P_EmbUI_time, println, result);
     DynamicJsonDocument doc(TIMEAPI_BUFSIZE);
     DeserializationError error = deserializeJson(doc, result);
     result="";
 
     if (error) {
-        LOG(print, F("Time deserializeJson error: "));
-        LOG(println, error.code());
+        LOGE(P_EmbUI_time, print, F("Time deserializeJson error: "));
+        LOGE(P_EmbUI_time, println, error.code());
         return;
     }
 
@@ -274,14 +274,14 @@ void WorldTimeAPI::getTimeHTTP()
         const char *tz = doc[F("timezone")];
         tzone+=tz;
     }
-    LOG(printf_P, PSTR("HTTP TimeZone: %s, offset: %d, dst offset: %d\n"), tzone.c_str(), raw_offset, dst_offset);
+    LOGI(P_EmbUI_time, printf, "HTTP TimeZone: %s, offset: %d, dst offset: %d\n", tzone.c_str(), raw_offset, dst_offset);
 
     TimeProcessor::getInstance().setOffset(raw_offset+dst_offset);
 
     TimeProcessor::getInstance().setTime(doc[F("datetime")].as<String>());
 
     if (doc[F("dst_from")]!=nullptr){
-        LOG(println, F("Zone has DST, rescheduling refresh"));
+        LOGD(P_EmbUI_time, println, F("Zone has DST, rescheduling refresh"));
         httprefreshtimer();
     }
 }
@@ -302,7 +302,7 @@ void WorldTimeAPI::httprefreshtimer(const uint32_t delay){
 
         timer = (mktime(tm) - TimeProcessor::getUnixTime())% DAYSECONDS;
 
-        LOG(printf_P, PSTR("Schedule TZ refresh in %ld\n"), timer);
+        LOGD(P_EmbUI_time, printf_P, PSTR("Schedule TZ refresh in %ld\n"), timer);
     }
 
     _wrk.set(timer * TASK_SECOND, TASK_ONCE, [this](){getTimeHTTP();});

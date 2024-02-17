@@ -20,18 +20,18 @@
 void EmbUI::save(const char *_cfg, bool force){
     File configFile;
     if (_cfg == nullptr) {
-        LOG(println, F("UI: Save default main config file"));
+        LOGD(P_EmbUI, println, "Save config file");
         LittleFS.rename(C_cfgfile,C_cfgfile_bkp);
         embuifs::serialize2file(cfg, C_cfgfile);
     } else {
-        LOG(printf_P, PSTR("UI: Save %s main config file\n"), _cfg);
+        LOGD(P_EmbUI, printf, "Save %s main config file\n", _cfg);
         embuifs::serialize2file(cfg, _cfg);
     }
 }
 
 void EmbUI::load(const char *cfgfile){
 
-    LOG(print, F("UI: Config file load "));
+    LOGD(P_EmbUI, print, F("Config file load "));
 
     if (cfgfile){
         if (embuifs::deserializeFile(cfg, cfgfile))
@@ -39,14 +39,14 @@ void EmbUI::load(const char *cfgfile){
     } else {
         String f(C_cfgfile);
         if (!embuifs::deserializeFile(cfg, f.c_str())){
-            LOG(println, F("...failed, trying with backup"));
+            LOGV(P_EmbUI, println, F("...failed, trying with backup"));
             f = C_cfgfile_bkp;
             if (embuifs::deserializeFile(cfg, f.c_str())){
-                LOG(println, F("BackUp load OK!"));
+                LOGV(P_EmbUI, println, F("BackUp load OK!"));
                 return;
             }
         } else {
-            LOG(println, F("OK!"));
+            LOGD(P_EmbUI, println, F("OK!"));
             return;
         }
     }
@@ -56,7 +56,7 @@ void EmbUI::load(const char *cfgfile){
 }
 
 void EmbUI::cfgclear(){
-    LOG(println, F("UI: !CLEAR SYSTEM CONFIG!"));
+    LOGD(P_EmbUI, println, F("!CLEAR SYSTEM CONFIG!"));
     cfg.clear();
     autosave(true);
 }

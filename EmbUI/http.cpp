@@ -65,7 +65,7 @@ void EmbUI::http_set_handlers(){
 
     // postponed reboot (TODO: convert to CMD)
     server.on("/restart", HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        Task *t = new Task(TASK_SECOND*5, TASK_ONCE, nullptr, &ts, false, nullptr, [](){ LOG(println, ); delay(100); ESP.restart(); });
+        Task *t = new Task(TASK_SECOND*5, TASK_ONCE, nullptr, &ts, false, nullptr, [](){ ESP.restart(); });
         t->enableDelayed();
         request->redirect("/");
     });

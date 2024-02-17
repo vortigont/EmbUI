@@ -215,7 +215,11 @@ static constexpr const char* PG404  = "Not found";
 static constexpr const char* PGimg = "img";
 
 // LOG Messages
-static constexpr const char* P_ERR_obj2large  = "UI: ERORR - can't add object to frame, too large!";
+static constexpr const char* P_EmbUI  = "EmbUI";
+static constexpr const char* P_EmbUI_WiFi  = "EmbUI WiFi";
+static constexpr const char* P_EmbUI_mqtt  = "EmbUI MQTT";
+static constexpr const char* P_EmbUI_time  = "EmbUI Time";
+static constexpr const char* P_ERR_obj2large  = "ERR - can't add object to frame, too large!";
 
 #ifdef USE_SSDP
   #ifndef EXTERNAL_SSDP

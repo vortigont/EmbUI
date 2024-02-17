@@ -36,7 +36,7 @@ void EmbUI::_mqttConnTask(bool state){
 }
 
 void EmbUI::_connectToMqtt() {
-    LOG(println, "Connecting to MQTT...");
+    LOGI(P_EmbUI_mqtt, println, "Connecting to MQTT...");
 
     if (cfg[V_mqtt_topic]){
         mqtt_topic = cfg[V_mqtt_topic].as<const char*>();
@@ -71,11 +71,11 @@ void EmbUI::_connectToMqtt() {
 
 void EmbUI::mqttStart(){
     if (cfg[V_mqtt_enable] != true || !cfg.containsKey(V_mqtt_host)){
-        LOG(println, "UI: MQTT disabled or no host set");
+        LOGD(P_EmbUI_mqtt, println, "MQTT disabled or no host set");
         return;   // выходим если host не задан
     }
 
-    LOG(println, "Starting MQTT Client");
+    LOGD(P_EmbUI_mqtt, println, "Starting MQTT Client");
     if (!mqttClient)
         mqttClient = std::make_unique<AsyncMqttClient>();
 
@@ -99,13 +99,13 @@ void EmbUI::mqttReconnect(){ // принудительный реконнект,
 }
 
 void EmbUI::_onMqttDisconnect(AsyncMqttClientDisconnectReason reason){
-  LOG(printf, "UI: Disconnected from MQTT:%u\n", static_cast<uint8_t>(reason));
+  LOGD(P_EmbUI_mqtt, printf, "Disconnected from MQTT:%u\n", static_cast<uint8_t>(reason));
   feeders.remove(_mqtt_feed_id);    // remove MQTT feeder from chain
   //mqttReconnect();
 }
 
 void EmbUI::_onMqttConnect(bool sessionPresent){
-    LOG(println,"UI: Connected to MQTT.");
+    LOGD(P_EmbUI_mqtt, println,"Connected to MQTT.");
     _mqttConnTask(false);
     _mqttSubscribe();
     // mqttClient->publish(mqtt_lwt.c_str(), 0, true, "1");  // publish Last Will testament
@@ -122,7 +122,7 @@ void EmbUI::_onMqttConnect(bool sessionPresent){
 }
 
 void EmbUI::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
-    LOG(printf, "UI: Got MQTT msg topic: %s len:%u/%u\n", topic, len, total);
+    LOGV(P_EmbUI_mqtt, printf, "Got MQTT msg topic: %s len:%u/%u\n", topic, len, total);
     if (index || len != total) return;     // this is chunked message, reassembly is not supported (yet)
 
     std::string_view tpc(topic);
@@ -145,7 +145,7 @@ void EmbUI::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessagePro
 
     DeserializationError error = deserializeJson((*res), (const char*)payload, len); // deserialize via copy to prevent dangling pointers in action()'s
     if (error){
-        LOG(printf, "MQTT: msg deserialization err: %d\n", error.code());
+        LOGD(P_EmbUI_mqtt, printf, "MQTT: msg deserialization err: %d\n", error.code());
         delete res;
         return;
     }

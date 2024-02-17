@@ -74,11 +74,11 @@ void set_settings_ftp(Interface *interf, const JsonObject *data, const char* act
       embui.var_dropnulls(P_ftp_pwd, (*data)[P_ftp_pwd]);    // do not save default pwd
 
     ftp_stop();
-    LOG(println, "UI: Stopping FTP Server");
+    LOGD(P_EmbUI, println, "UI: Stopping FTP Server");
 
     if ( newstate ){
       ftp_start();
-      LOG(println, "UI: Starting FTP Server");
+      LOGD(P_EmbUI, println, "UI: Starting FTP Server");
     }
 
     if (interf) basicui::page_system_settings(interf, nullptr, NULL);          // go to "Options" page

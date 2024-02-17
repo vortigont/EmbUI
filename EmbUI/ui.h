@@ -247,7 +247,9 @@ class FrameSendWSServer: public FrameSend {
     public:
         FrameSendWSServer(AsyncWebSocket *server) : ws(server){}
         ~FrameSendWSServer() { ws = nullptr; }
-        bool available() const override { return ws->count(); }
+        bool available() const override {
+            LOGV(printf, "WS cnt:%u\n", ws->count());
+             return ws->count(); }
         void send(const String &data) override { if (!data.isEmpty()) ws->textAll(data); };
         void send(const JsonVariantConst& data) override;
 };
@@ -1077,7 +1079,7 @@ JsonArrayConst Interface::json_section_begin(TAdaptedString name, const L label,
     section->name = obj[P_section].as<const char*>();
     section->block = obj.createNestedArray(P_block);
 
-    LOG(printf, "UI: section begin #%u '%s', %ub free\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0, so I print in fo BEFORE adding section to stack
+    LOGD(P_EmbUI, printf, "section begin #%u '%s', %ub free\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0, so I print in fo BEFORE adding section to stack
     section_stack.add(section);
     return JsonArrayConst(section->block);
 }
