@@ -63,7 +63,7 @@
         "srcDir": "EmbUI",
         "libLDFMode": "chain",
         "libCompatMode": "strict",
-        "flags": "-std=gnu++17",
+        "flags": "-std=gnu++17 -DYUBOXMOD",
         "unflags": "-std=gnu++11"
     },
     "examples": [
