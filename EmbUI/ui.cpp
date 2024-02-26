@@ -90,7 +90,7 @@ void Interface::json_section_end(){
     if (section_stack.size()) {
         section_stack.tail()->idx++;
     }
-    LOGI(P_EmbUI, printf, "section end #%u '%s'\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
+    LOGD(P_EmbUI, printf, "section end #%u '%s'\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
     delete section;
 }
 
