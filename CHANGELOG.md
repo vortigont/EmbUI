@@ -1,5 +1,9 @@
 ## Changelog
 
+* switch project to YoBox mod of AsyncServer and espeasy's asynctcp
+* rework LOG macros, allow it to have severity levels and tag
+
+
 ### v3.1.1
 + add noappend parameter to Interface::json_section_begin
 * update default styles with more compact input fields
