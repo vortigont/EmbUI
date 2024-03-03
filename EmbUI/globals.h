@@ -98,7 +98,7 @@
 	#define LOGW(...)
 #endif
 
-#if defined(EMBUI_DEBUG_LEVEL) && EMBUI_DEBUG_LEVEL == 1
+#if defined(EMBUI_DEBUG_LEVEL) && EMBUI_DEBUG_LEVEL > 0
 	#define LOGE(tag, func, ...) EMBUI_DEBUG_PORT.print(tag); EMBUI_DEBUG_PORT.print(" E: "); EMBUI_DEBUG_PORT.func(__VA_ARGS__)
 #else
 	#define LOGE(...)

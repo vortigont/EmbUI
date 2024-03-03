@@ -38,9 +38,9 @@ void WiFiController::connect(const char *ssid, const char *pwd)
     String _ssid(ssid); String _pwd(pwd);   // I need objects to pass it to lambda
     Task *t = new Task(WIFI_BEGIN_DELAY * TASK_SECOND, TASK_ONCE,
         [_ssid, _pwd](){
-            LOGI(P_EmbUI_WiFi, printf_P, "client connecting to SSID:'%s', pwd:'%s'\n", _ssid.c_str(), _pwd.isEmpty() ? P_empty_quotes : _pwd.c_str());
-                WiFi.disconnect();
-                WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+            LOGI(P_EmbUI_WiFi, printf, "client connecting to SSID:'%s', pwd:'%s'\n", _ssid.c_str(), _pwd.isEmpty() ? P_empty_quotes : _pwd.c_str());
+            WiFi.disconnect();
+            WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
 
             _ssid.length() ? WiFi.begin(_ssid.c_str(), _pwd.c_str()) : WiFi.begin();
         },
@@ -71,7 +71,7 @@ void WiFiController::setup_mDns(){
         MDNS.end();
         return;
     }
-    LOGI(P_EmbUI_WiFi, printf, "responder started: %s.local\n", emb->hostname());
+    LOGI(P_EmbUI_WiFi, printf, "mDNS responder: %s.local\n", emb->hostname());
 
     if (!MDNS.addService("http", P_tcp, 80)) { LOGE(P_EmbUI_WiFi, println, "mDNS failed to add tcp:80 service"); };
 
@@ -151,8 +151,7 @@ void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 	        return;
     	}
 
-        LOGI(P_EmbUI_WiFi, printf, "SSID:'%s', IP: ", WiFi.SSID().c_str());  // IPAddress(info.got_ip.ip_info.ip.addr)
-        LOGI(P_EmbUI_WiFi, println, WiFi.localIP().toString().c_str());
+        LOGI(P_EmbUI_WiFi, printf, "SSID:'%s', IP: %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());  // IPAddress(info.got_ip.ip_info.ip.addr)
 
         // if we are in ap_grace_enable state (i.e. reconnecting) - cancell it
         if (wconn == wifi_recon_t::ap_grace_enable){
@@ -179,7 +178,7 @@ void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
             ap_ctr = WIFI_AP_GRACE_PERIOD;
             break;
         }
-
+        break;
     default:
         LOGD(P_EmbUI_WiFi, printf, "event: %d\n", event);
         break;

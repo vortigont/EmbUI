@@ -57,7 +57,7 @@ void Interface::json_frame_flush(){
     if (!section_stack.size()) return;
     json[P_final] = true;
     json_section_end();
-    LOGI(P_EmbUI, println, "json_frame_flush");
+    LOGD(P_EmbUI, println, "json_frame_flush");
     json_frame_send();
     json_frame_clear();
 }

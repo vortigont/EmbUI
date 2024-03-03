@@ -5,7 +5,7 @@
 
 #include "timeProcessor.h"
 
-#include <time.h>
+#include <ctime>
 #include <esp_sntp.h>
 
 #ifndef TZONE
@@ -108,7 +108,7 @@ void TimeProcessor::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info){
         if (userntp)
             sntp_setservername(CUSTOM_NTP_INDEX, userntp->data());
         sntp_init();
-        LOG(println, F("UI TIME: Starting sntp sync"));
+        LOGI(P_EmbUI_time, println, "Starting sntp sync");
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         sntp_stop();
@@ -129,17 +129,17 @@ void TimeProcessor::timeavailable(struct timeval *t){
  * @param _tstamp - преобразовать заданный таймстамп, если не задан используется текущее локальное время
  */
 void TimeProcessor::getDateTimeString(String &buf, const time_t tstamp){
-  char tmpBuf[DATETIME_STRLEN];
-  const tm* tm = localtime( tstamp ? &tstamp : now());
-  sprintf(tmpBuf, "%04u-%02u-%02uT%02u:%02u", tm->tm_year + TM_BASE_YEAR, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min);
-  buf.concat(tmpBuf);
+  char buff[std::size("yyyy-mm-ddThh:mm:ss")];
+  std::time_t time = std::time({});
+  std::strftime(std::data(buff), std::size(buff), "%FT%T", std::localtime(tstamp ? &tstamp : &time));
+  buf.concat(buff);
 }
 
 /**
  * установка текущего смещения от UTC в секундах
  */
 void TimeProcessor::setOffset(const int val){
-    LOG(printf_P, PSTR("UI Time: Set time zone offset to: %d\n"), val);
+    LOGI(P_EmbUI_time, printf, "TZ offset: %d\n", val);
 
     //setTimeZone((long)val, 0);    // this breaks linker in some weird way
     configTime((long)val, 0, ntp1, ntp2);
@@ -163,7 +163,7 @@ void TimeProcessor::setcustomntp(const char* ntp){
     else
         *userntp = ntp;
     sntp_setservername(CUSTOM_NTP_INDEX, userntp->data());
-    LOG(printf, "Set custom NTP to: %s\n", userntp->data());
+    LOGI(P_EmbUI_time, printf, "Set custom NTP to: %s\n", userntp->data());
 }
 
 /**
@@ -192,7 +192,7 @@ void TimeProcessor::ntpodhcp(bool enable){
     sntp_servermode_dhcp(enable);
 
     if (!enable){
-        LOG(println, F("TIME: Disabling NTP over DHCP"));
+        LOGI(P_EmbUI_time, println, "TIME: Disabling NTP over DHCP");
         sntp_setservername(0, (char*)ntp1);
         sntp_setservername(1, (char*)ntp2);
         if (userntp)
