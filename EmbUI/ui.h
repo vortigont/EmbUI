@@ -156,6 +156,7 @@ public:
         typename std::enable_if<!std::is_fundamental_v<T>, void>::type
     param(ui_param_t key, T* value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
 
+
     /**
      * @brief set 'html' flag for element
      * if set, than value updated for {{}} placeholders in html template, otherwise within dynamicaly created elements on page
@@ -642,7 +643,6 @@ class Interface {
          * depend on type button can send:
          *  type generic - sendsit's id with null value
          *  type submit  - submit a section form + it's own id
-         *  type js - call a js function with name ~ id
          */
         template <typename T>
         void button(button_t btype, const T id, const T label, const char* color = P_EMPTY);
@@ -652,10 +652,16 @@ class Interface {
          * depend on type button can send:
          *  type 0 - it's id + value
          *  type 1 - submit a form with section + it's own id + value
-         *  type 2 - call a js function with name ~ id + pass it a value
+         *  type 3 href - interpret value as a URI to go to
          */
         template <typename T, typename V>
         void button_value(button_t btype, const T id, const V value, const T label, const char* color = P_EMPTY);
+
+        /**
+         * @brief - create html button that calls user defined js function on click 
+         */
+        template <typename T, typename V>
+        void button_jscallback(const T id, const T label, const char* callback, const V value = 0, const char* color = P_EMPTY);
 
         /**
          * @brief - элемент интерфейса checkbox
@@ -919,10 +925,12 @@ class Interface {
 
         /**
          * @brief pick and implace UI structured data objects from front-end side-storage
-         * 
+         * @note root section name of the loaded object will be appended/prepended with supplied argument values
          * @param key - a key to load data from, a dot sepparated notation (i.e. "app.page.controls")
+         * @param prefix - if not null, then all ID's in loaded objects will be prepended with provided prefix
+         * @param suffix - if not null, then to all ID's in loaded objects will be concatenated with provided suffix
          */
-        void uidata_pick(const char* key);
+        void uidata_pick(const char* key, const char* prefix = NULL, const char* suffix = NULL);
 
         /**
          * @brief - Add 'value' object to the Interface frame
@@ -965,6 +973,20 @@ void Interface::button_value(button_t btype, const T id, const V value, const T 
 
     json_frame_add(ui);
 };
+
+template <typename T, typename V>
+void Interface::button_jscallback(const T id, const T label, const char* callback, const V value, const char* color){
+    UI_button<TINY_JSON_SIZE> ui(button_t::js, id, label);
+    ui.obj[P_function] = callback;
+    ui.obj[P_value] = value;
+    if (!embui_traits::is_empty_string(color)) ui.color(color);
+    ui.color(color);
+
+    json_frame_add(ui);
+};
+
+        template <typename T, typename V>
+        void button_jscallback(const T id, const T label, const V value = 0,  const char* color = P_EMPTY);
 
 template <typename ID, typename L>
 void Interface::comment(const ID id, const L label){

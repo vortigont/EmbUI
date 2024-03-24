@@ -1,4 +1,3 @@
-
 /**
  * global objects placeholder
  */
@@ -9,7 +8,7 @@ var global = {menu_id:0, menu: [], value:{}};
  * EmbUI's js api version
  * used to set compatibilty dependency between backend firmware and WebUI js
  */
-const ui_jsapi = 3;
+const ui_jsapi = 4;
 
 /**
  * User application versions - frontend/backend
@@ -47,27 +46,29 @@ var unknown_pkg_callback = function (msg){
  */
 var customFuncs = {
 	// BasicUI class - set system date/time from the browser
-	dtime: function (v) {
+	set_time: function (event) {
 		var t = new Date();
 		var tLocal = new Date(t - t.getTimezoneOffset() * 60 * 1000);
-		var isodate = tLocal.toISOString();
-		isodate = isodate.slice(0, 19);	// chop off chars after ss
+		var isodate = tLocal.toISOString().slice(0, 19);	// chop off chars after ss
 
 		var data = {};
-		if (typeof v == 'undefined' || typeof v == 'object'){
-			// if there was no 'value' given, than simply post the date string to MCU that triggers time/date setup
-			data["set_sys_datetime"] = isodate;
-			ws.send_post("set_sys_datetime", data);
-		} else {
+		let value = event.target.value;
+		if (value){
 			// if there was a param 'value', then paste the date string into doc element with id='value'
 			// let's do this via simulating MCU value frame
+			console.log("Set specific date:", value)
 			data["block"] = [];
-			data.block.push({"date" : isodate});
+			data.block.push({"date" : value});
 			var r = render();
 			r.value(data);
+		} else {
+			// if there was no 'value' given, than simply post browser's date string to MCU that triggers time/date setup
+			console.log("Set browser's date:", isodate)
+			data["set_sys_datetime"] = isodate;
+			ws.send_post("set_sys_datetime", data);
 		}
 	}//,
-	//func2: function () {     console.log('Called func 2'); }
+	//func2: function (event) {     console.log('Called func 2'); }
 };
 
 /**
@@ -227,6 +228,25 @@ function colorGradient(colors, fadeFraction) {
 return 'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
 }
 
+// a simple recursive iterator with callback
+function recurseforeachkey(obj, f) {
+	for (let key in obj) {
+		if (typeof obj[key] === 'object') {
+			if (Array.isArray(obj[key])) {
+				for (let i = 0; i < obj[key].length; i++) {
+				recurseforeachkey(obj[key][i], f);
+				}
+			} else {
+				recurseforeachkey(obj[key], f);
+			}
+		} else {
+		// run callback
+		f(key, obj);
+		}
+	}
+}
+  
+
 // template renderer
 var render = function(){
 	var tmpl_menu = new mustache(go("#tmpl_menu")[0],{
@@ -299,11 +319,11 @@ var render = function(){
 			ws.send_post(id, data);
 		},
 		// run custom user-js function
-		on_js: function(d, id, val) {
-			if (id in customFuncs)
-				customFuncs[id](val);
+		on_js: function(event, callback) {
+			if (callback in customFuncs)
+				customFuncs[callback](event);
 			else
-				console.log("Custom func undefined: ", id);
+				console.log("User function undefined: ", callback);
 		}
 	},
 	tmpl_section = new mustache(go("#tmpl_section")[0], fn_section),
@@ -332,10 +352,9 @@ var render = function(){
 				if (!out.lockhist) out.history(obj.section);
 			} else {
 				if ( Object.keys(go("#"+obj.section)).length === 0 && !obj.noappend ){
-					//console.log("append to main:", obj.section)
 					go("#main").append(tmpl_section_main.parse(obj));
 				} else {
-					//console.log("replacing section:", obj.section)
+					console.log("replacing section:", obj.section)
 					go("#"+obj.section).replace(tmpl_section.parse(obj));
 				}
 			}
@@ -351,6 +370,7 @@ var render = function(){
 					if(arr[i].section == "uidata" && arr[i].block.length){
 						let newblocks = []	// an array for sideloaded blocks
 						arr[i].block.forEach(async function(v, idx, array){
+							// Load UI data objects from external resource, i.e. json file
 							if(v.action == "xload"){
 								let response = await fetch(v.url, {method: 'GET'});
 								if (!response.ok) return;
@@ -368,11 +388,26 @@ var render = function(){
 								}
 								return
 							}
+							// Pick UI object from a previously loaded UI data storage
 							if (v.action == "pick"){
 								//console.log("pick obj:", v.key);
-								let ui_obj = _.get(uiblocks, v.key)
-								if (Object.keys(ui_obj).length !== 0)
+								let ui_obj = {};
+								if (v.prefix || v.suffix)
+									// make a deep copy, 'cause we'll modify the object
+									ui_obj = JSON.parse(JSON.stringify(_.get(uiblocks, v.key)));
+								else
+									ui_obj = _.get(uiblocks, v.key)
+								if (Object.keys(ui_obj).length !== 0){
+									if (v.prefix){
+										ui_obj.section = v.prefix + obj[key];
+										recurseforeachkey(ui_obj, function(key, obj){ if (key === "id"){ obj[key] = v.prefix + obj[key]; } })
+									}
+									if (v.suffix){
+										ui_obj.section += v.suffix;
+										recurseforeachkey(ui_obj, function(key, obj){ if (key === "id"){ obj[key] += v.suffix; } })
+									}
 									newblocks.push(ui_obj)
+								}
 								return
 							}
 						})
@@ -398,6 +433,7 @@ var render = function(){
 
 			// deep iterate and process "uidata" sections
 			recourseUIData(frame);
+			console.log("Processed packet:", obj);
 
 			// go through 1-st level section and render it according to type of data
 			for (let i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {

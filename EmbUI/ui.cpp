@@ -108,10 +108,14 @@ void Interface::uidata_xload(const char* key, const char* url, bool merge, unsig
     json_frame_add(obj);
 }
 
-void Interface::uidata_pick(const char* key){
+void Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
     StaticJsonDocument<UI_DEFAULT_JSON_SIZE> obj;
     obj[P_action] = P_pick;
     obj[P_key] = key;
+    if (!embui_traits::is_empty_string(prefix))
+        obj[P_prefix] = const_cast<char*>(prefix);
+    if (!embui_traits::is_empty_string(suffix))
+        obj[P_suffix] = const_cast<char*>(suffix);
     json_frame_add(obj);
 }
 
