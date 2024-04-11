@@ -545,7 +545,7 @@ class Interface {
         /**
          * @brief - content section is meant to replace existing data on the page
          */
-        void json_section_content(){ json_section_begin("content"); };
+        void json_section_content(){ json_section_begin(P_content); };
 
         /**
          * @brief opens nested json_section using previous section's index

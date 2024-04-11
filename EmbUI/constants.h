@@ -47,6 +47,7 @@ static constexpr const char* P_apssid = "apssid";
 static constexpr const char* P_block = "block";
 static constexpr const char* P_button = "button";
 static constexpr const char* P_color = "color";
+static constexpr const char* P_content = "content";
 static constexpr const char* P_chckbox = "checkbox";
 static constexpr const char* P_class = "class";
 static constexpr const char* P_comment = "comment";
