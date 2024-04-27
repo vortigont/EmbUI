@@ -1,5 +1,11 @@
 ## Changelog
 
+### v3.1.2
+* Switch to mathieucarbou's for of AsynWebserver
++ ui_data pick section call can mutate stored UI objects
+! rework log macro's
+* update workflow actions
+
 ### v3.1.1
 + add noappend parameter to Interface::json_section_begin
 * update default styles with more compact input fields
