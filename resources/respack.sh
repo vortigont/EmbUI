@@ -55,6 +55,8 @@ cat html/css/*_dark.css | gzip -9 > ./data/css/style_dark.css.gz
 
 cp -u html/css/*.jpg ./data/css/
 cp -u html/css/*.webp ./data/css/
+cp -u html/css/*.gz ./data/css/
+
 
 embui_js="dyncss.js lib.js maker.js"
 # combine and compress js files in one bundle
