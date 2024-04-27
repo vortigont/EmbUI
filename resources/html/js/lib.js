@@ -452,7 +452,7 @@ var wbs = function(url){
 		ws.onmessage = function(msg){
 			let m = {};
 			try{ m = JSON.parse(msg.data); } catch(e){ console.log('Error message', e); return; }
-			console.log('Received message:', m);
+			//console.log('Received message:', msg.data);
 			if (!(m instanceof Object)) return;
 			if (m.section && !(m.section in frame) && m.final){
 				receiv_msg(m);
@@ -471,7 +471,7 @@ var wbs = function(url){
 		}
 	},
 	receiv_msg = function(msg){
-		console.log('Received packet:', msg);
+		console.log('Received packet:', JSON.parse(JSON.stringify(msg)));
 		if (msg.pkg && typeof out["on"+msg.pkg] == "function"){
 			try{ out["on"+msg.pkg](msg); } catch(e){ console.log('Error on'+msg.pkg, e); }
 		} else {

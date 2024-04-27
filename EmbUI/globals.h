@@ -23,10 +23,10 @@
 
 #define EMBUI_VERSION_MAJOR     3
 #define EMBUI_VERSION_MINOR     1
-#define EMBUI_VERSION_REVISION  1
+#define EMBUI_VERSION_REVISION  2
 
 // API version for JS frontend
-#define EMBUI_JSAPI             3
+#define EMBUI_JSAPI             4
 // loadable UI blocks version requirement (loaded from js/ui_sys.json)
 #define EMBUI_UIOBJECTS         1
 
@@ -98,7 +98,7 @@
 	#define LOGW(...)
 #endif
 
-#if defined(EMBUI_DEBUG_LEVEL) && EMBUI_DEBUG_LEVEL == 1
+#if defined(EMBUI_DEBUG_LEVEL) && EMBUI_DEBUG_LEVEL > 0
 	#define LOGE(tag, func, ...) EMBUI_DEBUG_PORT.print(tag); EMBUI_DEBUG_PORT.print(" E: "); EMBUI_DEBUG_PORT.func(__VA_ARGS__)
 #else
 	#define LOGE(...)

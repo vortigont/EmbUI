@@ -6,18 +6,18 @@
     "url": "https://github.com/vortigont/EmbUI",
     "authors": [
         {
+            "name": "Emil Muratov",
+            "url": "https://github.com/vortigont",
+            "email": "gpm@hotplug.ru",
+            "maintainer": true
+        },
+        {
             "name": "Anton Zolotarev",
             "url": "https://github.com/anton-zolotarev"
         },
         {
             "name": "Dmytro Korniienko",
             "url": "https://github.com/DmytroKorniienko"
-        },
-        {
-            "name": "Emil Muratov",
-            "url": "https://github.com/vortigont",
-            "email": "gpm@hotplug.ru",
-            "maintainer": true
         }
     ],
     "license": "MIT",
@@ -26,15 +26,14 @@
         "url": "https://github.com/vortigont/EmbUI.git"
     },
     "platforms": ["espressif32"],
-    "version": "3.1.1",
+    "version": "3.1.2",
     "dependencies":
     [
         {"owner": "bblanchon",
          "name": "ArduinoJson",
          "version": "~6.21"},
-        {"owner": "vortigont",
-         "name": "ESP Async WebServer",
-         "version": "https://github.com/vortigont/ESPAsyncWebServer#yubxmod"},
+        {"owner": "mathieucarbou",
+         "name": "ESP Async WebServer"},
         {"owner": "bblanchon",
          "name": "StreamUtils",
          "version": "https://github.com/bblanchon/ArduinoStreamUtils"},
@@ -63,7 +62,7 @@
         "srcDir": "EmbUI",
         "libLDFMode": "chain",
         "libCompatMode": "strict",
-        "flags": "-std=gnu++17 -DYUBOXMOD",
+        "flags": "-std=gnu++17",
         "unflags": "-std=gnu++11"
     },
     "examples": [

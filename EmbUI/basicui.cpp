@@ -114,6 +114,7 @@ void show_uipage(Interface *interf, const JsonObject *data, const char* action){
             break;
         case page::settings :   // general settings page
             page_system_settings(interf, nullptr, action);
+            break;
         case page::network :    // WiFi network setup section
             page_settings_netw(interf, nullptr, action);
             break;

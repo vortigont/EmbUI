@@ -1,6 +1,6 @@
 {
 	"type":"interface",
-	"version":1,
+	"version":2,
 	"descr":"EmbUI settings and configuration UI object blocks",
 	"settings":{
 		"network":{
@@ -173,6 +173,7 @@
 							"id":"dtime",
 							"html":"button",
 							"type":2,
+							"function": "set_time",
 							"label":"Set browser's time"
 						}
 					]

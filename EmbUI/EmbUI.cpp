@@ -30,12 +30,13 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
  *
  */
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len){
+    LOGV(P_EmbUI, printf, "=WS MSG= len: %u\n", len);
     // pass data to handler fuction
     if(type == WS_EVT_DATA)
         return wsDataHandler(server, client, type, arg, data, len);
 
     if(type == WS_EVT_CONNECT){
-        LOGD(P_EmbUI, printf, "WS connect:%s id:%u\n", server->url(), client->id());
+        LOGD(P_EmbUI, printf, "WS_EVT_CONNECT:%s id:%u\n", server->url(), client->id());
         {
             Interface interf(client);
             if (!embui.action.exec(&interf, nullptr, A_ui_page_main))    // call user defined mainpage callback
@@ -46,18 +47,18 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     }
 
     if(type == WS_EVT_DISCONNECT){
-        LOGD(P_EmbUI, printf, "WS disconnect:%s id:%u\n", server->url(), client->id());
+        LOGD(P_EmbUI, printf, "WS_EVT_DISCONNECT:%s id:%u\n", server->url(), client->id());
         return;
     }
 
     if(type == WS_EVT_ERROR){
-        LOGD(P_EmbUI, printf, "ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
+        LOGD(P_EmbUI, printf, "ws[%s][%u] WS_EVT_ERROR(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
         //httpCallback("sys_WS_EVT_ERROR", "", false); // сообщим об ошибке сокета
         return;
     }
 
     if(type == WS_EVT_PONG){
-        LOGE(P_EmbUI, printf, "ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
+        LOGD(P_EmbUI, printf, "ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
         return;
     }
 }
@@ -67,15 +68,17 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
     AwsFrameInfo *info = (AwsFrameInfo*)arg;
 
     // fragmented messages reassembly is not (yet) supported
-    if(!info->final || info->index != 0 || info->len != len)
+    if(!info->final || info->index != 0 || info->len != len){
+        LOGV(P_EmbUI, printf, "WS fragment fin:%u, idx:%u, len:%u\n", info->final, info->index, len);
         return;
-
-    LOGD(P_EmbUI, printf, "=WS MSG= data len: %u\n", len);
+    }
 
     // ignore packets without "pkg":"post" marker
     std::string_view payload((const char *)data, len);
-    if (payload.substr(1, 12) != "\"pkg\":\"post\"")
+    if (payload.substr(1, 12) != "\"pkg\":\"post\""){
+        LOGW(P_EmbUI, println, "bad post pkt");
         return;
+    }
 
     // deserializing data with deep copy to pass to post() for action lookup
     uint16_t objCnt = 0;
@@ -99,14 +102,6 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
         [res](){
             JsonObject o = res->as<JsonObject>();
             // if there is nested data in the object
-/*
-            if (o[P_data].size()){
-                // echo back data to all feeders
-                Interface interf(&embui.ws, MEDIUM_JSON_SIZE);
-                interf.json_frame_value(o[P_data], true);
-                interf.json_frame_flush();
-            }
-*/
             // call action handler for post'ed data
             embui.post(o);
             delete res; },
@@ -210,7 +205,7 @@ void EmbUI::begin(){
  * looks for registered action for the section name and calls the action with post data if found
  */
 void EmbUI::post(const JsonObject &data, bool inject){
-    LOGD(P_EmbUI, print, "EmbUI::post "); LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
+    LOGD(P_EmbUI, print, "post() "); //LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
     JsonObject odata = data[P_data].as<JsonObject>();
     Interface interf(&feeders);
 
@@ -263,7 +258,7 @@ const char* EmbUI::param(const char* key)
  */
 String EmbUI::param(const String &key)
 {
-    LOGV(P_EmbUI, printf, "UI READ KEY: '%s'", key.c_str());
+    LOGV(P_EmbUI, printf, "READ key: '%s'", key.c_str());
     String v;
     if (cfg[key].is<int>()){ v += cfg[key].as<int>(); }
     else if (cfg[key].is<float>()) { v += cfg[key].as<float>(); }
@@ -353,7 +348,7 @@ void EmbUI::_getmacid(){
 
 void EmbUI::var_remove(const char* key){
     if (cfg.containsKey(key)){
-        LOGD(P_EmbUI, printf, "UI cfg REMOVE key:'%s'\n", key);
+        LOGD(P_EmbUI, printf, "cfg remove key:'%s'\n", key);
         cfg.remove(key);
         autosave();
     }
@@ -362,7 +357,7 @@ void EmbUI::var_remove(const char* key){
 
 void ActionHandler::add(const char* id, actionCallback_t callback){
     actions.emplace_back(id, callback);
-    LOGD(P_EmbUI, print, "Action REGISTER: "); LOG(println, id);
+    LOGD(P_EmbUI, printf, "action register: %s\n", id);
 }
 
 void ActionHandler::replace(const char* id, actionCallback_t callback){
