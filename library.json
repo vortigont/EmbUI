@@ -69,11 +69,22 @@
     "examples": [
         {
             "name": "Generic UI",
-            "base": "examples/01_generic"
+            "base": "examples/01_generic",
+            "files": [
+                "platformio.ini",
+                "src/*"
+            ]
         },
         {
             "name": "Sensors display UI",
-            "base": "examples/02_sensors"
+            "base": "examples/02_sensors",
+            "files": [
+                "platformio.ini",
+                "src/*",
+                "data/*",
+                "README.md",
+                "post_flashz.py"
+            ]
         }
     ]
 }
