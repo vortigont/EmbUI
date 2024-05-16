@@ -1002,7 +1002,7 @@ void Interface::constant(const ID id, const L label, const V value){
     json_frame_add(ui);
 };
 
-template <typename ID, typename V, typename L = const char*>
+template <typename ID, typename V, typename L>
 void Interface::display(const ID id, V&& value, const L label, String cssclass, const JsonObject params ){
     if (cssclass.isEmpty())	// make css selector like 'class "css" "id"', id used as a secondary distinguisher 
         cssclass = P_display;   // "display is the default css selector"
@@ -1011,7 +1011,7 @@ void Interface::display(const ID id, V&& value, const L label, String cssclass, 
     div(id, P_html, std::forward<V>(value), label, cssclass, params);
 };
 
-template <typename ID, typename V, typename L = const char*, typename CSS = const char*>
+template <typename ID, typename V, typename L, typename CSS>
 void Interface::div(const ID id, const ID type, const V value, const L label, const CSS css, const JsonVariantConst params){
     UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::div, id, value);
     ui.obj[P_type] = type;
@@ -1065,7 +1065,7 @@ void Interface::json_frame_jscall(const TString& function){
     json_section_begin(P_EMPTY);
 };
 
-template <typename TChar = const char>
+template <typename TChar>
 void Interface::json_frame_jscall(const TChar* function){
     json[P_pkg] = P_jscall;
     json[P_jsfunc] = function;
@@ -1114,7 +1114,7 @@ Interface::json_section_extend(const ID name){
     json_section_begin(name, P_EMPTY, false, false, false, false, o);
 };
 
-template  <typename ID, typename L = const char*>
+template  <typename ID, typename L>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
 Interface::json_section_manifest(const ID appname, const char* devid, unsigned appjsapi, const L appversion){
     json_section_begin("manifest");
@@ -1160,7 +1160,7 @@ Interface::range(const ID id, T value, T min, T max, T step, const L label, bool
     json_frame_add(ui);
 };
 
-template <typename ID, typename T, typename L = const char*>
+template <typename ID, typename T, typename L>
 void Interface::select(const ID id, const T value, const L label, bool onChange, const L exturl){
     UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::select, id, value);
     ui.label(label);
@@ -1171,7 +1171,7 @@ void Interface::select(const ID id, const T value, const L label, bool onChange,
     json_section_extend(P_options);
 };
 
-template <typename L = const char*>
+template <typename L>
     typename std::enable_if<embui_traits::is_string_v<L>,void>::type
 Interface::spacer(const L label){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::spacer);
