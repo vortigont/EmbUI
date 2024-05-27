@@ -9,8 +9,8 @@
 #include "basicui.h"
 #include "ftpsrv.h"
 
-#define POST_ACTION_DELAY   50      // delay for large posts processing in ms
-#define POST_LARGE_SIZE     1024    // large post threshold
+#define POST_ACTION_DELAY   10      // delay for large posts processing in ms
+//#define POST_LARGE_SIZE     1024    // large post threshold
 
 // instance of embui object
 EmbUI embui;
@@ -80,15 +80,7 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
         return;
     }
 
-    // deserializing data with deep copy to pass to post() for action lookup
-    uint16_t objCnt = 0;
-    for(uint16_t i=0; i<len; ++i)
-        if(data[i]==0x3a || data[i]==0x7b)    // считаем ':' и '{' это учитывает и пары k:v и вложенные массивы
-            ++objCnt;
-
-    DynamicJsonDocument *res = new DynamicJsonDocument(len + JSON_OBJECT_SIZE(objCnt)); // https://arduinojson.org/v6/assistant/
-    if(!res->capacity())
-        return;
+    JsonDocument *res = new JsonDocument();
 
     DeserializationError error = deserializeJson((*res), (const char*)data, len); // deserialize via copy to prevent dangling pointers in action()'s
     if (error){
@@ -97,7 +89,7 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
         return;
     }
 
-    // switch context for processing data
+    // switch context to the main loop() for processing data
     Task *t = new Task(POST_ACTION_DELAY, TASK_ONCE,
         [res](){
             JsonObject o = res->as<JsonObject>();
@@ -112,7 +104,7 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
 }
 
 // EmbUI constructor
-EmbUI::EmbUI() : cfg(EMBUI_CFGSIZE), server(80), ws(EMBUI_WEBSOCK_URI){
+EmbUI::EmbUI() : server(80), ws(EMBUI_WEBSOCK_URI){
         _getmacid();
 
         tAutoSave.set(EMBUI_AUTOSAVE_TIMEOUT * TASK_SECOND, TASK_ONCE, [this](){LOGD(P_EmbUI, println, "AutoSave"); save();} );    // config autosave timer
@@ -211,7 +203,7 @@ void EmbUI::post(const JsonObject &data, bool inject){
 
     // echo back injected data to all available feeders IF request 'data' object is not empty
     if (odata.size() && feeders.available()){
-        interf.json_frame_value(odata, true);
+        interf.json_frame_value(odata);
         interf.json_frame_flush();
     }
 
@@ -226,7 +218,7 @@ void EmbUI::post(const JsonObject &data, bool inject){
 void EmbUI::send_pub(){
     if (mqttAvailable()) _mqtt_pub_sys_status();
     if (!ws.count()) return;
-    Interface interf(&ws, SMALL_JSON_SIZE);     // only websocket publish!
+    Interface interf(&ws);     // only websocket publish!
     basicui::embuistatus(&interf);
     action.exec(&interf, nullptr, A_publish);   // call user-callback for publishing task
 }

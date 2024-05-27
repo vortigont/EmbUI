@@ -510,7 +510,7 @@ void embuistatus(Interface *interf){
 
     // RSSI
     auto rssi = WiFi.RSSI();
-    std::snprintf(buff, 20, "%u%% (%ddBm)", constrain(map(rssi, -85, -40, 0, 100),0,100), rssi);
+    std::snprintf(buff, 20, "%d%% (%ddBm)", constrain(map(rssi, -85, -40, 0, 100),0,100), rssi);
     interf->value(P_pRSSI, buff, true);
 
     interf->json_frame_flush();

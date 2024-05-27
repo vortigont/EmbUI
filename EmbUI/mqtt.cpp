@@ -134,13 +134,8 @@ void EmbUI::_onMqttMessage(char* topic, char* payload, AsyncMqttClientMessagePro
 
     // this is a dublicate code same as for WS, need to implement a proper queue for such data
 
-    uint16_t objCnt = 0;
-    for(uint16_t i=0; i<len; ++i)
-        if(payload[i]==0x3a || payload[i]==0x7b)    // считаем ':' и '{' это учитывает и пары k:v и вложенные массивы
-            ++objCnt;
-
-    DynamicJsonDocument *res = new DynamicJsonDocument(len + JSON_OBJECT_SIZE(objCnt) + 64); // https://arduinojson.org/v6/assistant/
-    if(!res->capacity())
+    JsonDocument *res = new JsonDocument();
+    if(!res)
         return;
 
     DeserializationError error = deserializeJson((*res), (const char*)payload, len); // deserialize via copy to prevent dangling pointers in action()'s

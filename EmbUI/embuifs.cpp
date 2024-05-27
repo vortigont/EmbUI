@@ -15,9 +15,9 @@
 
 namespace embuifs {
 
-    bool deserializeFile(DynamicJsonDocument& doc, const String& filepath){ return deserializeFile(doc, filepath.c_str()); };
+    bool deserializeFile(JsonDocument& doc, const String& filepath){ return deserializeFile(doc, filepath.c_str()); };
 
-    bool deserializeFile(DynamicJsonDocument& doc, const char* filepath){
+    bool deserializeFile(JsonDocument& doc, const char* filepath){
         if (!filepath || !*filepath)
             return false;
 
@@ -38,9 +38,9 @@ namespace embuifs {
         return false;
     }
 
-    size_t serialize2file(const DynamicJsonDocument& doc, const String& filepath, size_t bufsize){ return serialize2file(doc, filepath.c_str(), bufsize); };
+    size_t serialize2file(const JsonDocument& doc, const String& filepath, size_t bufsize){ return serialize2file(doc, filepath.c_str(), bufsize); };
 
-    size_t serialize2file(const DynamicJsonDocument& doc, const char* filepath, size_t bufsize){
+    size_t serialize2file(const JsonDocument& doc, const char* filepath, size_t bufsize){
         File hndlr = LittleFS.open(filepath, "w");
         WriteBufferingStream bufferedFile(hndlr, bufsize);
         size_t len = serializeJson(doc, bufferedFile);

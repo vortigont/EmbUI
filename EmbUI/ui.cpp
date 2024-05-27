@@ -5,50 +5,25 @@
 
 #include "ui.h"
 
-#define FRAME_ADD_RETRY 3
-
-///////////////////////////////////////
-
-/**
- * @brief - add object to frame with mem overflow protection 
- */
-void Interface::json_frame_add(const JsonVariantConst &jobj){
-    size_t _cnt = FRAME_ADD_RETRY;
-
-    do {
-        --_cnt;
-        #ifdef EMBUI_DEBUG
-            if (!_cnt)
-                LOGE(P_EmbUI, println, P_ERR_obj2large);
-        #endif
-    } while (!json_frame_enqueue(jobj) && _cnt );
-};
-
 void Interface::json_frame_clear(){
     section_stack.clear();
     json.clear();
 }
 
-bool Interface::json_frame_enqueue(const JsonVariantConst &obj, bool shallow){
-    if(shallow){
-        LOGD(P_EmbUI, printf, "Frame add shallow obj %u b, mem:%d/%d\n", obj.memoryUsage(), json.memoryUsage(), json.capacity());
-        JsonVariant nested = section_stack.back().block.createNestedObject();
-        nested.shallowCopy(obj);
-        return true;
-    }
+void Interface::json_frame_add(const JsonVariantConst &obj){
+    LOGV(P_EmbUI, printf, "Frame add obj %u items\n", obj.size());
 
-    LOGV(P_EmbUI, printf, "Frame add obj %u b, mem:%d/%d\n", obj.memoryUsage(), json.memoryUsage(), json.capacity());
-
-    if ( ( json.capacity() - json.memoryUsage() > obj.memoryUsage() + 16 ) && section_stack.back().block.add(obj)) {
+    if ( section_stack.back().block.add(obj) ){
         LOGV(P_EmbUI, printf, "...OK idx:%u\theap free: %u\n", section_stack.back().idx, ESP.getFreeHeap());
         section_stack.back().idx++;        // incr idx for next obj
-        return true;
+        return;
     }
-    LOGW(P_EmbUI, printf, " - Frame full! Heap free: %u\n", ESP.getFreeHeap());
+
+    // this is no longer valid, but I do not know why it might probably return false, so let's just send and make next frame section
+    //LOGW(P_EmbUI, printf, " - Frame full! Heap free: %u\n", ESP.getFreeHeap());
 
     json_frame_send();
     json_frame_next();
-    return false;
 }
 
 void Interface::json_frame_flush(){
@@ -64,21 +39,18 @@ void Interface::json_frame_next(){
     json.clear();
     JsonObject obj = json.to<JsonObject>();
     for ( auto i = std::next(section_stack.begin()); i != section_stack.end(); ++i ){
-        obj = (*std::prev(i)).block.createNestedObject();
+        obj = (*std::prev(i)).block.add<JsonObject>();
         obj[P_section] = (*i).name;
         obj["idx"] = (*i).idx;
-        (*i).block = obj.createNestedArray(P_block);
+        (*i).block = obj[P_block].to<JsonArray>();
         //LOG(printf, "nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
     }
-    LOGI(P_EmbUI, printf, "json_frame_next: [#%u], mem:%u/%u\n", section_stack.size()-1, obj.memoryUsage(), json.capacity());   // section index counts from 0
+    LOGI(P_EmbUI, printf, "json_frame_next: [#%u]\n", section_stack.size()-1);   // section index counts from 0
 }
 
-void Interface::json_frame_value(const JsonVariant val, bool shallow){
+void Interface::json_frame_value(const JsonVariantConst val){
     json_frame(P_value);
-    if (shallow)
-        json_frame_enqueue(val, shallow);
-    else
-        json_frame_add(val);
+    json_frame_add(val);
 }
 
 void Interface::json_section_end(){
@@ -96,7 +68,7 @@ JsonObject Interface::get_last_object(){
 }
 
 void Interface::uidata_xload(const char* key, const char* url, bool merge, unsigned version){
-    StaticJsonDocument<UI_DEFAULT_JSON_SIZE> obj;
+    JsonDocument obj;
     obj[P_action] = P_xload;
     obj[P_key] = key;
     obj[P_url] = url;
@@ -106,7 +78,7 @@ void Interface::uidata_xload(const char* key, const char* url, bool merge, unsig
 }
 
 void Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
-    StaticJsonDocument<UI_DEFAULT_JSON_SIZE> obj;
+    JsonDocument obj;
     obj[P_action] = P_pick;
     obj[P_key] = key;
     if (!embui_traits::is_empty_string(prefix))
@@ -189,7 +161,7 @@ void FrameSendAsyncJS::send(const JsonVariantConst& data){
 
     if (data[P_pkg] == P_value){
         JsonVariant& root = response->getRoot();
-        root.shallowCopy(data[P_block]);
+        root[P_block] = data[P_block];
     } else
         return;     // won't reply with non-value packets
 

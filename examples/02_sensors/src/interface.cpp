@@ -180,7 +180,7 @@ void sensorPublisher() {
     if (!embui.ws.count())    // send new values only if there are WebSocket clients
       return;
 
-    Interface interf(&embui.ws, SMALL_JSON_SIZE);
+    Interface interf(&embui.ws);
     interf.json_frame_value();
     // Update voltage sensor
 #ifdef ESP8266
