@@ -8,7 +8,6 @@
 #include "globals.h"
 #include "traits.hpp"
 #include <list>
-#include "LList.h"
 #include "AsyncJson.h"
 
 // static json obj size for tiny ui elements, like checkboxes, number inputs, etc...
@@ -363,9 +362,11 @@ class FrameSendAsyncJS: public FrameSend {
 };
 
 struct section_stack_t{
-    JsonArray block;
-    String name;
     int idx{0};
+    String name;
+    JsonArray block;
+    section_stack_t();
+    section_stack_t(const char* sect_name, JsonArray&& block) : name(sect_name), block(std::move(block)) {} 
 };
 
 class Interface {
@@ -373,7 +374,7 @@ class Interface {
 
     DynamicJsonDocument json;
     bool _delete_handler_on_destruct;
-    LList<section_stack_t*> section_stack;
+    std::list<section_stack_t> section_stack;
     FrameSend *send_hndl;
 
 
@@ -622,7 +623,7 @@ class Interface {
          * 
          * @return const section_stack_t 
          */
-        const section_stack_t* get_last_section(){ return section_stack.tail(); };
+        const section_stack_t& get_last_section(){ return section_stack.back(); };
 
         /**
          * @brief Get last html object in interface stack
@@ -1002,7 +1003,7 @@ void Interface::constant(const ID id, const L label, const V value){
     json_frame_add(ui);
 };
 
-template <typename ID, typename V, typename L = const char*>
+template <typename ID, typename V, typename L>
 void Interface::display(const ID id, V&& value, const L label, String cssclass, const JsonObject params ){
     if (cssclass.isEmpty())	// make css selector like 'class "css" "id"', id used as a secondary distinguisher 
         cssclass = P_display;   // "display is the default css selector"
@@ -1011,7 +1012,7 @@ void Interface::display(const ID id, V&& value, const L label, String cssclass, 
     div(id, P_html, std::forward<V>(value), label, cssclass, params);
 };
 
-template <typename ID, typename V, typename L = const char*, typename CSS = const char*>
+template <typename ID, typename V, typename L, typename CSS>
 void Interface::div(const ID id, const ID type, const V value, const L label, const CSS css, const JsonVariantConst params){
     UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::div, id, value);
     ui.obj[P_type] = type;
@@ -1065,7 +1066,7 @@ void Interface::json_frame_jscall(const TString& function){
     json_section_begin(P_EMPTY);
 };
 
-template <typename TChar = const char>
+template <typename TChar>
 void Interface::json_frame_jscall(const TChar* function){
     json[P_pkg] = P_jscall;
     json[P_jsfunc] = function;
@@ -1075,12 +1076,12 @@ void Interface::json_frame_jscall(const TChar* function){
 
 template  <typename TString, typename L>
 JsonArrayConst Interface::json_section_begin(const TString& name, const L label, bool main, bool hidden, bool line, bool noappend){
-    JsonObject obj(section_stack.size() ? section_stack.tail()->block.createNestedObject() : json.as<JsonObject>());
+    JsonObject obj(section_stack.size() ? section_stack.back().block.createNestedObject() : json.as<JsonObject>());
     return json_section_begin(detail::adaptString(name), label, main, hidden, line, noappend, obj);
 }
 template  <typename TChar, typename L>
 JsonArrayConst Interface::json_section_begin(const TChar* name, const L label, bool main, bool hidden, bool line, bool noappend){
-    JsonObject obj(section_stack.size() ? section_stack.tail()->block.createNestedObject() : json.as<JsonObject>());
+    JsonObject obj(section_stack.size() ? section_stack.back().block.createNestedObject() : json.as<JsonObject>());
     return json_section_begin(detail::adaptString(name), label, main, hidden, line, noappend, obj);
 }
 
@@ -1097,28 +1098,24 @@ JsonArrayConst Interface::json_section_begin(TAdaptedString name, const L label,
     if (line) obj["line"] = true;
     if (noappend) obj["noappend"] = true;
 
-    section_stack_t *section = new section_stack_t;
-    section->name = obj[P_section].as<const char*>();
-    section->block = obj.createNestedArray(P_block);
-
-    LOGD(P_EmbUI, printf, "section begin #%u '%s', %ub free\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0, so I print in fo BEFORE adding section to stack
-    section_stack.add(section);
-    return JsonArrayConst(section->block);
+    section_stack.emplace_back(obj[P_section].as<const char*>(), obj.createNestedArray(P_block));
+    LOGD(P_EmbUI, printf, "section begin #%u '%s', %ub free\n", section_stack.size(), section_stack.back().name.isEmpty() ? "-" : section_stack.back().name.c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0, so I print in fo BEFORE adding section to stack
+    return JsonArrayConst(section_stack.back().block);
 }
 
 template  <typename ID>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
 Interface::json_section_extend(const ID name){
-    section_stack.tail()->idx--;
-    JsonObject o(section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element
+    section_stack.back().idx--;
+    JsonObject o(section_stack.back().block[section_stack.back().block.size()-1]);    // find last array element
     json_section_begin(name, P_EMPTY, false, false, false, false, o);
 };
 
-template  <typename ID, typename L = const char*>
+template  <typename ID, typename L>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
 Interface::json_section_manifest(const ID appname, const char* devid, unsigned appjsapi, const L appversion){
     json_section_begin("manifest");
-    JsonObject obj = section_stack.tail()->block.createNestedObject();
+    JsonObject obj( section_stack.back().block.createNestedObject() );
     obj[P_uijsapi] = EMBUI_JSAPI;
     obj[P_uiver] = EMBUI_VERSION_STRING;
     obj["uiobjects"] = EMBUI_UIOBJECTS;
@@ -1160,7 +1157,7 @@ Interface::range(const ID id, T value, T min, T max, T step, const L label, bool
     json_frame_add(ui);
 };
 
-template <typename ID, typename T, typename L = const char*>
+template <typename ID, typename T, typename L>
 void Interface::select(const ID id, const T value, const L label, bool onChange, const L exturl){
     UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::select, id, value);
     ui.label(label);
@@ -1171,7 +1168,7 @@ void Interface::select(const ID id, const T value, const L label, bool onChange,
     json_section_extend(P_options);
 };
 
-template <typename L = const char*>
+template <typename L>
     typename std::enable_if<embui_traits::is_string_v<L>,void>::type
 Interface::spacer(const L label){
     UIelement<TINY_JSON_SIZE> ui(ui_element_t::spacer);

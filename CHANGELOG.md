@@ -1,5 +1,9 @@
 ## Changelog
 
+### v3.1.3
+- removed LinkedList dependency, use std::list from STL instead
+* ui.h remove default template params in method implementations
+
 ### v3.1.2
 * Switch to mathieucarbou's for of AsynWebserver
 + ui_data pick section call can mutate stored UI objects

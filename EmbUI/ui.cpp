@@ -25,25 +25,23 @@ void Interface::json_frame_add(const JsonVariantConst &jobj){
 };
 
 void Interface::json_frame_clear(){
-    while (section_stack.size())
-        delete section_stack.shift();
-
+    section_stack.clear();
     json.clear();
 }
 
 bool Interface::json_frame_enqueue(const JsonVariantConst &obj, bool shallow){
     if(shallow){
         LOGD(P_EmbUI, printf, "Frame add shallow obj %u b, mem:%d/%d\n", obj.memoryUsage(), json.memoryUsage(), json.capacity());
-        JsonVariant nested = section_stack.tail()->block.createNestedObject();
+        JsonVariant nested = section_stack.back().block.createNestedObject();
         nested.shallowCopy(obj);
         return true;
     }
 
     LOGV(P_EmbUI, printf, "Frame add obj %u b, mem:%d/%d\n", obj.memoryUsage(), json.memoryUsage(), json.capacity());
 
-    if ( ( json.capacity() - json.memoryUsage() > obj.memoryUsage() + 16 ) && section_stack.tail()->block.add(obj)) {
-        LOGV(P_EmbUI, printf, "...OK idx:%u\theap free: %u\n", section_stack.tail()->idx, ESP.getFreeHeap());
-        section_stack.tail()->idx++;        // incr idx for next obj
+    if ( ( json.capacity() - json.memoryUsage() > obj.memoryUsage() + 16 ) && section_stack.back().block.add(obj)) {
+        LOGV(P_EmbUI, printf, "...OK idx:%u\theap free: %u\n", section_stack.back().idx, ESP.getFreeHeap());
+        section_stack.back().idx++;        // incr idx for next obj
         return true;
     }
     LOGW(P_EmbUI, printf, " - Frame full! Heap free: %u\n", ESP.getFreeHeap());
@@ -65,11 +63,11 @@ void Interface::json_frame_flush(){
 void Interface::json_frame_next(){
     json.clear();
     JsonObject obj = json.to<JsonObject>();
-    for (unsigned i = 0; i < section_stack.size(); i++) {
-        if (i) obj = section_stack[i - 1]->block.createNestedObject();
-        obj[P_section] = section_stack[i]->name;
-        obj["idx"] = section_stack[i]->idx;
-        section_stack[i]->block = obj.createNestedArray(P_block);
+    for ( auto i = std::next(section_stack.begin()); i != section_stack.end(); ++i ){
+        obj = (*std::prev(i)).block.createNestedObject();
+        obj[P_section] = (*i).name;
+        obj["idx"] = (*i).idx;
+        (*i).block = obj.createNestedArray(P_block);
         //LOG(printf, "nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
     }
     LOGI(P_EmbUI, printf, "json_frame_next: [#%u], mem:%u/%u\n", section_stack.size()-1, obj.memoryUsage(), json.capacity());   // section index counts from 0
@@ -86,16 +84,15 @@ void Interface::json_frame_value(const JsonVariant val, bool shallow){
 void Interface::json_section_end(){
     if (!section_stack.size()) return;
 
-    section_stack_t *section = section_stack.pop();
+    section_stack.erase(std::prev( section_stack.end() ));
     if (section_stack.size()) {
-        section_stack.tail()->idx++;
+        section_stack.back().idx++;
     }
     LOGD(P_EmbUI, printf, "section end #%u '%s'\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
-    delete section;
 }
 
 JsonObject Interface::get_last_object(){
-    return JsonObject (section_stack.tail()->block[section_stack.tail()->block.size()-1]);    // find last array element and return it as an Jobject
+    return JsonObject (section_stack.back().block[section_stack.back().block.size()-1]);    // find last array element and return it as an Jobject
 }
 
 void Interface::uidata_xload(const char* key, const char* url, bool merge, unsigned version){

@@ -26,7 +26,7 @@
         "url": "https://github.com/vortigont/EmbUI.git"
     },
     "platforms": ["espressif32"],
-    "version": "3.1.2",
+    "version": "3.1.3",
     "dependencies":
     [
         {"owner": "bblanchon",
@@ -44,9 +44,6 @@
         {"owner": "arkhipenko",
          "name": "TaskScheduler",
          "version": "~3.7"},
-        {"owner": "vortigont",
-         "name": "LinkedList",
-         "version": "https://github.com/vortigont/LinkedList"},
          {"owner": "vortigont",
          "name": "FTPClientServer",
          "version": "https://github.com/vortigont/FTPClientServer#feat"},
@@ -69,11 +66,22 @@
     "examples": [
         {
             "name": "Generic UI",
-            "base": "examples/01_generic"
+            "base": "examples/01_generic",
+            "files": [
+                "platformio.ini",
+                "src/*"
+            ]
         },
         {
             "name": "Sensors display UI",
-            "base": "examples/02_sensors"
+            "base": "examples/02_sensors",
+            "files": [
+                "platformio.ini",
+                "src/*",
+                "data/*",
+                "README.md",
+                "post_flashz.py"
+            ]
         }
     ]
 }
