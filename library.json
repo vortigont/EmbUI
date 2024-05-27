@@ -31,7 +31,7 @@
     [
         {"owner": "bblanchon",
          "name": "ArduinoJson",
-         "version": "~6.21"},
+         "version": "~7.0"},
         {"owner": "mathieucarbou",
          "name": "ESP Async WebServer",
          "version": "~2.9"},

@@ -10,28 +10,6 @@
 #include <list>
 #include "AsyncJson.h"
 
-// static json obj size for tiny ui elements, like checkboxes, number inputs, etc...
-#ifndef TINY_JSON_SIZE
-#define TINY_JSON_SIZE      256
-#endif
-
-// static json obj size for small ui elements
-#ifndef SMALL_JSON_SIZE
-#define SMALL_JSON_SIZE     512
-#endif
-
-// static json obj size for small ui elements
-#ifndef MEDIUM_JSON_SIZE
-#define MEDIUM_JSON_SIZE     1024
-#endif
-
-// dynamic json for creating websocket frames to be sent to UI
-#ifndef IFACE_DYN_JSON_SIZE
-#define IFACE_DYN_JSON_SIZE 4096
-#endif
-
-// static json doc size
-#define UI_DEFAULT_JSON_SIZE SMALL_JSON_SIZE
 
 template<typename TString>
 using ValidStringRef_t = std::enable_if_t<embui_traits::is_string_obj_v<TString>, void>;
@@ -91,7 +69,6 @@ enum class button_t:uint8_t {
     href
 };
 
-template <size_t capacity = UI_DEFAULT_JSON_SIZE>
 class UIelement {
 protected:
     ui_element_t _t;
@@ -112,7 +89,7 @@ protected:
     }
 
 public:
-    StaticJsonDocument<capacity> obj;
+    JsonDocument obj;
 
     // c-tor with ID by value
     template <typename T>
@@ -209,22 +186,21 @@ public:
 
 };
 
-template <size_t S = UI_DEFAULT_JSON_SIZE>
-class UI_button : public UIelement<S> {
+class UI_button : public UIelement {
 public:
-    using UIelement<S>::value;
-    using UIelement<S>::color;
+    using UIelement::value;
+    using UIelement::color;
 
     template <typename T, typename L>
-    UI_button(button_t btype, const T* id, const L label) : UIelement<S>(ui_element_t::button, id) {
-        UIelement<S>::obj[P_type] = static_cast<uint8_t>(btype);
-        UIelement<S>::label(label);
+    UI_button(button_t btype, const T* id, const L label) : UIelement(ui_element_t::button, id) {
+        UIelement::obj[P_type] = static_cast<uint8_t>(btype);
+        UIelement::label(label);
     };
 
     template <typename T, typename L>
-    UI_button(button_t btype, const T& id, const L label) : UIelement<S>(ui_element_t::button, id) {
-        UIelement<S>::obj[P_type] = static_cast<uint8_t>(btype);
-        UIelement<S>::label(label);
+    UI_button(button_t btype, const T& id, const L label) : UIelement(ui_element_t::button, id) {
+        UIelement::obj[P_type] = static_cast<uint8_t>(btype);
+        UIelement::label(label);
     };
 };
 
@@ -349,7 +325,7 @@ class FrameSendAsyncJS: public FrameSend {
         AsyncJsonResponse* response;
     public:
         FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {
-            response = new AsyncJsonResponse(false, IFACE_DYN_JSON_SIZE);
+            response = new AsyncJsonResponse(false);
         }
         ~FrameSendAsyncJS();
 
@@ -372,24 +348,11 @@ struct section_stack_t{
 class Interface {
 
 
-    DynamicJsonDocument json;
+    JsonDocument json;
     bool _delete_handler_on_destruct;
     std::list<section_stack_t> section_stack;
     FrameSend *send_hndl;
 
-
-    /**
-     * @brief append supplied json data to the current Interface frame
-     * this function is unsafe, i.e. when frame is full and can't append
-     * current data it returns false and tries to send current frame and open new one
-     * use json_frame_add() to add data in a safe way
-     * 
-     * @param obj - json object to add
-     * @param shallow - add object using shallow copy
-     * @return true on success adding obj
-     * @return false otherwise
-     */
-    bool json_frame_enqueue(const JsonVariantConst &obj, bool shallow = false);
 
     /**
      * @brief purge json object while keeping section structure
@@ -410,7 +373,7 @@ class Interface {
     JsonArrayConst json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, bool noappend, JsonObject &obj);
 
     template <typename L>
-    void _html_input(UIelement<TINY_JSON_SIZE> &ui, const char* type, const L label, bool onChange);
+    void _html_input(UIelement &ui, const char* type, const L label, bool onChange);
 
 
     /* *** PUBLIC METHODS *** */
@@ -422,19 +385,19 @@ class Interface {
          * EmbUI could have it's own chain of send handlers to execute
          * 
          * @param feeder an FrameSender object to use for sending data 
-         * @param size desired size of DynamicJsonDocument
+         * @param size desired size of JsonDocument
          */
-        Interface (FrameSend *feeder, size_t size = IFACE_DYN_JSON_SIZE): json(size), _delete_handler_on_destruct(false) {
+        Interface (FrameSend *feeder): _delete_handler_on_destruct(false) {
             send_hndl = feeder;
         }
 
-        Interface(AsyncWebSocket *server, size_t size = IFACE_DYN_JSON_SIZE): json(size), _delete_handler_on_destruct(true) {
+        Interface(AsyncWebSocket *server): _delete_handler_on_destruct(true) {
             send_hndl = new FrameSendWSServer(server);
         }
-        Interface(AsyncWebSocketClient *client, size_t size = IFACE_DYN_JSON_SIZE): json(size), _delete_handler_on_destruct(true) {
+        Interface(AsyncWebSocketClient *client): _delete_handler_on_destruct(true) {
             send_hndl = new FrameSendWSClient(client);
         }
-        Interface(AsyncWebServerRequest *request, size_t size = IFACE_DYN_JSON_SIZE): json(size), _delete_handler_on_destruct(true) {
+        Interface(AsyncWebServerRequest *request): _delete_handler_on_destruct(true) {
             send_hndl = new FrameSendHttp(request);
         }
         ~Interface(){
@@ -461,8 +424,8 @@ class Interface {
          * attempts to retry on mem overflow
          */
         void json_frame_add(const JsonVariantConst &obj);
-        template <size_t capacity>
-        void json_frame_add( UIelement<capacity> &ui){ json_frame_add(ui.obj); }
+
+        void json_frame_add( UIelement &ui){ json_frame_add(ui.obj); }
 
         /**
          * @brief purge all current section data
@@ -518,10 +481,8 @@ class Interface {
          * @brief - begin Value UI secton with supplied json object
          * used to supply WebUI with data (key:value pairs)
          * @param val json object with supplied data to be copied
-         * @param shallow use 'shallow' copy, be SURE to keep val object alive intact until frame is fully send
-         *                with json_frame_send() or json_frame_flush()
          */
-        void json_frame_value(const JsonVariant val, bool shallow = false);
+        void json_frame_value(const JsonVariantConst val);
 
         /**
          * @brief start UI section
@@ -825,16 +786,6 @@ class Interface {
         number(const ID id, T value, const L label){ number_constrained(id, value, label); };
 
         /**
-         * @brief add any user-constructed object to the frame
-         * accepts arbitrary structured objects, it is up to the front-end js engine to process it properly
-         * 
-         * @param data - user object to add
-         * @param shallow - use shallow copy when adding data to the frame
-         * NOTE: if shallow-copy is used, then 'data' object MUST be retained intact until json_frame_flush() is executed to purge linked data
-         */
-        void jobject(const JsonVariantConst data, bool shallow = false){ if (shallow) json_frame_enqueue(data, true); else json_frame_add(data); };
-
-        /**
          * @brief - create an option element for "select" drop-down list
          */
         template <typename T, typename L>
@@ -961,14 +912,14 @@ class Interface {
 
 template <typename T>
 void Interface::button(button_t btype, const T id, const T label, const char* color){
-    UI_button<TINY_JSON_SIZE> ui(btype, id, label);
+    UI_button ui(btype, id, label);
     ui.color(color);
     json_frame_add(ui);
 };
 
 template <typename T, typename V>
 void Interface::button_value(button_t btype, const T id, const V value, const T label, const char* color){
-    UI_button<TINY_JSON_SIZE> ui(btype, id, label);
+    UI_button ui(btype, id, label);
     ui.obj[P_value] = value;
     ui.color(color);
 
@@ -977,7 +928,7 @@ void Interface::button_value(button_t btype, const T id, const V value, const T 
 
 template <typename T, typename V>
 void Interface::button_jscallback(const T id, const T label, const char* callback, const V value, const char* color){
-    UI_button<TINY_JSON_SIZE> ui(button_t::js, id, label);
+    UI_button ui(button_t::js, id, label);
     ui.obj[P_function] = callback;
     ui.obj[P_value] = value;
     if (!embui_traits::is_empty_string(color)) ui.color(color);
@@ -991,14 +942,14 @@ void Interface::button_jscallback(const T id, const T label, const char* callbac
 
 template <typename ID, typename L>
 void Interface::comment(const ID id, const L label){
-    UIelement<UI_DEFAULT_JSON_SIZE * 2> ui(ui_element_t::comment, id);     // use a bit larger buffer for long texts
+    UIelement ui(ui_element_t::comment, id);     // use a bit larger buffer for long texts
     ui.label(label);
     json_frame_add(ui);
 }
 
 template <typename ID, typename L, typename V>
 void Interface::constant(const ID id, const L label, const V value){
-    UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::constant, id, value);
+    UIelement ui(ui_element_t::constant, id, value);
     ui.obj[P_label] = label;    // implicitly set label to a supplied parameter (could be non-literal)
     json_frame_add(ui);
 };
@@ -1014,14 +965,13 @@ void Interface::display(const ID id, V&& value, const L label, String cssclass, 
 
 template <typename ID, typename V, typename L, typename CSS>
 void Interface::div(const ID id, const ID type, const V value, const L label, const CSS css, const JsonVariantConst params){
-    UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::div, id, value);
+    UIelement ui(ui_element_t::div, id, value);
     ui.obj[P_type] = type;
     ui.label(label);
     if (!embui_traits::is_empty_string(css)) ui.obj[P_class] = css;
 
     if (!params.isNull()){
-        JsonVariant nobj = ui.obj.createNestedObject(P_params);
-        nobj.shallowCopy(params);
+        ui.obj[P_params] = params;
     }
     json_frame_add(ui);
 };
@@ -1029,7 +979,7 @@ void Interface::div(const ID id, const ID type, const V value, const L label, co
 template <typename ID, typename V, typename L>
     typename std::enable_if<embui_traits::is_string_v<V>,void>::type
 Interface::file_form(const ID id, const V action, const L label, const L opt){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::file, id);
+    UIelement ui(ui_element_t::file, id);
     ui.obj[P_type] = P_file;
     ui.obj[P_action] = action;
     ui.label(label);
@@ -1039,7 +989,7 @@ Interface::file_form(const ID id, const V action, const L label, const L opt){
 
 template <typename ID, typename V>
 void Interface::hidden(const ID id, const V value){
-    UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::hidden, id);
+    UIelement ui(ui_element_t::hidden, id);
     ui.value(value);
     json_frame_add(ui);
 };
@@ -1076,12 +1026,12 @@ void Interface::json_frame_jscall(const TChar* function){
 
 template  <typename TString, typename L>
 JsonArrayConst Interface::json_section_begin(const TString& name, const L label, bool main, bool hidden, bool line, bool noappend){
-    JsonObject obj(section_stack.size() ? section_stack.back().block.createNestedObject() : json.as<JsonObject>());
+    JsonObject obj(section_stack.size() ? section_stack.back().block.add<JsonObject>() : json.as<JsonObject>());
     return json_section_begin(detail::adaptString(name), label, main, hidden, line, noappend, obj);
 }
 template  <typename TChar, typename L>
 JsonArrayConst Interface::json_section_begin(const TChar* name, const L label, bool main, bool hidden, bool line, bool noappend){
-    JsonObject obj(section_stack.size() ? section_stack.back().block.createNestedObject() : json.as<JsonObject>());
+    JsonObject obj(section_stack.size() ? section_stack.back().block.add<JsonObject>() : json.as<JsonObject>());
     return json_section_begin(detail::adaptString(name), label, main, hidden, line, noappend, obj);
 }
 
@@ -1098,7 +1048,7 @@ JsonArrayConst Interface::json_section_begin(TAdaptedString name, const L label,
     if (line) obj["line"] = true;
     if (noappend) obj["noappend"] = true;
 
-    section_stack.emplace_back(obj[P_section].as<const char*>(), obj.createNestedArray(P_block));
+    section_stack.emplace_back(obj[P_section].as<const char*>(), obj[P_block].to<JsonArray>());
     LOGD(P_EmbUI, printf, "section begin #%u '%s', %ub free\n", section_stack.size(), section_stack.back().name.isEmpty() ? "-" : section_stack.back().name.c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0, so I print in fo BEFORE adding section to stack
     return JsonArrayConst(section_stack.back().block);
 }
@@ -1115,7 +1065,7 @@ template  <typename ID, typename L>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
 Interface::json_section_manifest(const ID appname, const char* devid, unsigned appjsapi, const L appversion){
     json_section_begin("manifest");
-    JsonObject obj( section_stack.back().block.createNestedObject() );
+    JsonObject obj( section_stack.back().block.add<JsonObject>() );
     obj[P_uijsapi] = EMBUI_JSAPI;
     obj[P_uiver] = EMBUI_VERSION_STRING;
     obj["uiobjects"] = EMBUI_UIOBJECTS;
@@ -1128,7 +1078,7 @@ Interface::json_section_manifest(const ID appname, const char* devid, unsigned a
 template <typename ID, typename T, typename L>
     typename std::enable_if<std::is_arithmetic_v<T>, void>::type
 Interface::number_constrained(const ID id, T value, const L label, T step, T min, T max){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
+    UIelement ui(ui_element_t::input, id, value);
     ui.obj[P_type] = P_number;
     ui.label(label);
     if (min) ui.obj[P_min] = min;
@@ -1139,7 +1089,7 @@ Interface::number_constrained(const ID id, T value, const L label, T step, T min
 
 template <typename T, typename L>
 void Interface::option(const T value, const L label){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::option, P_EMPTY, value);
+    UIelement ui(ui_element_t::option, P_EMPTY, value);
     ui.label(label);
     json_frame_add(ui);
 }
@@ -1147,7 +1097,7 @@ void Interface::option(const T value, const L label){
 template <typename ID, typename T, typename L>
     typename std::enable_if<embui_traits::is_string_v<ID>,void>::type
 Interface::range(const ID id, T value, T min, T max, T step, const L label, bool onChange){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
+    UIelement ui(ui_element_t::input, id, value);
     ui.obj[P_type] = "range";
     ui.obj[P_min] = min;
     ui.obj[P_max] = max;
@@ -1159,7 +1109,7 @@ Interface::range(const ID id, T value, T min, T max, T step, const L label, bool
 
 template <typename ID, typename T, typename L>
 void Interface::select(const ID id, const T value, const L label, bool onChange, const L exturl){
-    UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::select, id, value);
+    UIelement ui(ui_element_t::select, id, value);
     ui.label(label);
     if (onChange) ui.obj[P_onChange] = true;
     if (!embui_traits::is_empty_string(exturl)) ui.obj[P_url] = exturl;
@@ -1171,7 +1121,7 @@ void Interface::select(const ID id, const T value, const L label, bool onChange,
 template <typename L>
     typename std::enable_if<embui_traits::is_string_v<L>,void>::type
 Interface::spacer(const L label){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::spacer);
+    UIelement ui(ui_element_t::spacer);
     ui.label(label);
     json_frame_add(ui);
 }
@@ -1179,7 +1129,7 @@ Interface::spacer(const L label){
 template <typename ID, typename V, typename L>
     typename std::enable_if<embui_traits::is_string_v<V>,void>::type
 Interface::textarea(const ID id, const V value, const L label){
-    UIelement<UI_DEFAULT_JSON_SIZE> ui(ui_element_t::textarea, id, value);
+    UIelement ui(ui_element_t::textarea, id, value);
     ui.label(label);
     json_frame_add(ui);
 };
@@ -1187,12 +1137,12 @@ Interface::textarea(const ID id, const V value, const L label){
 template <typename ID, typename T>
 void Interface::value(const ID id, const T val, bool html){
     if (html){
-        UIelement<TINY_JSON_SIZE> ui(ui_element_t::value, id);
+        UIelement ui(ui_element_t::value, id);
         ui.obj[P_value] = val;
         ui.html(html);
         json_frame_add(ui);
     } else {
-        StaticJsonDocument<TINY_JSON_SIZE> jdoc;
+        JsonDocument jdoc;
         jdoc[id] = val;
         json_frame_add(jdoc);
     }
@@ -1201,19 +1151,19 @@ void Interface::value(const ID id, const T val, bool html){
 template <typename TChar, typename V, typename L>
     ValidCharPtr_t<TChar>
 Interface::html_input(const TChar* id, const char* type, const V value, const L label, bool onChange){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
+    UIelement ui(ui_element_t::input, id, value);
     _html_input(ui, type, label, onChange);
 };
 
 template <typename TString, typename V, typename L>
     ValidStringRef_t<TString>
 Interface::html_input(const TString& id, const char* type, const V value, const L label, bool onChange){
-    UIelement<TINY_JSON_SIZE> ui(ui_element_t::input, id, value);
+    UIelement ui(ui_element_t::input, id, value);
     _html_input(ui, type, label, onChange);
 };
 
 template <typename L>
-void Interface::_html_input(UIelement<TINY_JSON_SIZE> &ui, const char* type, const L label, bool onChange){
+void Interface::_html_input(UIelement &ui, const char* type, const L label, bool onChange){
     ui.label(label);
     ui.obj[P_type] = type;
     if (onChange) ui.obj[P_onChange] = true;
