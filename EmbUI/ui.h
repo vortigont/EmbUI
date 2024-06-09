@@ -322,19 +322,17 @@ class FrameSendAsyncJS: public FrameSend {
     private:
         bool flushed = false;
         AsyncWebServerRequest *req;
-        AsyncJsonResponse* response;
+        AsyncJsonResponse response{ AsyncJsonResponse(false) };
     public:
-        FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {
-            response = new AsyncJsonResponse(false);
-        }
+        FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {}
         ~FrameSendAsyncJS();
-
-        // not supported
-        void send(const String &data) override {};
 
         void send(const JsonVariantConst& data) override;
 
         bool available() const override { return flushed; }
+
+        // not supported
+        [[ deprecated( "FrameSendAsyncJS ignores String argument" ) ]] void send(const String &data) override {};
 };
 
 struct section_stack_t{
@@ -423,7 +421,7 @@ class Interface {
          * @brief - add object to current Interface frame
          * attempts to retry on mem overflow
          */
-        void json_frame_add(const JsonVariantConst &obj);
+        void json_frame_add(const JsonVariantConst obj);
 
         void json_frame_add( UIelement &ui){ json_frame_add(ui.obj); }
 
