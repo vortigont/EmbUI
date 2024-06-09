@@ -113,7 +113,7 @@ public:
         set_html_type(t);
     };
 
-    UIelement(ui_element_t t) : UIelement(t, P_EMPTY) {};
+    explicit UIelement(ui_element_t t) : UIelement(t, P_EMPTY) {};
 
     template <typename ID, typename V>
     UIelement(ui_element_t t, const ID id, const V value) : UIelement(t, id ){
@@ -273,7 +273,7 @@ struct HndlrChain {
     std::unique_ptr<FrameSend> handler;
     HndlrChain() = delete;
     HndlrChain(const HndlrChain& rhs) = delete;
-    HndlrChain(std::unique_ptr<FrameSend>&& rhs) noexcept : id(std::rand()), handler(std::move(rhs)) {};
+    explicit HndlrChain(std::unique_ptr<FrameSend>&& rhs) noexcept : id(std::rand()), handler(std::move(rhs)) {};
 };
 
 class FrameSendChain : public FrameSend {
@@ -324,7 +324,7 @@ class FrameSendAsyncJS: public FrameSend {
         AsyncWebServerRequest *req;
         AsyncJsonResponse response{ AsyncJsonResponse(false) };
     public:
-        FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {}
+        explicit FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {}
         ~FrameSendAsyncJS();
 
         void send(const JsonVariantConst& data) override;
@@ -386,9 +386,9 @@ class Interface {
          */
         Interface (FrameSend *feeder): _delete_handler_on_destruct(false), send_hndl(feeder) {}
 
-        Interface(AsyncWebSocket *server): _delete_handler_on_destruct(true), send_hndl(new FrameSendWSServer(server)) {}
-        Interface(AsyncWebSocketClient *client): _delete_handler_on_destruct(true), send_hndl(new FrameSendWSClient(client)) {}
-        Interface(AsyncWebServerRequest *request): _delete_handler_on_destruct(true), send_hndl(new FrameSendHttp(request)) {}
+        explicit Interface(AsyncWebSocket *server): _delete_handler_on_destruct(true), send_hndl(new FrameSendWSServer(server)) {}
+        explicit Interface(AsyncWebSocketClient *client): _delete_handler_on_destruct(true), send_hndl(new FrameSendWSClient(client)) {}
+        explicit Interface(AsyncWebServerRequest *request): _delete_handler_on_destruct(true), send_hndl(new FrameSendHttp(request)) {}
         // no copy c-tor
         Interface(const Interface&) = delete;
         Interface & operator=(const Interface&) = delete;
