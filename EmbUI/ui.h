@@ -345,9 +345,8 @@ struct section_stack_t{
 
 class Interface {
 
-
+    const bool _delete_handler_on_destruct;
     JsonDocument json;
-    bool _delete_handler_on_destruct;
     std::list<section_stack_t> section_stack;
     FrameSend *send_hndl;
 
@@ -385,19 +384,15 @@ class Interface {
          * @param feeder an FrameSender object to use for sending data 
          * @param size desired size of JsonDocument
          */
-        Interface (FrameSend *feeder): _delete_handler_on_destruct(false) {
-            send_hndl = feeder;
-        }
+        Interface (FrameSend *feeder): _delete_handler_on_destruct(false), send_hndl(feeder) {}
 
-        Interface(AsyncWebSocket *server): _delete_handler_on_destruct(true) {
-            send_hndl = new FrameSendWSServer(server);
-        }
-        Interface(AsyncWebSocketClient *client): _delete_handler_on_destruct(true) {
-            send_hndl = new FrameSendWSClient(client);
-        }
-        Interface(AsyncWebServerRequest *request): _delete_handler_on_destruct(true) {
-            send_hndl = new FrameSendHttp(request);
-        }
+        Interface(AsyncWebSocket *server): _delete_handler_on_destruct(true), send_hndl(new FrameSendWSServer(server)) {}
+        Interface(AsyncWebSocketClient *client): _delete_handler_on_destruct(true), send_hndl(new FrameSendWSClient(client)) {}
+        Interface(AsyncWebServerRequest *request): _delete_handler_on_destruct(true), send_hndl(new FrameSendHttp(request)) {}
+        // no copy c-tor
+        Interface(const Interface&) = delete;
+        Interface & operator=(const Interface&) = delete;
+        // d-tor
         ~Interface(){
             json_frame_clear();
             if (_delete_handler_on_destruct){
