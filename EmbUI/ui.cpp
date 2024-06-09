@@ -10,9 +10,11 @@ void Interface::json_frame_clear(){
     json.clear();
 }
 
-void Interface::json_frame_add(const JsonVariantConst &obj){
+void Interface::json_frame_add(const JsonVariantConst obj){
     LOGV(P_EmbUI, printf, "Frame add obj %u items\n", obj.size());
 
+    //(section_stack.size() ? section_stack.back().block.add<JsonObject>() : json.as<JsonObject>())
+    if (!section_stack.size()) { Serial.println("Empy sec stack!"); return; }
     if ( section_stack.back().block.add(obj) ){
         LOGV(P_EmbUI, printf, "...OK idx:%u\theap free: %u\n", section_stack.back().idx, ESP.getFreeHeap());
         section_stack.back().idx++;        // incr idx for next obj
@@ -160,21 +162,20 @@ void FrameSendAsyncJS::send(const JsonVariantConst& data){
     if (flushed) return;    // we can send only ONCE!
 
     if (data[P_pkg] == P_value){
-        JsonVariant& root = response->getRoot();
-        root[P_block] = data[P_block];
+        response.getRoot()[P_block] = data[P_block];
     } else
         return;     // won't reply with non-value packets
 
-    response->setLength();
-    req->send(response);
+    response.setLength();
+    req->send(&response);
     flushed = true;
 };
 
 FrameSendAsyncJS::~FrameSendAsyncJS() {
     if (!flushed){
         // there were no usefull data, let's reply with empty obj
-        response->setLength();
-        req->send(response);        
+        response.setLength();
+        req->send(&response);
     }
     req = nullptr;
 }

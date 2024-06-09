@@ -72,7 +72,7 @@ class WiFiController {
     //void wifi_updateAP();
 
 public:
-    WiFiController(EmbUI *ui, bool aponly = false);
+    explicit WiFiController(EmbUI *ui, bool aponly = false);
     ~WiFiController();
 
     /**

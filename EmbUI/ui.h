@@ -113,7 +113,7 @@ public:
         set_html_type(t);
     };
 
-    UIelement(ui_element_t t) : UIelement(t, P_EMPTY) {};
+    explicit UIelement(ui_element_t t) : UIelement(t, P_EMPTY) {};
 
     template <typename ID, typename V>
     UIelement(ui_element_t t, const ID id, const V value) : UIelement(t, id ){
@@ -273,7 +273,7 @@ struct HndlrChain {
     std::unique_ptr<FrameSend> handler;
     HndlrChain() = delete;
     HndlrChain(const HndlrChain& rhs) = delete;
-    HndlrChain(std::unique_ptr<FrameSend>&& rhs) noexcept : id(std::rand()), handler(std::move(rhs)) {};
+    explicit HndlrChain(std::unique_ptr<FrameSend>&& rhs) noexcept : id(std::rand()), handler(std::move(rhs)) {};
 };
 
 class FrameSendChain : public FrameSend {
@@ -322,19 +322,17 @@ class FrameSendAsyncJS: public FrameSend {
     private:
         bool flushed = false;
         AsyncWebServerRequest *req;
-        AsyncJsonResponse* response;
+        AsyncJsonResponse response{ AsyncJsonResponse(false) };
     public:
-        FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {
-            response = new AsyncJsonResponse(false);
-        }
+        explicit FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {}
         ~FrameSendAsyncJS();
-
-        // not supported
-        void send(const String &data) override {};
 
         void send(const JsonVariantConst& data) override;
 
         bool available() const override { return flushed; }
+
+        // not supported
+        [[ deprecated( "FrameSendAsyncJS ignores String argument" ) ]] void send(const String &data) override {};
 };
 
 struct section_stack_t{
@@ -347,9 +345,8 @@ struct section_stack_t{
 
 class Interface {
 
-
+    const bool _delete_handler_on_destruct;
     JsonDocument json;
-    bool _delete_handler_on_destruct;
     std::list<section_stack_t> section_stack;
     FrameSend *send_hndl;
 
@@ -387,19 +384,15 @@ class Interface {
          * @param feeder an FrameSender object to use for sending data 
          * @param size desired size of JsonDocument
          */
-        Interface (FrameSend *feeder): _delete_handler_on_destruct(false) {
-            send_hndl = feeder;
-        }
+        Interface (FrameSend *feeder): _delete_handler_on_destruct(false), send_hndl(feeder) {}
 
-        Interface(AsyncWebSocket *server): _delete_handler_on_destruct(true) {
-            send_hndl = new FrameSendWSServer(server);
-        }
-        Interface(AsyncWebSocketClient *client): _delete_handler_on_destruct(true) {
-            send_hndl = new FrameSendWSClient(client);
-        }
-        Interface(AsyncWebServerRequest *request): _delete_handler_on_destruct(true) {
-            send_hndl = new FrameSendHttp(request);
-        }
+        explicit Interface(AsyncWebSocket *server): _delete_handler_on_destruct(true), send_hndl(new FrameSendWSServer(server)) {}
+        explicit Interface(AsyncWebSocketClient *client): _delete_handler_on_destruct(true), send_hndl(new FrameSendWSClient(client)) {}
+        explicit Interface(AsyncWebServerRequest *request): _delete_handler_on_destruct(true), send_hndl(new FrameSendHttp(request)) {}
+        // no copy c-tor
+        Interface(const Interface&) = delete;
+        Interface & operator=(const Interface&) = delete;
+        // d-tor
         ~Interface(){
             json_frame_clear();
             if (_delete_handler_on_destruct){
@@ -423,7 +416,7 @@ class Interface {
          * @brief - add object to current Interface frame
          * attempts to retry on mem overflow
          */
-        void json_frame_add(const JsonVariantConst &obj);
+        void json_frame_add(const JsonVariantConst obj);
 
         void json_frame_add( UIelement &ui){ json_frame_add(ui.obj); }
 

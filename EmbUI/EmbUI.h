@@ -63,7 +63,7 @@ struct section_handler_t {
     // callback function
     actionCallback_t cb;
 
-    section_handler_t(const char* id, actionCallback_t callback) : action(id), cb(callback){};
+    section_handler_t(const char* id, const actionCallback_t& callback) : action(id), cb(callback){};
 };
 
 /**
@@ -302,7 +302,7 @@ class EmbUI
      * do NOT override it for all requests without knowing how it works internally
      * @param cb call back function
      */
-    void on_notfound(asyncsrv_callback_t cb){ cb_not_found = cb; };
+    void on_notfound(const asyncsrv_callback_t& cb){ cb_not_found = cb; };
 
 #ifdef EMBUI_UDP
     void udp(const String &message);
@@ -606,7 +606,7 @@ class FrameSendMQTT: public FrameSend {
 protected:
     EmbUI *_eu;
 public:
-    FrameSendMQTT(EmbUI *emb) : _eu(emb){}
+    explicit FrameSendMQTT(EmbUI *emb) : _eu(emb){}
     virtual ~FrameSendMQTT() { _eu = nullptr; }
     bool available() const override { return _eu->mqttAvailable(); }
     virtual void send(const String &data) override {};     // a do-nothig overload
