@@ -63,25 +63,17 @@
         "flags": "-std=gnu++17",
         "unflags": "-std=gnu++11"
     },
-    "examples": [
-        {
-            "name": "Generic UI",
-            "base": "examples/01_generic",
-            "files": [
-                "platformio.ini",
-                "src/*"
-            ]
-        },
-        {
-            "name": "Sensors display UI",
-            "base": "examples/02_sensors",
-            "files": [
-                "platformio.ini",
-                "src/*",
-                "data/*",
-                "README.md",
-                "post_flashz.py"
-            ]
-        }
-    ]
+    "export": {
+        "include": [
+            "EmbUI/*",
+            "examples/*",
+            "*.md",
+            "*.json",
+            "LICENSE",
+            "resources/*"
+        ],
+        "exclude": [
+          "*/*.tmp"
+        ]
+    }
 }
