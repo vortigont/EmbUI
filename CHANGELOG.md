@@ -1,5 +1,9 @@
 ## Changelog
 
+### v3.2.0
++ code refactoring to use ArduinoJson 7 code style
+* minor code syntax and style cleanup 
+
 ### v3.1.3
 - removed LinkedList dependency, use std::list from STL instead
 * ui.h remove default template params in method implementations
