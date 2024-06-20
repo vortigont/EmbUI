@@ -34,7 +34,7 @@
          "version": "~7.0"},
         {"owner": "mathieucarbou",
          "name": "ESP Async WebServer",
-         "version": "~2.9"},
+         "version": "~2.10"},
         {"owner": "bblanchon",
          "name": "StreamUtils",
          "version": "https://github.com/bblanchon/ArduinoStreamUtils"},
