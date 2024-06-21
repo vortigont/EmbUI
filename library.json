@@ -1,6 +1,8 @@
 {
     "name": "EmbUI",
     "frameworks": "arduino",
+    "platforms": ["espressif32"],
+    "version": "3.2.0",
     "keywords": "embui, arduino",
     "description": "Embeded Web UI framework for ESP32 IoT prototyping",
     "url": "https://github.com/vortigont/EmbUI",
@@ -25,8 +27,6 @@
         "type": "git",
         "url": "https://github.com/vortigont/EmbUI.git"
     },
-    "platforms": ["espressif32"],
-    "version": "3.2.0",
     "dependencies":
     [
         {"owner": "bblanchon",
@@ -49,7 +49,7 @@
          "version": "https://github.com/vortigont/FTPClientServer#feat"},
          {"owner": "vortigont",
          "name": "esp32-flashz",
-         "version": "https://github.com/vortigont/esp32-flashz#testing",
+         "version": "https://github.com/vortigont/esp32-flashz#libdeps",
          "platforms": ["espressif32"]},
         {"owner": "vortigont",
          "name": "ESP32-DNSServerAsync",
