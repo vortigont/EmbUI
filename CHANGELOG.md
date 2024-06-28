@@ -1,5 +1,9 @@
 ## Changelog
 
+### v3.2.2
+* bump lib dependencies
+* respack.sh - use zopfli to compress resources
+
 ### v3.2.0
 + code refactoring to use ArduinoJson 7 code style
 * minor code syntax and style cleanup 

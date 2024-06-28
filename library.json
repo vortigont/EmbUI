@@ -31,10 +31,10 @@
     [
         {"owner": "bblanchon",
          "name": "ArduinoJson",
-         "version": "~7.0"},
+         "version": "~7.1"},
         {"owner": "mathieucarbou",
          "name": "ESP Async WebServer",
-         "version": "~2.10"},
+         "version": "~3.0"},
         {"owner": "bblanchon",
          "name": "StreamUtils",
          "version": "https://github.com/bblanchon/ArduinoStreamUtils"},
