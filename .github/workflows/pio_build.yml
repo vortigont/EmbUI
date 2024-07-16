@@ -21,7 +21,7 @@ on:
 
 
 jobs:
-  CI Build:  
+  CI_Build:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 2
