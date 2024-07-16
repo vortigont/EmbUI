@@ -5,6 +5,7 @@
 name: PlatformIO CI
 
 on:
+  workflow_dispatch:      # Manual start
   push:
 #    branches: [ main, feat, v2.6, 2.6tst, stage ]
   pull_request:
@@ -20,8 +21,7 @@ on:
 
 
 jobs:
-  build:
-  
+  CI Build:  
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 2
@@ -42,7 +42,7 @@ jobs:
         #restore-keys: |
         #  ${{ runner.os }}-pio
     - name: Set up Python 3.x
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
     - name: Install Platformio
@@ -50,6 +50,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
         #platformio pkg update
+    - name: Patch Platformio
+      run: |
+        echo "REPO_NAME=$(basename ${{ github.repository }})" >> $GITHUB_ENV
+        cd $(dirname $(which pio) )
+        cd ../
+        echo $(find -type d -name site-packages)
+        cd   $(find -type d -name site-packages)
+        pwd
+        git apply --verbose $GITHUB_WORKSPACE/extra/0001-LDF-refresh-lib-dependency-after-recursive-search.patch
+        cd $GITHUB_WORKSPACE
     - name: PlatformIO Build
       env: 
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
