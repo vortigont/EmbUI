@@ -249,6 +249,15 @@ function recurseforeachkey(obj, f) {
 
 // template renderer
 var render = function(){
+	let chkNumeric = function(v){
+		// cast empty strings to null
+		if (typeof v == 'string' && v == "") return null;
+		if(isFinite(v))
+			return Number(v);
+		else
+			return v;
+	};
+
 	var tmpl_menu = new mustache(go("#tmpl_menu")[0],{
 		on_page: function(d,id) {
 			out.menu_change(id);
@@ -264,18 +273,8 @@ var render = function(){
 				custom_hook(this.id, d, id);
 			}
 		},
-		// handle dynamicaly changed elements on a page
+		// handle dynamicaly changed elements on a page which should send value to WS server on each change
 		on_change: function(d, id, val) {
-
-			chkNumeric = function(v){
-				// cast empty strings to null
-				if (typeof v == 'string' && v == "") return null;
-				if(isFinite(v))
-					return Number(v);
-				else
-					return v;
-			};
-
 			let value;
 
 			// check if value has been supplied by templater
@@ -286,12 +285,14 @@ var render = function(){
 					case 'checkbox':
 						value = document.getElementById(id).checked;
 						break;
-					case 'input':
+					case 'number':
 					case 'select-one':
 					case 'range':
 						value = chkNumeric(this.value);
 						break;
-					case 'textarea':	// cast empty strings to null
+					// cast empty strings to null in inputs
+					case 'input':
+					case 'textarea':
 						value = (typeof this.value == 'string' && this.value == "") ? null : this.value;
 					default:
 						value = this.value;

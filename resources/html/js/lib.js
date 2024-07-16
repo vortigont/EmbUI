@@ -8,37 +8,39 @@ var go = function(param, context){
 // process form data before serializing and sending to backend
 go.formdata = function(form){
 	var controls = {},
+	chkNumeric = function(element){
+		return isFinite(element.value) ? Number(element.value) : element.value;
+	},
 	checkValue = function(element){
-		// cast empty strings to null
-		if (typeof element.value == 'string' && element.value == "") return null;
-
 		switch (element.type.toLowerCase()){
 			case 'password':
-				return element.value;		// keep password field value as string
+				return element.value;		// keep password field value as-is string
 			case 'checkbox':				// use boolean true/false as a value for 'checked' boxes  
-				return element.checked?	true : false;
+				return element.checked;
+			case 'number':
+			case 'select-one':
+			case 'range':
 			case 'radio':
-				if(element.checked) return chkNumeric(element);
-				break;
-//			case 'hidden':
-			default:
 				return chkNumeric(element);
+			//case 'radio':
+			//	if(element.checked) return chkNumeric(element);
+			//	break;
+			case 'input':
+			case 'textarea':
+				return (typeof element.value == 'string' && element.value == "") ? null : this.value;
+			//case 'hidden':
+			default:
+				return element.value;
 		}
-	},
-	chkNumeric = function(element){
-		if(isFinite(element.value)){
-			return Number(element.value);
-		} else {
-		return element.value; }
 	};
 
-	for(var i = 0; i < form.length; i++){
-		var el = form[i];
+	for(let i = 0; i < form.length; i++){
+		let el = form[i];
 		if (el.disabled) continue;
 		switch (el.tagName.toLowerCase()){
 			case 'input':
 				var val = checkValue(el);
-				if (typeof val != "undefined") controls[el.name || el.id]= val;
+				if (typeof val != "undefined") controls[el.name || el.id] = val;
 				break;
 			case 'select':
 				controls[el.name || el.id]= chkNumeric(el);
