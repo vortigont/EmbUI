@@ -31,9 +31,9 @@ Embedded WebUI Interface framework
  - self-hosted - нет зависимостей от внешних ресурсов/CDN/Cloud сервисов
 
 ## Проекты на EmbUI
+ - [FireLamp_JeeUI](https://github.com/vortigont/FireLamp_JeeUI/) - огненная лампа на светодиодной матрице ws2812 / HUB75 panel informer
  - [ESPEM](https://github.com/vortigont/espem) - энергометр на основе измерителя PZEM-004
  - [InfoClock](https://github.com/vortigont/infoclock) - Часы-информер на матричных модулях Max72xx
- - [FireLamp_JeeUI](https://github.com/DmytroKorniienko/FireLamp_JeeUI/tree/dev) - огненная лампа на светодиодной матрице ws2812 _(API не совместим с данным форком)_
  - [EmbUI](https://github.com/DmytroKorniienko/) - исходный проект данного форка
 
 
