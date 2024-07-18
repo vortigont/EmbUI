@@ -1,5 +1,12 @@
 ## Changelog
 
+### v3.2.3
+* bump lib dependencies
++ frontend js: cast to numeric certain input fields on form send
+* add platformio patch for flashz lib
+* CI fix
+
+
 ### v3.2.2
 * bump lib dependencies
 * respack.sh - use zopfli to compress resources
