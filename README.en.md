@@ -31,11 +31,9 @@ A framework that helps to create WebUI and dynamic control elements for Arduino 
  - self-hosted - all resources resides on LittleFS locally, no calls for CDN resources
 
 ## Projects using EmbUI
+ - [FireLamp / Informer](https://github.com/vortigont/FireLamp_JeeUI) - DIY HUB75/ws2812 led panel/matrix informer, clock, cristmas light project
  - [ESPEM](https://github.com/vortigont/espem) - ESP32 energy meter for Peacfair PZEM-004
  - [InfoClock](https://github.com/vortigont/infoclock) - Clock/weather ticker based on Max72xx modules
- - [FireLamp_JeeUI](https://github.com/DmytroKorniienko/FireLamp_JeeUI/tree/dev) - DIY firelamp based on ws2812 led matrix _(API is NOT compatible with this fork of EmbUI)_
- - [EmbUI](https://github.com/DmytroKorniienko/) - upstream project for this fork (API is not compatible anymore)
-
 
 
 ## WebUI samples based on EmbUI framework
