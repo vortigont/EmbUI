@@ -12,6 +12,8 @@
 #define TZONE "GMT0"         // default Time-Zone
 #endif
 
+#define DAYSECONDS          (86400U)
+
 // stub zone for a  <+-nn> names
 static const char P_LOC[] = "LOC";
 
@@ -21,15 +23,27 @@ callback_function_t TimeProcessor::timecb = nullptr;
 TimeProcessor::TimeProcessor()
 {
     sntp_set_time_sync_notification_cb( [](struct timeval *tv){ timeavailable(tv);} );
-#ifdef ESP_ARDUINO_VERSION
-    sntp_servermode_dhcp(1);    // enable NTPoDHCP
+
+// enable NTPoDHCP
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    #if LWIP_DHCP_GET_NTP_SRV
+    esp_sntp_servermode_dhcp(1);
+    #endif
+#else
+    sntp_servermode_dhcp(1);
 #endif
 
+
     configTzTime(TZONE, ntp1, ntp2, userntp ? userntp->data() : NULL);
-    sntp_stop();    // отключаем ntp пока нет подключения к AP
+    // отключаем ntp пока нет подключения к AP
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    esp_sntp_stop();
+#else
+    sntp_stop();
+#endif
 
     // hook up WiFi events handler
-    WiFi.onEvent(std::bind(&TimeProcessor::_onWiFiEvent, this, std::placeholders::_1, std::placeholders::_2));
+    WiFi.onEvent([this](WiFiEvent_t event, WiFiEventInfo_t info){ _onWiFiEvent(event, info); } );
 }
 
 String TimeProcessor::getFormattedShortTime()
@@ -103,15 +117,29 @@ void TimeProcessor::tzsetup(const char* tz){
  */
 void TimeProcessor::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info){
     switch (event){
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+    	esp_sntp_setservername(1, (char*)ntp2);
+        if (userntp)
+    	    esp_sntp_setservername(CUSTOM_NTP_INDEX, userntp->data());
+        esp_sntp_init();
+#else
     case SYSTEM_EVENT_STA_GOT_IP:
         sntp_setservername(1, (char*)ntp2);
         if (userntp)
             sntp_setservername(CUSTOM_NTP_INDEX, userntp->data());
         sntp_init();
+#endif
         LOGI(P_EmbUI_time, println, "Starting sntp sync");
         break;
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+        esp_sntp_stop();
+#else
     case SYSTEM_EVENT_STA_DISCONNECTED:
-        sntp_stop();
+    	sntp_stop();
+#endif
         break;
     default:
         break;
@@ -138,10 +166,8 @@ void TimeProcessor::getDateTimeString(String &buf, const time_t tstamp){
 /**
  * установка текущего смещения от UTC в секундах
  */
-void TimeProcessor::setOffset(const int val){
+void TimeProcessor::setOffset(int val){
     LOGI(P_EmbUI_time, printf, "TZ offset: %d\n", val);
-
-    //setTimeZone((long)val, 0);    // this breaks linker in some weird way
     configTime((long)val, 0, ntp1, ntp2);
 }
 
@@ -151,9 +177,10 @@ void TimeProcessor::setOffset(const int val){
  * корректно установленно ранее каким-либо методом)
  */
 long int TimeProcessor::getOffset(){
-    const tm* tm = localtime(now());
-    auto tz = __gettzinfo();
-    return *(tm->tm_isdst == 1 ? &tz->__tzrule[1].offset : &tz->__tzrule[0].offset);
+    time_t now;
+    time(&now);
+    struct tm local_time = *localtime(&now);
+    return difftime(now, mktime(&local_time));
 }
 
 void TimeProcessor::setcustomntp(const char* ntp){
@@ -162,7 +189,13 @@ void TimeProcessor::setcustomntp(const char* ntp){
         userntp = new std::string(ntp);
     else
         *userntp = ntp;
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    esp_sntp_setservername(CUSTOM_NTP_INDEX, userntp->data());
+#else
     sntp_setservername(CUSTOM_NTP_INDEX, userntp->data());
+#endif
+
     LOGI(P_EmbUI_time, printf, "Set custom NTP to: %s\n", userntp->data());
 }
 
@@ -170,10 +203,21 @@ void TimeProcessor::setcustomntp(const char* ntp){
  * @brief - retreive NTP server name or IP
  */
 String TimeProcessor::getserver(uint8_t idx){
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    if (esp_sntp_getservername(idx)){
+        return String(esp_sntp_getservername(idx));
+    }
+#else
     if (sntp_getservername(idx)){
         return String(sntp_getservername(idx));
-    } else {
+    }
+#endif
+    else {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+        const ip_addr_t * _ip = esp_sntp_getserver(idx);
+#else
         const ip_addr_t * _ip = sntp_getserver(idx);
+#endif
         IPAddress addr(_ip->u_addr.ip4.addr);
         return addr.toString();
     }
@@ -188,8 +232,28 @@ void TimeProcessor::attach_callback(callback_function_t callback){
 }
 
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 void TimeProcessor::ntpodhcp(bool enable){
+    #if LWIP_DHCP_GET_NTP_SRV
+    esp_sntp_servermode_dhcp(enable);
+    #endif
+
+    if (!enable){
+        LOGI(P_EmbUI_time, println, "TIME: Disabling NTP over DHCP");
+        esp_sntp_setservername(0, (char*)ntp1);
+        esp_sntp_setservername(1, (char*)ntp2);
+        if (userntp)
+            esp_sntp_setservername(CUSTOM_NTP_INDEX, userntp->data());
+    }
+};
+
+#else   // ESP_IDF_VERSION < 5.0.0
+
+void TimeProcessor::ntpodhcp(bool enable){
+    #if LWIP_DHCP_GET_NTP_SRV
     sntp_servermode_dhcp(enable);
+    #endif
+
 
     if (!enable){
         LOGI(P_EmbUI_time, println, "TIME: Disabling NTP over DHCP");
@@ -199,6 +263,8 @@ void TimeProcessor::ntpodhcp(bool enable){
             sntp_setservername(CUSTOM_NTP_INDEX, userntp->data());
     }
 };
+#endif  // ESP_IDF_VERSION
+
 
 
 #ifdef EMBUI_WORLDTIMEAPI
