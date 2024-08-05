@@ -1042,7 +1042,7 @@ JsonArrayConst Interface::json_section_begin(TAdaptedString name, const L label,
     if (noappend) obj["noappend"] = true;
 
     section_stack.emplace_back(obj[P_section].as<const char*>(), obj[P_block].to<JsonArray>());
-    LOGD(P_EmbUI, printf, "section begin #%u '%s', %ub free\n", section_stack.size(), section_stack.back().name.isEmpty() ? "-" : section_stack.back().name.c_str(), json.capacity() - json.memoryUsage());   // section index counts from 0, so I print in fo BEFORE adding section to stack
+    LOGD(P_EmbUI, printf, "section begin #%u '%s'\n", section_stack.size(), section_stack.back().name.isEmpty() ? "-" : section_stack.back().name.c_str());   // section index counts from 0, so I print in fo BEFORE adding section to stack
     return JsonArrayConst(section_stack.back().block);
 }
 
