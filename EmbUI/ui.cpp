@@ -61,8 +61,8 @@ void Interface::json_section_end(){
     section_stack.erase(std::prev( section_stack.end() ));
     if (section_stack.size()) {
         section_stack.back().idx++;
+        LOGD(P_EmbUI, printf, "section end #%u '%s'\n", section_stack.size(), section_stack.back().name.isEmpty() ? "-" : section_stack.back().name.c_str());
     }
-    LOGD(P_EmbUI, printf, "section end #%u '%s'\n", section_stack.size(), section->name.isEmpty() ? "-" : section->name.c_str(), ESP.getFreeHeap());        // size() before pop()
 }
 
 JsonObject Interface::get_last_object(){
