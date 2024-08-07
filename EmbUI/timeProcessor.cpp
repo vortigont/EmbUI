@@ -147,7 +147,7 @@ void TimeProcessor::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info){
 }
 
 void TimeProcessor::timeavailable(struct timeval *t){
-    LOG(println, F("UI TIME: Event - Time adjusted"));
+    LOGI(P_EmbUI_time, println, "NTP updated");
     if(timecb)
         timecb();
 }

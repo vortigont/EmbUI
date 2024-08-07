@@ -14,7 +14,7 @@ void Interface::json_frame_add(const JsonVariantConst obj){
     LOGV(P_EmbUI, printf, "Frame add obj %u items\n", obj.size());
 
     //(section_stack.size() ? section_stack.back().block.add<JsonObject>() : json.as<JsonObject>())
-    if (!section_stack.size()) { Serial.println("Empy sec stack!"); return; }
+    if (!section_stack.size()) { LOGW(P_EmbUI, println, "Empty section stack!"); return; }
     if ( section_stack.back().block.add(obj) ){
         LOGV(P_EmbUI, printf, "...OK idx:%u\theap free: %u\n", section_stack.back().idx, ESP.getFreeHeap());
         section_stack.back().idx++;        // incr idx for next obj
