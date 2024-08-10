@@ -1,5 +1,15 @@
 ## Changelog
 
+### v3.2.4
++ Arduino Core 3.x support
++ add Core3 to CI builder
+* updated htpm template
+ - line'd selctions now could use class specifiers for each element
+ - add optional 'disabled' property to checkboxes
+ - add constbtn element
+* fix some log errors
+* js frontend: fix 'hidden' form fileds are checked for numeric value on sending to WS
+
 ### v3.2.3
 * bump lib dependencies
 + frontend js: cast to numeric certain input fields on form send
