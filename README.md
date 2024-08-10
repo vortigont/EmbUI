@@ -1,4 +1,4 @@
-__[ENGLISH](/README.en.md) | [EXAMPLES](/examples) | [CHANGELOG](/CHANGELOG.md)__ | [![PlatformIO CI](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml/badge.svg)](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml)
+__[ENGLISH](/README.en.md) | [EXAMPLES](/examples) | [CHANGELOG](/CHANGELOG.md)__ | [![PlatformIO CI](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml/badge.svg)](https://github.com/vortigont/EmbUI/actions/workflows/pio_build.yml) | [![PlatformIO Registry](https://badges.registry.platformio.org/packages/vortigont/library/EmbUI.svg)](https://registry.platformio.org/libraries/vortigont/EmbUI)
 
 # EmbUI
 Embedded WebUI Interface framework
@@ -8,7 +8,7 @@ Embedded WebUI Interface framework
 
 ## Поддерживаемые платформы
  - ESP32, ESP32-S2, ESP32-C3, ESP32-S3 Arduino Core
- - ESP8266 Arduino Core [branch v2.6](https://github.com/vortigont/EmbUI/tree/v2.6) only
+ - ESP8266 Arduino Core [branch v2.6](https://github.com/vortigont/EmbUI/tree/v2.6) only (DEPRECATED)
 
 ## Возможности
  - асинхронный интерфейс обмена данными с браузером через WebSocket
@@ -25,13 +25,12 @@ Embedded WebUI Interface framework
  - автопубликация контроллера в локальной сети через [mDNS](https://en.wikipedia.org/wiki/Multicast_DNS)/[ZeroConf](https://en.wikipedia.org/wiki/Zero-configuration_networking)
  - возможность обнаружения устройства:
     - WiFi Captive Portal detection - при подключении к WiFi AP контроллера устройтсво/браузер покажет всплюывающее окно с предложением открыть страницу настройки EmbUI
-    - [Service Browser](https://play.google.com/store/apps/details?id=com.druk.servicebrowser) Android
-    - [SSDP](https://en.wikipedia.org/wiki/Simple_Service_Discovery_Protocol) for Windows
+    - [mDNS Discovery](https://play.google.com/store/apps/details?id=com.mdns_discovery.app) Android
     - [Bonjour](https://en.wikipedia.org/wiki/Bonjour_(software)) iOS/MacOS
  - self-hosted - нет зависимостей от внешних ресурсов/CDN/Cloud сервисов
 
 ## Проекты на EmbUI
- - [FireLamp_JeeUI](https://github.com/vortigont/FireLamp_JeeUI/) - огненная лампа на светодиодной матрице ws2812 / HUB75 panel informer
+ - [FireLamp_JeeUI](https://github.com/vortigont/FireLamp_JeeUI/) - HUB75 panel informer / огненная лампа-гирлянда на светодиодной матрице ws2812
  - [ESPEM](https://github.com/vortigont/espem) - энергометр на основе измерителя PZEM-004
  - [InfoClock](https://github.com/vortigont/infoclock) - Часы-информер на матричных модулях Max72xx
  - [EmbUI](https://github.com/DmytroKorniienko/) - исходный проект данного форка
