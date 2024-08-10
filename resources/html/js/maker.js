@@ -476,10 +476,10 @@ var render = function(){
 			if (!obj.block) return;
 
 			/*
-				Sets the value 'val' to the DOM object with id 'key'
-				if 'html' is set to 'true', than values applied as html-text value,
+				Find DOM object with id 'key' and sets it's 'value' property to 'val'.
+				If 'html' is set to 'true', than values applied as html-text value,
 				i.e. template tags visible on the page  ( <span>{{value}}</span> )
-				otherwise value applies as html element attribute ( <input type="range" value="{{value}}" )
+				otherwise value applies to an html element's attribute ( <input type="range" value="{{value}}" )
 			*/
 			function setValue(key, val, html = false){
 				if (val == null || typeof val == "object") return;	// skip undef/null or (empty) objects
@@ -487,7 +487,7 @@ var render = function(){
 				if (!el.length) return;
 				if (html === true ){ el.html(val); return; }
 
-				// проверяем чекбоксы на значение вкл/выкл
+				// checkbox state
 				if (el[0].type == "checkbox") {
 					// allow multiple types of TRUE value for checkboxes
 					el[0].checked = (val == true  ||  val == 1 || val == "1" || val == "true" );

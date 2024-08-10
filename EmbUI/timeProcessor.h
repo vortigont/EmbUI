@@ -7,6 +7,7 @@
 
 #include "globals.h"
 #include <WiFi.h>
+#include <string>
 
 /*
  * COUNTRY macro allows to select a specific country pool for ntp requests, like ru.pool.ntp.org, eu.pool.ntp.org, etc...
@@ -24,11 +25,6 @@
 #endif
 
 #define CUSTOM_NTP_INDEX    2
-
-#define TM_BASE_YEAR        1900
-#define DAYSECONDS          (86400U)
-#define DATETIME_STRLEN     (20U)   // ISO data/time string "YYYY-MM-DDThh:mm:ss", seconds optional
-
 using callback_function_t = std::function<void(void)>;
 
 // TimeProcessor class is a Singleton
@@ -106,7 +102,7 @@ public:
      *  и правила перехода сезонного времени каким-либо другим способом.
      *  При уставке правила перехода сезонного времени (если были) сбрасываются!
      */
-    void setOffset(const int val);
+    void setOffset(int val);
 
     /**
      * Attach user-defined call-back function that would be called on time-set event

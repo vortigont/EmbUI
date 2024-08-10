@@ -13,7 +13,6 @@ version of EmbUI project https://github.com/DmytroKorniienko/EmbUI
 #include "embui_wifi.hpp"
 
 #define WIFI_STA_CONNECT_TIMEOUT    10                      // timer for WiFi STA connection attempt 
-//#define WIFI_SET_AP_AFTER_DISCONNECT_TIMEOUT    15      // time after WiFi client disconnects and before internal AP is brought up
 #define WIFI_STA_COOLDOWN_TIMOUT    90                      // timer for STA connect retry
 #define WIFI_AP_GRACE_PERIOD        15                      // time to delay AP enable/disable, sec
 #define WIFI_BEGIN_DELAY            3                       // a timeout before initiating WiFi-Client connection
@@ -26,7 +25,8 @@ WiFiController::WiFiController(EmbUI *ui, bool aponly) : emb(ui) {
     ts.addTask(_tWiFi);
 
     // Set WiFi event handlers
-    eid = WiFi.onEvent(std::bind(&WiFiController::_onWiFiEvent, this, std::placeholders::_1, std::placeholders::_2));
+    eid = WiFi.onEvent( [this](WiFiEvent_t event, WiFiEventInfo_t info){ _onWiFiEvent(event, info); } );
+
 }
 
 // d-tor
@@ -58,7 +58,7 @@ void WiFiController::connect(const char *ssid, const char *pwd)
 
 
 void WiFiController::setmode(WiFiMode_t mode){
-    LOGI(P_EmbUI_WiFi, printf_P, PSTR("set mode: %d\n"), mode);
+    LOGI(P_EmbUI_WiFi, printf, "set mode: %d\n", mode);
     WiFi.mode(mode);
 }
 
@@ -133,12 +133,24 @@ void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
         setup_mDns();
         break;
 */
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+#else
     case SYSTEM_EVENT_STA_CONNECTED:
+#endif
         LOGI(P_EmbUI_WiFi, println, "STA connected");
         wconn = wifi_recon_t::sta_noip;
         break;
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+#else
     case SYSTEM_EVENT_STA_GOT_IP:
+#endif
+
+// do I still need it for IDF 4.x ???
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0)
     	/* this is a weird hack to mitigate DHCP-client hostname issue
 	     * https://github.com/espressif/arduino-esp32/issues/2537
          * we use some IDF functions to restart dhcp-client, that has been disabled before STA connect
@@ -147,11 +159,11 @@ void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 	    tcpip_adapter_ip_info_t iface;
 	    tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &iface);
         if(!iface.ip.addr){
-            LOGD(P_EmbUI_WiFi, print, F("DHCP discover... "));
+            LOGD(P_EmbUI_WiFi, print, "DHCP discover... ");
 	        return;
     	}
-
-        LOGI(P_EmbUI_WiFi, printf, "SSID:'%s', IP: %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());  // IPAddress(info.got_ip.ip_info.ip.addr)
+#endif
+        LOGI(P_EmbUI_WiFi, printf, "SSID:'%s', IP: %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
 
         // if we are in ap_grace_enable state (i.e. reconnecting) - cancell it
         if (wconn == wifi_recon_t::ap_grace_enable){
@@ -169,7 +181,11 @@ void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
         setup_mDns();
         break;
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+#else
     case SYSTEM_EVENT_STA_DISCONNECTED:
+#endif
         LOGI(P_EmbUI_WiFi, printf, "Disconnected, reason: %d\n", info.wifi_sta_disconnected.reason);  // PIO's ARDUINO=10812    Core >=2.0.0
 
         // WiFi STA has just lost the conection => enable internal AP after grace period
