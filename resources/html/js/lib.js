@@ -20,15 +20,13 @@ go.formdata = function(form){
 			case 'number':
 			case 'select-one':
 			case 'range':
-			case 'radio':
+			case 'hidden':
 				return chkNumeric(element);
-			//case 'radio':
-			//	if(element.checked) return chkNumeric(element);
-			//	break;
+			case 'radio':
+				if(element.checked) return chkNumeric(element);
 			case 'input':
 			case 'textarea':
 				return (typeof element.value == 'string' && element.value == "") ? null : this.value;
-			//case 'hidden':
 			default:
 				return element.value;
 		}
