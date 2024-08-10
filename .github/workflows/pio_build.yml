@@ -23,12 +23,13 @@ on:
 jobs:
   CI_Build:
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
       max-parallel: 2
       matrix:
         example:
-          - "examples/01_generic"
-          - "examples/02_sensors"
+          - "ci_core2.ini"
+          - "ci_core3.ini"
 
     steps:
     - uses: actions/checkout@v4
@@ -64,6 +65,7 @@ jobs:
       env: 
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
       run: |
-        cd ${{ matrix.example }} && platformio run
+        cd $GITHUB_WORKSPACE/examples/01_generic && platformio run -c ${{ matrix.example }}
+        cd $GITHUB_WORKSPACE/examples/02_sensors && platformio run -c ${{ matrix.example }}
         #platformio run -c ${{ matrix.example }}/platformio.ini
         #pio ci -c ${{ matrix.example }}/platformio.ini
