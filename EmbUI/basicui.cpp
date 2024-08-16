@@ -497,15 +497,15 @@ void embuistatus(Interface *interf){
     // memory
     char buff[20];
     if(psramFound())
-        std::snprintf(buff, 20, "%uk/%uk", ESP.getFreeHeap()/1024, ESP.getFreePsram()/1024);
+        std::snprintf(buff, 20, "%luk/%luk", ESP.getFreeHeap()/1024, ESP.getFreePsram()/1024);
     else
-        std::snprintf(buff, 20, "%uk", ESP.getFreeHeap()/1024);
+        std::snprintf(buff, 20, "%luk", ESP.getFreeHeap()/1024U);
 
     interf->value(P_pMem, buff, true);
 
     // uptime
     uint32_t seconds = esp_timer_get_time() / 1000000;
-    std::snprintf(buff, 20, "%ud%02u:%02u:%02u", seconds/86400, (seconds/3600)%24, (seconds/60)%60, seconds%60);
+    std::snprintf(buff, 20, "%lud%02lu:%02lu:%02lu", seconds/86400, (seconds/3600)%24, (seconds/60)%60, seconds%60);
     interf->value(P_pUptime, buff, true);
 
     // RSSI

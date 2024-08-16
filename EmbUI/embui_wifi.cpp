@@ -21,16 +21,18 @@ version of EmbUI project https://github.com/DmytroKorniienko/EmbUI
 // c-tor
 WiFiController::WiFiController(EmbUI *ui, bool aponly) : emb(ui) {
     if (aponly) wconn = wifi_recon_t::ap_only;
-    _tWiFi.set(TASK_SECOND, TASK_FOREVER, std::bind(&WiFiController::_state_switcher, this));
+    _tWiFi.set( TASK_SECOND, TASK_FOREVER, [this](){ _state_switcher(); } );
     ts.addTask(_tWiFi);
 
     // Set WiFi event handlers
     eid = WiFi.onEvent( [this](WiFiEvent_t event, WiFiEventInfo_t info){ _onWiFiEvent(event, info); } );
-
 }
 
 // d-tor
-WiFiController::~WiFiController(){ WiFi.removeEvent(eid); };
+WiFiController::~WiFiController(){
+    WiFi.removeEvent(eid);
+    ts.deleteTask(_tWiFi);
+};
 
 
 void WiFiController::connect(const char *ssid, const char *pwd)
@@ -108,7 +110,6 @@ void WiFiController::setupAP(bool force){
 
 void WiFiController::init(){
     WiFi.setHostname(emb->hostname());
-    LOGI(P_EmbUI_WiFi, print, "start in ");
     if (wconn == wifi_recon_t::ap_only){
         LOGI(P_EmbUI_WiFi, println, "AP-only mode");
         setupAP(true);
@@ -194,6 +195,7 @@ void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
             ap_ctr = WIFI_AP_GRACE_PERIOD;
             break;
         }
+        _tWiFi.enableIfNot();
         break;
     default:
         LOGD(P_EmbUI_WiFi, printf, "event: %d\n", event);
@@ -203,6 +205,7 @@ void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 
 
 void WiFiController::_state_switcher(){
+    //LOGV(P_EmbUI_WiFi, printf, "_state_switcher() %u\n", wconn);
 
     switch (wconn){
     case wifi_recon_t::ap_only:     // switch to AP-only mode
@@ -216,7 +219,7 @@ void WiFiController::_state_switcher(){
             if(!--ap_ctr && (WiFi.getMode() & WIFI_MODE_STA)){
                 dnssrv.stop();
                 WiFi.enableAP(false);
-                LOGD(P_EmbUI_WiFi, println, F("AP disabled"));
+                LOGD(P_EmbUI_WiFi, println, "AP disabled");
                 wconn = wifi_recon_t::sta_good;
                 ap_ctr = WIFI_AP_GRACE_PERIOD;
             }
@@ -224,10 +227,11 @@ void WiFiController::_state_switcher(){
         break;
 
     case wifi_recon_t::ap_grace_enable:
+        //LOGV(P_EmbUI_WiFi, printf, "AP grace time: %u\n", ap_ctr);
         if (ap_ctr){
             if(!--ap_ctr && !(WiFi.getMode() & WIFI_MODE_AP)){
                 setupAP();
-                LOGD(P_EmbUI_WiFi, println, F("AP enabled"));
+                LOGD(P_EmbUI_WiFi, println, "AP enabled");
                 wconn = wifi_recon_t::sta_reconnecting;
                 sta_ctr = WIFI_STA_CONNECT_TIMEOUT;
             }
@@ -238,7 +242,7 @@ void WiFiController::_state_switcher(){
         if(sta_ctr){
             if(!--sta_ctr){                             // disable STA mode for cooldown period
                 WiFi.enableSTA(false);
-                LOGD(P_EmbUI_WiFi, println, F("STA disabled"));
+                LOGD(P_EmbUI_WiFi, println, "STA disabled");
                 wconn = wifi_recon_t::sta_cooldown;
                 sta_ctr = WIFI_STA_COOLDOWN_TIMOUT;
             }
@@ -248,7 +252,7 @@ void WiFiController::_state_switcher(){
     case wifi_recon_t::sta_cooldown:
         if(sta_ctr){
             if(!--sta_ctr){                             // try to reconnect STA
-                LOGD(P_EmbUI_WiFi, println, F("STA reconnecting"));
+                LOGD(P_EmbUI_WiFi, println, "STA reconnecting");
                 wconn = wifi_recon_t::sta_reconnecting;
                 sta_ctr = WIFI_STA_CONNECT_TIMEOUT;
                 WiFi.begin();
