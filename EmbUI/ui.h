@@ -224,7 +224,7 @@ class FrameSendWSServer: public FrameSend {
         FrameSendWSServer(AsyncWebSocket *server) : ws(server){}
         ~FrameSendWSServer() { ws = nullptr; }
         bool available() const override {
-            LOGV(printf, "WS cnt:%u\n", ws->count());
+            LOGV(P_EmbUI, printf, "WS cnt:%u\n", ws->count());
              return ws->count(); }
         void send(const String &data) override { if (!data.isEmpty()) ws->textAll(data); };
         void send(const JsonVariantConst& data) override;
