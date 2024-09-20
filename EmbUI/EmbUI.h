@@ -192,9 +192,6 @@ class EmbUI
     JsonVariantConst paramVariant(const T &key) const { return cfg[key]; }
 
 
-    bool isparamexists(const char* key){ return cfg.containsKey(key);}
-    bool isparamexists(const String &key){ return cfg.containsKey(key);}
-
     /***  config operations ***/
     void save(const char *_cfg = nullptr, bool force = false);
     void load(const char *cfgfile = nullptr);   // if null, than default cfg file is used
@@ -265,7 +262,7 @@ class EmbUI
      * it's value won't be replaced
      */
     template <typename T>
-    inline void var_create(const char* key, const T& value){ if(!cfg.containsKey(key)){var(key, value);} }
+    void var_create(const char* key, const T& value){ if(!cfg[key].is<T>()){ var(key, value); } }
 
     /**
      * @brief - remove key from config

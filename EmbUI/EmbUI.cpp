@@ -339,7 +339,7 @@ void EmbUI::_getmacid(){
 }
 
 void EmbUI::var_remove(const char* key){
-    if (cfg.containsKey(key)){
+    if (cfg[key].is<JsonVariant>()){
         LOGD(P_EmbUI, printf, "cfg remove key:'%s'\n", key);
         cfg.remove(key);
         autosave();

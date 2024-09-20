@@ -70,7 +70,7 @@ void EmbUI::_connectToMqtt() {
 }
 
 void EmbUI::mqttStart(){
-    if (cfg[V_mqtt_enable] != true || !cfg.containsKey(V_mqtt_host)){
+    if (cfg[V_mqtt_enable] != true || !cfg[V_mqtt_host].is<const char*>()){
         LOGD(P_EmbUI_mqtt, println, "MQTT disabled or no host set");
         return;   // выходим если host не задан
     }
