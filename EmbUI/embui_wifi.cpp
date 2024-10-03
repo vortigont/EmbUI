@@ -26,6 +26,9 @@ WiFiController::WiFiController(EmbUI *ui, bool aponly) : emb(ui) {
 
     // Set WiFi event handlers
     eid = WiFi.onEvent( [this](WiFiEvent_t event, WiFiEventInfo_t info){ _onWiFiEvent(event, info); } );
+    if (!eid){
+        LOGE(P_EmbUI_WiFi, println, "Err registering evt handler!");
+    }
 }
 
 // d-tor
@@ -125,8 +128,13 @@ void WiFiController::init(){
     _tWiFi.enableDelayed();
 }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+void WiFiController::_onWiFiEvent(arduino_event_id_t event, arduino_event_info_t info)
+#else
 void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
+#endif
 {
+    LOGI(P_EmbUI_WiFi, println, "Got event");
     switch (event){
 /*
     case SYSTEM_EVENT_AP_START:
