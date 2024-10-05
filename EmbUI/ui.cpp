@@ -30,8 +30,7 @@ void Interface::json_frame_add(const JsonVariantConst obj){
     // this is no longer valid, but I do not know why it might probably return false, so let's just send and make next frame section
     //LOGW(P_EmbUI, printf, " - Frame full! Heap free: %u\n", ESP.getFreeHeap());
 
-    _json_frame_send();
-    _json_frame_next();
+    json_frame_send();
 }
 
 void Interface::json_frame_flush(){
@@ -41,6 +40,11 @@ void Interface::json_frame_flush(){
     LOGD(P_EmbUI, println, "json_frame_flush");
     _json_frame_send();
     json_frame_clear();
+}
+
+void Interface::json_frame_send(){
+    _json_frame_send();
+    _json_frame_next();
 }
 
 void Interface::_json_frame_next(){

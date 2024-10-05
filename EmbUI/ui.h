@@ -409,11 +409,15 @@ class Interface {
         void json_frame(const char* type, const char* section_id = P_EMPTY);
 
         /**
-         * @brief - add object to current Interface frame
+         * @brief - add and object to current section block
          * attempts to retry on mem overflow
          */
         void json_frame_add(const JsonVariantConst obj);
 
+        /**
+         * @brief - add and object to current section block
+         * attempts to retry on mem overflow
+         */
         void json_frame_add( UIelement &ui){ json_frame_add(ui.obj); }
 
         /**
@@ -423,15 +427,23 @@ class Interface {
         void json_frame_clear();
         
         /**
-         * @brief finalize, send and clear current sections stack
+         * @brief finalize, send and clear current sections stack and frame data
          * implies  json_section_end(); _json_frame_send(); json_frame_clear();
          */
         void json_frame_flush();
 
         /**
+         * @brief send accumulated data and clears memory while preserving sections stack
+         * this call does NOT closes the frame and implies that a continuation data will follow
+         * should be used when sending really large sections by periodicaly dumping the
+         * data to network stack and reusing memory
+         */
+        void json_frame_send();
+
+        /**
          * @brief frame that executes arbitrary js function on a page providing it a constructed object as an argument
          * opening this frame user can build any object with a structure supported by sectioned engine of EmbUI.
-         * On reassembly that object will be passed as an input parametner to executed function
+         * On reassembly that object will be passed as an input parameter to executed js function
          * 
          * @tparam TString 
          * @param function - function name to execute on scope of a page
@@ -442,7 +454,7 @@ class Interface {
         /**
          * @brief frame that executes arbitrary js function on a page providing it a constructed object as an argument
          * opening this frame user can build any object with a structure supported by sectioned engine of EmbUI.
-         * On reassembly that object will be passed as an input parametner to executed function
+         * On reassembly that object will be passed as an input parameter to executed function
          * 
          * @tparam TString 
          * @param function - function name to execute on scope of a page
