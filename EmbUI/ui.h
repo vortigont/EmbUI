@@ -212,8 +212,9 @@ class FrameSend {
          */
         virtual bool available() const = 0;
         virtual ~FrameSend(){ };
-        virtual void send(const String &data) = 0;
+        virtual void send(const char* data) = 0;
         virtual void send(const JsonVariantConst& data) = 0;
+        void send(const String &data){ send(data.c_str()); };
         //virtual void flush(){};
 };
 
@@ -226,7 +227,8 @@ class FrameSendWSServer: public FrameSend {
         bool available() const override {
             LOGV(P_EmbUI, printf, "WS cnt:%u\n", ws->count());
              return ws->count(); }
-        void send(const String &data) override { if (!data.isEmpty()) ws->textAll(data); };
+
+        void send(const char* data) override { ws->textAll(data ? data : P_empty_quotes); };
         void send(const JsonVariantConst& data) override;
 };
 
@@ -237,7 +239,9 @@ class FrameSendWSClient: public FrameSend {
         FrameSendWSClient(AsyncWebSocketClient *client) : cl(client){}
         ~FrameSendWSClient() { cl = nullptr; }
         bool available() const override { return cl->status() == WS_CONNECTED; }
-        void send(const String &data) override { if (!data.isEmpty()) cl->text(data); };
+
+        void send(const char* data) override { cl->text(data ? data : P_empty_quotes); };
+
         /**
          * @brief - serialize and send json obj directly to the ws buffer
          */
@@ -247,24 +251,18 @@ class FrameSendWSClient: public FrameSend {
 class FrameSendHttp: public FrameSend {
     protected:
         AsyncWebServerRequest *req;
-        AsyncResponseStream *stream;
+
     public:
-        FrameSendHttp(AsyncWebServerRequest *request) : req(request) {
-            stream = req->beginResponseStream(PGmimejson);
-            stream->addHeader(PGhdrcachec, PGnocache);
-        }
+        FrameSendHttp(AsyncWebServerRequest *request) : req(request) { }
         ~FrameSendHttp() { /* delete stream; */ req = nullptr; }
-        void send(const String &data) override {
-            if (!data.length()) return;
-            stream->print(data);
-        };
+
+        void send(const char* data) override;
+
         /**
          * @brief - serialize and send json obj directly to the ws buffer
          */
-        void send(const JsonVariantConst& data) override {
-            serializeJson(data, *stream);
-            req->send(stream);
-        };
+        void send(const JsonVariantConst& data) override;
+
         bool available() const override { return true; }
 };
 
@@ -314,7 +312,7 @@ class FrameSendChain : public FrameSend {
      * @param data 
      */
     void send(const JsonVariantConst& data) override;
-    void send(const String& data) override;
+    void send(const char* data) override;
 
 };
 
@@ -332,7 +330,7 @@ class FrameSendAsyncJS: public FrameSend {
         bool available() const override { return flushed; }
 
         // not supported
-        [[ deprecated( "FrameSendAsyncJS ignores String argument" ) ]] void send(const String &data) override {};
+        [[ deprecated( "FrameSendAsyncJS ignores String argument" ) ]] void send(const char* data) override {};
 };
 
 struct section_stack_t{

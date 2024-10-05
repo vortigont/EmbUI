@@ -50,8 +50,8 @@ void EmbUI::http_set_handlers(){
     // returns run-time system config serialized in JSON
     server.on("/config", HTTP_ANY, [this](AsyncWebServerRequest *request) {
 
-        AsyncResponseStream *response = request->beginResponseStream(PGmimejson);
-        response->addHeader(PGhdrcachec, PGnocache);
+        AsyncResponseStream *response = request->beginResponseStream(asyncsrv::T_application_json);
+        response->addHeader(asyncsrv::T_Cache_Control, asyncsrv::T_no_cache);
 
         serializeJson(cfg, *response);
 

@@ -213,7 +213,6 @@ static constexpr const char* PGgzip = "gzip";
 static constexpr const char* PGhdrcachec = "Cache-Control";
 static constexpr const char* PGhdrcontentenc = "Content-Encoding";
 static constexpr const char* PGmimecss  = "text/css";
-static constexpr const char* PGmimejson = "application/json";
 static constexpr const char* PGmimexml  = "text/xml";
 static constexpr const char* PGnocache = "no-cache, no-store, must-revalidate";
 static constexpr const char* PG404  = "Not found";

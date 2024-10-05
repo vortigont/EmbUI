@@ -109,12 +109,7 @@ void FrameSendWSServer::send(const JsonVariantConst& data){
         return;
     }
 
-#ifndef YUBOXMOD
     serializeJson(data, (char*)buffer->get(), length);
-#else
-    serializeJson(data, (char*)buffer->data() , length);
-#endif
-
     ws->textAll(buffer);
 };
 
@@ -129,11 +124,7 @@ void FrameSendWSClient::send(const JsonVariantConst& data){
     if (!buffer)
         return;
 
-#ifndef YUBOXMOD
     serializeJson(data, (char*)buffer->get(), length);
-#else
-    serializeJson(data, (char*)buffer->data(), length);
-#endif
     cl->text(buffer);
 };
 
@@ -159,7 +150,7 @@ void FrameSendChain::send(const JsonVariantConst& data){
         i.handler->send(data);
 }
 
-void FrameSendChain::send(const String& data){
+void FrameSendChain::send(const char* data){
     for (auto &i : _hndlr_chain)
         i.handler->send(data);
 }
@@ -185,3 +176,16 @@ FrameSendAsyncJS::~FrameSendAsyncJS() {
     }
     req = nullptr;
 }
+
+void FrameSendHttp::send(const char* data){
+    AsyncWebServerResponse* r = req->beginResponse(200, asyncsrv::T_application_json, data);
+    r->addHeader(asyncsrv::T_Cache_Control, asyncsrv::T_no_cache);
+    req->send(r);
+}
+
+void FrameSendHttp::send(const JsonVariantConst& data) {
+    AsyncResponseStream* stream = req->beginResponseStream(asyncsrv::T_application_json);
+    stream->addHeader(asyncsrv::T_Cache_Control, asyncsrv::T_no_cache);
+    serializeJson(data, *stream);
+    req->send(stream);
+};

@@ -606,7 +606,7 @@ public:
     explicit FrameSendMQTT(EmbUI *emb) : _eu(emb){}
     virtual ~FrameSendMQTT() { _eu = nullptr; }
     bool available() const override { return _eu->mqttAvailable(); }
-    virtual void send(const String &data) override {};     // a do-nothig overload
+    virtual void send(const char* data) override {};     // a do-nothig overload
 
     /**
      * @brief method will publish to MQTT json-serialized data for EmbUI packets
