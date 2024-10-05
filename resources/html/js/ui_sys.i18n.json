@@ -1,0 +1,568 @@
+{
+  "en": {
+    "data": {
+      "settings": {
+        "network": {
+          "label": "WiFi Settings",
+          "block": [
+            {
+              "label": "Device HostName",
+              "block": [
+                {
+                  "block": [
+                    {
+                      "label": "HostName (mDNS Hostname/AP-SSID)"
+                    }
+                  ]
+                },
+                {
+                  "label": "Redefine hostname, or clear to reset to default"
+                },
+                {
+                  "label": "Save"
+                }
+              ]
+            },
+            {
+              "label": "WiFi Client",
+              "block": [
+                {
+                  "label": "Connect to WiFi network"
+                },
+                {
+                  "label": "WiFi SSID"
+                },
+                {
+                  "label": "Password"
+                },
+                {
+                  "label": "Connect"
+                }
+              ]
+            },
+            {
+              "label": "WiFi AP",
+              "block": [
+                {
+                  "label": "WiFi Access-Point setup"
+                },
+                {
+                  "label": "Protect AP with password (8 chars min)"
+                },
+                {
+                  "block": [
+                    {
+                      "label": "Access Point SSID (hostname)"
+                    },
+                    {
+                      "label": "{SSID}"
+                    }
+                  ]
+                },
+                {
+                  "block": [
+                    {
+                      "label": "AP-only Mode"
+                    },
+                    {
+                      "label": "In AP-only EmbUI always works as an Access Point and never attempt any WiFi-client connections"
+                    }
+                  ]
+                },
+                {
+                  "block": [
+                    {
+                      "label": "Disable WiFi Captive-Portal"
+                    },
+                    {
+                      "label": "Do not run catch-all DNS in AP mode"
+                    }
+                  ]
+                },
+                {
+                  "label": "Save"
+                }
+              ]
+            },
+            {
+              "html": "spacer"
+            },
+            {
+              "label": "Exit"
+            }
+          ]
+        },
+        "datetime": {
+          "label": "Date / Time / Time-zone",
+          "block": [
+            {
+              "block": [
+                {
+                  "label": "Device date/time:"
+                },
+                {
+                  "label": "Set browser's time"
+                }
+              ]
+            },
+            {
+              "label": "TimeZone shift/daylight saving rules applied automatically, no need to adjust it mannualy."
+            },
+            {
+              "label": "Time zone"
+            },
+            {
+              "block": [
+                {
+                  "label": "NTP Servers"
+                },
+                {
+                  "label": "Disable NTP over DHCP"
+                }
+              ]
+            },
+            {
+              "section": "ntp_servers",
+              "block": []
+            },
+            {
+              "label": "BackUp NTP-server (optional)"
+            },
+            {
+              "label": "Optional ISO Date/Time, YYYY-MM-DDThh:mm:ss"
+            },
+            {
+              "id": "datetime-local"
+            },
+            {
+              "label": "Save"
+            },
+            {
+              "html": "spacer"
+            },
+            {
+              "label": "Exit"
+            }
+          ]
+        },
+        "mqtt": {
+          "label": "MQTT",
+          "block": [
+            {
+              "label": "Enable MQTT Client"
+            },
+            {
+              "block": [
+                {
+                  "label": "MQTT server"
+                },
+                {
+                  "label": "MQTT port"
+                }
+              ]
+            },
+            {
+              "block": [
+                {
+                  "label": "MQTT Login"
+                },
+                {
+                  "label": "Password"
+                }
+              ]
+            },
+            {
+              "block": [
+                {
+                  "label": "Set MQTT topic prefix. Use '$id' macro to set 'device ID', i.e. 'mydev/$id/'. Leave blank to use default value"
+                },
+                {
+                  "label": "{id}"
+                }
+              ]
+            },
+            {
+              "block": [
+                {
+                  "label": "Override MQTT topic prefix"
+                },
+                {
+                  "label": "MQTT update interval, sec."
+                }
+              ]
+            },
+            {
+              "id": "set_ntwrk_mqtt",
+              "label": "Save"
+            },
+            {
+              "html": "spacer"
+            },
+            {
+              "id": "ui_page_settings",
+              "label": "Exit"
+            }
+          ]
+        },
+        "ftp": {
+          "section": "set_ntwrk_ftp",
+          "block": [
+            {
+              "label": "Enable FTP Server"
+            },
+            {
+              "label": "Activate FTP server. Use 'ftp/ftp' as default credentials"
+            },
+            {
+              "label": "FTP login"
+            },
+            {
+              "label": "Password"
+            },
+            {
+              "label": "Save"
+            },
+            {
+              "label": "Exit"
+            }
+          ]
+        },
+        "system": {
+          "label": "System settings",
+          "block": [
+            {
+              "label": "FW Update",
+              "block": [
+                {
+                  "label": "Load firmware/FS image"
+                },
+                {
+                  "label": "Upload FW"
+                },
+                {
+                  "label": "Upload FS"
+                }
+              ]
+            },
+            {
+              "label": "Clear sys config"
+            },
+            {
+              "label": "Reboot"
+            },
+            {
+              "html": "spacer"
+            },
+            {
+              "label": "Exit"
+            }
+          ]
+        },
+        "btns":{
+          "block": [
+              {
+                "label": "WiFi Setup"
+              },
+              {
+                "label": "Date / Time / Time Zone"
+              },
+              {
+                "label": "MQTT"
+              },
+              {
+                "label": "FTP Server"
+              },
+              {
+                "label": "System setup"
+              }
+            ]
+        }    
+      }
+    }
+  },
+  "ru": {
+    "data": {
+      "settings": {
+        "network": {
+          "section": "ui_page_network",
+          "label": "Настройки WiFi",
+          "block": [
+            {
+              "label": "Имя устройства",
+              "block": [
+                {
+                  "block": [
+                    {
+                      "html": "comment",
+                      "label": "Имя устройства (mDNS Hostname/AP-SSID)"
+                    },
+                    {
+                      "label": "{}"
+                    }
+                  ]
+                },
+                {
+                  "label": "Назначить имя устройства (оставить пустым для использования имени по-умолчанию)"
+                },
+                {
+                  "label": "🖫 Сохранить"
+                }
+              ]
+            },
+            {
+              "label": "WiFi Клиент",
+              "block": [
+                {
+                  "label": "Подключиться к сети WiFi"
+                },
+                {
+                  "label": "WiFi SSID"
+                },
+                {
+                  "label": "Пароль"
+                },
+                {
+                  "label": "Соединение"
+                }
+              ]
+            },
+            {
+              "section": "set_ntwrk_wifiap",
+              "label": "WiFi AP",
+              "block": [
+                {
+                  "label": "Настройки WiFi Access-Point"
+                },
+                {
+                  "label": "Пароль доступа к AP (8 символов мин.)"
+                },
+                {
+                  "block": [
+                    {
+                      "label": "Имя точки доступа AP SSID (hostname)"
+                    },
+                    {
+                      "label": "{SSID}"
+                    }
+                  ]
+                },
+                {
+                  "block": [
+                    {
+                      "label": "Режим AP-only"
+                    },
+                    {
+                      "label": "В режиме AP-only EmbUI всегда работает только как точка доступа, попыток подключения с внешней сети не производится"
+                    }
+                  ]
+                },
+                {
+                  "block": [
+                    {
+                      "label": "Отключть WiFi Captive-Portal"
+                    },
+                    {
+                      "label": "отключить перехватывающий DNS в режиме точки доступа"
+                    }
+                  ]
+                },
+                {
+                  "label": "🖫 Сохранить"
+                }
+              ]
+            },
+            {
+              "html": "spacer"
+            },
+            {
+              "label": "🔙 Выход"
+            }
+          ]
+        },
+        "datetime": {
+          "label": "Дата / Время / Часовая зона",
+          "block": [
+            {
+              "block": [
+                {
+                  "label": "Дата/вермя устройства"
+                },
+                {
+                  "label": "Выставить время из браузера"
+                }
+              ]
+            },
+            {
+              "label": "При корректно выставленной часовой зоне переход на летнее/зимнее время осуществляется автоматически."
+            },
+            {
+              "label": "Часова зона"
+            },
+            {
+              "block": [
+                {
+                  "label": "Серверы NTP"
+                },
+                {
+                  "label": "Отключить NTP over DHCP"
+                }
+              ]
+            },
+            {
+              "section": "ntp_servers",
+              "block": []
+            },
+            {
+              "label": "Резервный NTP-server (опционально)"
+            },
+            {
+              "label": "Задать время/дату в формате ISO, YYYY-MM-DDThh:mm:ss"
+            },
+            {
+              "id": "datetime-local"
+            },
+            {
+              "label": "🖫 Сохранить"
+            },
+            {
+              "html": "spacer"
+            },
+            {
+              "label": "🔙 Выход"
+            }
+          ]
+        },
+        "mqtt": {
+          "label": "MQTT",
+          "block": [
+            {
+              "label": "Включить MQTT клиент"
+            },
+            {
+              "block": [
+                {
+                  "label": "MQTT сервер"
+                },
+                {
+                  "label": "MQTT порт"
+                }
+              ]
+            },
+            {
+              "block": [
+                {
+                  "label": "MQTT логин"
+                },
+                {
+                  "label": "пароль"
+                }
+              ]
+            },
+            {
+              "block": [
+                {
+                  "label": "Изменить префикс MQTT топиков. '$id' макро в строке будет заменён на 'device ID', напр. 'mydev/$id/'. Оставьте строку пустой что бы использовать префикс по-умолчанию"
+                },
+                {
+                  "label": "{id}"
+                }
+              ]
+            },
+            {
+              "block": [
+                {
+                  "label": "переназначить префикс MQTT топиков"
+                },
+                {
+                  "label": "интервал обновления MQTT, сек."
+                }
+              ]
+            },
+            {
+              "label": "🖫 Сохранить"
+            },
+            {
+              "html": "spacer"
+            },
+            {
+              "label": "🔙 Выход"
+            }
+          ]
+        },
+        "ftp": {
+          "block": [
+            {
+              "label": "Включить FTP Server"
+            },
+            {
+              "html": "comment",
+              "label": "FTP сервер может быть использован для доступа к файловой системе контроллера. Логин/пароль по-умолчанию ftp/ftp"
+            },
+            {
+              "label": "FTP логин"
+            },
+            {
+              "label": "Пароль"
+            },
+            {
+              "label": "🖫 Сохранить"
+            },
+            {
+              "label": "🔙 Выход"
+            }
+          ]
+        },
+        "system": {
+          "label": "Системные настройки",
+          "block": [
+            {
+              "label": "Обновление ПО",
+              "block": [
+                {
+                  "label": "Загрузка прошивки/образа FS"
+                },
+                {
+                  "label": "Загрузить ПО"
+                },
+                {
+                  "label": "Загрузить ФС"
+                }
+              ]
+            },
+            {
+              "label": "Clear sys config"
+            },
+            {
+              "label": "Перезагрузка"
+            },
+            {
+              "html": "spacer"
+            },
+            {
+              "label": "🔙 Выход"
+            }
+          ]
+        },
+        "btns":{
+          "block": [
+              {
+                "label": "Настройки WiFi"
+              },
+              {
+                "label": "Дата/Время/Часовая зона"
+              },
+              {
+                "label": "MQTT"
+              },
+              {
+                "label": "FTP сервер"
+              },
+              {
+                "label": "Системные параметры"
+              }
+            ]
+        }    
+      }
+    }
+  }
+}
