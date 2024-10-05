@@ -72,6 +72,7 @@ static constexpr const char* P_hidden = "hidden";
 static constexpr const char* P_hostname_const = "hostname_const";
 static constexpr const char* P_html = "html";
 static constexpr const char* P_id = "id";
+static constexpr const char* P_idx = "idx";
 static constexpr const char* P_iframe = "iframe";
 static constexpr const char* P_js = "js";
 static constexpr const char* P_jscall = "jscall";

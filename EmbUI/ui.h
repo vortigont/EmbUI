@@ -353,21 +353,21 @@ class Interface {
 
     /**
      * @brief purge json object while keeping section structure
-     * used to release mem after json_frame_send() call
+     * used to release mem after _json_frame_send() call
      */
-    void json_frame_next();
+    void _json_frame_next();
 
     /**
      * @brief - serialize and send Interface object to the WebSocket
      */
-    inline void json_frame_send(){ if (send_hndl) send_hndl->send(json); };
+    inline void _json_frame_send(){ if (send_hndl) send_hndl->send(json); };
 
     /**
      * @brief - start UI section
      * A section contains DOM UI elements, this is generic one
      */
     template  <typename TAdaptedString, typename L>
-    JsonArrayConst json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, bool noappend, JsonObject &obj);
+    JsonArrayConst _json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, bool noappend, JsonObject &obj);
 
     template <typename L>
     void _html_input(UIelement &ui, const char* type, const L label, bool onChange);
@@ -406,11 +406,7 @@ class Interface {
          * @brief - begin UI secton of the specified <type>
          * generic frame creation method, used by other calls to create custom-typed frames
          */
-        template <typename TString>
-        void json_frame(const char* type, const TString& section_id);
-
-        template <typename TChar = const char>
-        void json_frame(const char* type, const TChar* section_id = P_EMPTY);
+        void json_frame(const char* type, const char* section_id = P_EMPTY);
 
         /**
          * @brief - add object to current Interface frame
@@ -428,7 +424,7 @@ class Interface {
         
         /**
          * @brief finalize, send and clear current sections stack
-         * implies  json_section_end(); json_frame_send(); json_frame_clear();
+         * implies  json_section_end(); _json_frame_send(); json_frame_clear();
          */
         void json_frame_flush();
 
@@ -573,22 +569,23 @@ class Interface {
         /* *** Object getters *** */
 
         /**
-         * @brief Get the last section object, i.e. it gives RO access to current section array
+         * @brief Get last section's block array
+         * i.e. it gives access to array of current section's objects
          * 
-         * @return const section_stack_t 
+         * @return JsonArray
          */
-        const section_stack_t& get_last_section(){ return section_stack.back(); };
+        JsonArray get_block(){ return section_stack.size() ? section_stack.back().block : JsonArray(); };
 
         /**
          * @brief Get last html object in interface stack
          * this method could be used to add/extend html object with arbitrary key:value objects that are
          * not present in existing html element creation methods
-         * NOTE: returned object might get INVALIDATED on next object addition when frame is flushed.
+         * NOTE: returned object will be INVALIDATED on next object addition when frame is flushed.
          * A care should be taken not to overflow memory pool of Interface object
          * 
          * @return JsonObject 
          */
-        JsonObject get_last_object();
+        JsonObject get_last_object(){ return section_stack.size() ? JsonObject (section_stack.back().block[section_stack.back().block.size()-1]) : JsonObject(); };
 
 
         /* *** HTML Elements *** */
@@ -988,20 +985,6 @@ void Interface::hidden(const ID id, const V value){
 };
 
 template <typename TString>
-void Interface::json_frame(const char* type, const TString& section_id){
-    json[P_pkg] = type;
-    json[P_final] = false;
-    json_section_begin(section_id);
-};
-
-template <typename TChar>
-void Interface::json_frame(const char* type, const TChar* section_id){
-    json[P_pkg] = type;
-    json[P_final] = false;
-    json_section_begin(section_id);
-};
-
-template <typename TString>
 void Interface::json_frame_jscall(const TString& function){
     json[P_pkg] = P_jscall;
     json[P_jsfunc] = function;
@@ -1020,16 +1003,16 @@ void Interface::json_frame_jscall(const TChar* function){
 template  <typename TString, typename L>
 JsonArrayConst Interface::json_section_begin(const TString& name, const L label, bool main, bool hidden, bool line, bool noappend){
     JsonObject obj(section_stack.size() ? section_stack.back().block.add<JsonObject>() : json.as<JsonObject>());
-    return json_section_begin(detail::adaptString(name), label, main, hidden, line, noappend, obj);
+    return _json_section_begin(detail::adaptString(name), label, main, hidden, line, noappend, obj);
 }
 template  <typename TChar, typename L>
 JsonArrayConst Interface::json_section_begin(const TChar* name, const L label, bool main, bool hidden, bool line, bool noappend){
     JsonObject obj(section_stack.size() ? section_stack.back().block.add<JsonObject>() : json.as<JsonObject>());
-    return json_section_begin(detail::adaptString(name), label, main, hidden, line, noappend, obj);
+    return _json_section_begin(detail::adaptString(name), label, main, hidden, line, noappend, obj);
 }
 
 template  <typename TAdaptedString, typename L>
-JsonArrayConst Interface::json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, bool noappend, JsonObject &obj){
+JsonArrayConst Interface::_json_section_begin(TAdaptedString name, const L label, bool main, bool hidden, bool line, bool noappend, JsonObject &obj){
     if (embui_traits::is_empty_string(name))
         obj[P_section] = String (std::rand()); // need a deep-copy
     else
@@ -1051,7 +1034,7 @@ template  <typename ID>
 Interface::json_section_extend(const ID name){
     section_stack.back().idx--;
     JsonObject o(section_stack.back().block[section_stack.back().block.size()-1]);    // find last array element
-    json_section_begin(name, P_EMPTY, false, false, false, false, o);
+    _json_section_begin(name, P_EMPTY, false, false, false, false, o);
 };
 
 template  <typename ID, typename L>

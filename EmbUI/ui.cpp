@@ -5,6 +5,12 @@
 
 #include "ui.h"
 
+void Interface::json_frame(const char* type, const char* section_id){
+    json[P_pkg] = type;
+    json[P_final] = false;
+    json_section_begin(section_id);
+};
+
 void Interface::json_frame_clear(){
     section_stack.clear();
     json.clear();
@@ -24,8 +30,8 @@ void Interface::json_frame_add(const JsonVariantConst obj){
     // this is no longer valid, but I do not know why it might probably return false, so let's just send and make next frame section
     //LOGW(P_EmbUI, printf, " - Frame full! Heap free: %u\n", ESP.getFreeHeap());
 
-    json_frame_send();
-    json_frame_next();
+    _json_frame_send();
+    _json_frame_next();
 }
 
 void Interface::json_frame_flush(){
@@ -33,17 +39,17 @@ void Interface::json_frame_flush(){
     json[P_final] = true;
     json_section_end();
     LOGD(P_EmbUI, println, "json_frame_flush");
-    json_frame_send();
+    _json_frame_send();
     json_frame_clear();
 }
 
-void Interface::json_frame_next(){
+void Interface::_json_frame_next(){
     json.clear();
     JsonObject obj = json.to<JsonObject>();
     for ( auto i = std::next(section_stack.begin()); i != section_stack.end(); ++i ){
         obj = (*std::prev(i)).block.add<JsonObject>();
         obj[P_section] = (*i).name;
-        obj["idx"] = (*i).idx;
+        obj[P_idx] = (*i).idx;
         (*i).block = obj[P_block].to<JsonArray>();
         //LOG(printf, "nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
     }
@@ -63,10 +69,6 @@ void Interface::json_section_end(){
         section_stack.back().idx++;
         LOGD(P_EmbUI, printf, "section end #%u '%s'\n", section_stack.size(), section_stack.back().name.isEmpty() ? "-" : section_stack.back().name.c_str());
     }
-}
-
-JsonObject Interface::get_last_object(){
-    return JsonObject (section_stack.back().block[section_stack.back().block.size()-1]);    // find last array element and return it as an Jobject
 }
 
 void Interface::uidata_xload(const char* key, const char* url, bool merge, unsigned version){
