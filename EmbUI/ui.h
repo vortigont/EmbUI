@@ -858,7 +858,7 @@ class Interface {
 
         /**
          * @brief load uidata on the front-end side
-         * this medothod generates object with instruction to load uidata object structure from specified url
+         * this method generates object with instruction to load uidata object structure from specified url
          * and save it under specified key
          * this method should be wrapped in json_section_uidata()
          * 
@@ -867,6 +867,18 @@ class Interface {
          * @param merge - if 'true', then try to merge/update data under existing key, otherwise replace it
          */
         void uidata_xload(const char* key, const char* url, bool merge = false, unsigned version = 0);
+
+        /**
+         * @brief merge data into uidata storage
+         * generates object with instruction to merge into uidata an object structure from specified url
+         * and save it under specified key 
+         * this method should be wrapped in json_section_uidata()
+         * 
+         * @param url - url to load json from
+         * @param key - a key to load data to, a dot sepparated notation (i.e. "app.page.controls")
+         * @param source - a source key to load a subset object data from, a dot sepparated notation (i.e. "app.page.controls")
+         */
+        void uidata_xmerge(const char* url, const char* key, const char* source = NULL );
 
         /**
          * @brief pick and implace UI structured data objects from front-end side-storage

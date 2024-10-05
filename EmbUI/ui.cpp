@@ -79,6 +79,16 @@ void Interface::uidata_xload(const char* key, const char* url, bool merge, unsig
     json_frame_add(obj);
 }
 
+void Interface::uidata_xmerge(const char* url, const char* key, const char* source){
+    JsonDocument obj;
+    obj[P_action] = P_xmerge;
+    obj[P_url] = url;
+    obj[P_key] = key;
+    obj[P_src] = source;
+    json_frame_add(obj);
+}
+
+
 void Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
     JsonDocument obj;
     obj[P_action] = P_pick;

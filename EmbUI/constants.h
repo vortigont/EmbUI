@@ -104,10 +104,12 @@ static constexpr const char* P_pUptime = "pUptime";
 static constexpr const char* P_range = "range";
 static constexpr const char* P_section = "section";
 static constexpr const char* P_select = "select";
+static constexpr const char* P_src = "src";
 static constexpr const char* P_spacer = "spacer";
 static constexpr const char* P_step = "step";
 static constexpr const char* P_submit = "submit";
 static constexpr const char* P_suffix = "suffix";
+static constexpr const char* P_sys = "sys";
 static constexpr const char* P_tcp = "tcp";
 static constexpr const char* P_text = "text";
 static constexpr const char* P_textarea = "textarea";
@@ -120,6 +122,7 @@ static constexpr const char* P_value = "value";
 static constexpr const char* P_version = "version";
 static constexpr const char* P_wifi = "wifi";
 static constexpr const char* P_xload ="xload";
+static constexpr const char* P_xmerge ="xmerge";
 
 
 // order of elements MUST match with 'enum class ui_element_t' in ui.h
