@@ -23,6 +23,6 @@ def csv_to_json(csvFilePath, jsonFilePath):
         jsonString = json.dumps(jsonArray, indent=2)
         jsonf.write(jsonString)
           
-csvFilePath = r'./data/js/zones.csv'
-jsonFilePath = r'./data/js/tz.json'
+csvFilePath = r'../data/js/zones.csv'
+jsonFilePath = r'../data/js/tz.json'
 csv_to_json(csvFilePath, jsonFilePath)

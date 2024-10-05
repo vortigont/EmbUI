@@ -6,9 +6,10 @@ tags=etags.txt
 compressor="gz"
 compress_cmd="zopfli"
 compress_args=""
+dst="../data"
 
 refresh_rq=0
-tzcsv=https://raw.githubusercontent.com/nayarsystems/posix_tz_db/master/zones.csv
+tzcsv=https:/raw.githubusercontent.com/nayarsystems/posix_tz_db/master/zones.csv
 
 optstring=":hf:c:"
 
@@ -116,38 +117,38 @@ updlocalarchive(){
     local res=$1
     echo "check: $res"
     [ ! -f html/${res} ] && return
-    if [ ! -f data/${res}.${compressor} ] || [ html/${res} -nt data/${res}.${compressor} ] ; then
-        cp html/${res} data/${res}
-        ${compress_cmd}  data/${res} && touch -r html/${res} data/${res}.${compressor}
+    if [ ! -f   ${dst}/${res}.${compressor} ] || [ html/${res} -nt   ${dst}/${res}.${compressor} ] ; then
+        cp html/${res}   ${dst}/${res}
+        ${compress_cmd}    ${dst}/${res} && touch -r html/${res}   ${dst}/${res}.${compressor}
     fi
 }
 
 echo "Preparing resources for EmbUI FS image" 
 
-mkdir -p ./data/css ./data/js
-cat html/css/pure*.css html/css/grids*.css > ./data/css/pure.css
-${compress_cmd}  ./data/css/pure.css
-cat html/css/*_default.css > ./data/css/style.css
-${compress_cmd}  ./data/css/style.css
-cat html/css/*_light.css > ./data/css/style_light.css
-${compress_cmd}  ./data/css/style_light.css
-cat html/css/*_dark.css > ./data/css/style_dark.css
-${compress_cmd}  ./data/css/style_dark.css
+mkdir -p ${dst}/css ${dst}/js
+cat html/css/pure*.css html/css/grids*.css > ${dst}/css/pure.css
+${compress_cmd}  ${dst}/css/pure.css
+cat html/css/*_default.css > ${dst}/css/style.css
+${compress_cmd}  ${dst}/css/style.css
+cat html/css/*_light.css > ${dst}/css/style_light.css
+${compress_cmd}  ${dst}/css/style_light.css
+cat html/css/*_dark.css > ${dst}/css/style_dark.css
+${compress_cmd}  ${dst}/css/style_dark.css
 
-cp -u html/css/*.jpg ./data/css/
-cp -u html/css/*.webp ./data/css/
-cp -u html/css/*.${compressor} ./data/css/
+cp -u html/css/*.jpg ${dst}/css/
+cp -u html/css/*.webp ${dst}/css/
+cp -u html/css/*.svg* ${dst}/css/
 
 echo "Packing EmbUI js" 
 embui_js="dyncss.js lib.js maker.js"
 # combine and compress js files in one bundle
 for f in ${embui_js}
 do
-    cat html/js/${f} >> data/js/embui.js
+    cat html/js/${f} >> ${dst}/js/embui.js
 done
-${compress_cmd}  data/js/embui.js
+${compress_cmd}  ${dst}/js/embui.js
 
-cp -u html/js/lodash.custom.js* data/js/
+cp -u html/js/lodash.custom.js* ${dst}/js/
 
 echo "Packing static files"
 # static gz files
@@ -161,21 +162,13 @@ echo "Update TZ"
 # update TZ info
 if freshtag ${tzcsv} || [ $refresh_rq -eq 1 ] ; then
     echo "Updating TZ info"
-    echo '"label","value"' > ./data/js/zones.csv
-    curl -sL $tzcsv >> ./data/js/zones.csv
+    echo '"label","value"' > ${dst}/js/zones.csv
+    curl -sL $tzcsv >> ${dst}/js/zones.csv
     python tzgen.py
-    ${compress_cmd} f ./data/js/tz.json
-    rm -f ./data/js/tz.json ./data/js/zones.csv
-else
-    unzip -o -d ./data/ data.zip "js/tz.json.${compressor}"
+    ${compress_cmd} -f ${dst}/js/tz.json
+    rm -f ${dst}/js/tz.json ${dst}/js/zones.csv
 fi
 
 
-cd ./data
-zip --filesync -r -0 --quiet ../data.zip ./*
-cd ..
-rm -r ./data
 
 mv -f newetags.txt $tags
-
-echo "Content of data.zip file should be used to create LittleFS image"
