@@ -597,6 +597,12 @@ class Interface {
          */
         JsonObject get_last_object(){ return section_stack.size() ? JsonObject (section_stack.back().block[section_stack.back().block.size()-1]) : JsonObject(); };
 
+        /**
+         * @brief create a new object at the end of current section's block
+         * if the is no section opened so far - returns null JsonObject
+         * @return new JsonObject reference
+         */
+        JsonObject make_new_object();
 
         /* *** HTML Elements *** */
 
@@ -1128,9 +1134,8 @@ void Interface::value(const ID id, const T val, bool html){
         ui.html(html);
         json_frame_add(ui);
     } else {
-        JsonDocument jdoc;
-        jdoc[id] = val;
-        json_frame_add(jdoc);
+        JsonObject obj = make_new_object();
+        obj[id] = val;
     }
 };
 

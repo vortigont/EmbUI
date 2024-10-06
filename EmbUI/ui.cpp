@@ -5,6 +5,8 @@
 
 #include "ui.h"
 
+static constexpr const char* MGS_empty_stack =  "no opened section for an object!";
+
 void Interface::json_frame(const char* type, const char* section_id){
     json[P_pkg] = type;
     json[P_final] = false;
@@ -20,7 +22,7 @@ void Interface::json_frame_add(const JsonVariantConst obj){
     LOGV(P_EmbUI, printf, "Frame add obj %u items\n", obj.size());
 
     //(section_stack.size() ? section_stack.back().block.add<JsonObject>() : json.as<JsonObject>())
-    if (!section_stack.size()) { LOGW(P_EmbUI, println, "Empty section stack!"); return; }
+    if (!section_stack.size()) { LOGW(P_EmbUI, println, MGS_empty_stack); return; }
     if ( section_stack.back().block.add(obj) ){
         LOGV(P_EmbUI, printf, "...OK idx:%u\theap free: %u\n", section_stack.back().idx, ESP.getFreeHeap());
         section_stack.back().idx++;        // incr idx for next obj
@@ -75,25 +77,30 @@ void Interface::json_section_end(){
     }
 }
 
+JsonObject Interface::make_new_object(){
+    if (!section_stack.size()) { LOGW(P_EmbUI, println, MGS_empty_stack); return JsonObject(); }
+    section_stack.back().idx++;        // incr idx for next obj
+    return section_stack.back().block.add<JsonObject>();
+}
+
+
 void Interface::uidata_xload(const char* key, const char* url, bool merge, unsigned version){
-    JsonDocument obj;
+    JsonObject obj = make_new_object();
     obj[P_action] = P_xload;
     obj[P_key] = key;
     obj[P_url] = url;
     if (merge) obj[P_merge] = true;
     if (version) obj[P_version] = version;
-    json_frame_add(obj);
 }
 
 void Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
-    JsonDocument obj;
+    JsonObject obj = make_new_object();
     obj[P_action] = P_pick;
     obj[P_key] = key;
     if (!embui_traits::is_empty_string(prefix))
         obj[P_prefix] = const_cast<char*>(prefix);
     if (!embui_traits::is_empty_string(suffix))
         obj[P_suffix] = const_cast<char*>(suffix);
-    json_frame_add(obj);
 }
 
 /**
