@@ -634,9 +634,12 @@ class Interface {
          * depend on type button can send:
          *  type generic - sendsit's id with null value
          *  type submit  - submit a section form + it's own id
+         * 
+         * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
+         * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
          */
         template <typename T>
-        void button(button_t btype, const T id, const T label, const char* color = P_EMPTY);
+        JsonObject button(button_t btype, const T id, const T label, const char* color = P_EMPTY);
 
         /**
          * @brief - create html button to submit itself's id, value, section form or else
@@ -644,18 +647,24 @@ class Interface {
          *  type 0 - it's id + value
          *  type 1 - submit a form with section + it's own id + value
          *  type 3 href - interpret value as a URI to go to
+         * 
+         * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
+         * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
          */
         template <typename T, typename V>
-        void button_value(button_t btype, const T id, const V value, const T label, const char* color = P_EMPTY);
+        JsonObject button_value(button_t btype, const T id, const V value, const T label, const char* color = P_EMPTY);
 
         /**
          * @brief - create html button that calls user defined js function on click 
+         * 
+         * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
+         * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
          */
         template <typename T, typename V>
-        void button_jscallback(const T id, const T label, const char* callback, const V value = 0, const char* color = P_EMPTY);
+        JsonObject button_jscallback(const T id, const T label, const char* callback, const V value = 0, const char* color = P_EMPTY);
 
         /**
-         * @brief - элемент интерфейса checkbox
+         * @brief - create a checkbox element
          * 
          * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
          * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
@@ -1062,34 +1071,30 @@ class Interface {
 
 
 template <typename T>
-void Interface::button(button_t btype, const T id, const T label, const char* color){
-    UI_button ui(btype, id, label);
-    ui.color(color);
-    json_frame_add(ui);
+JsonObject Interface::button(button_t btype, const T id, const T label, const char* color){
+    JsonObject o(make_new_object());
+    o[P_html] = P_button;
+    o[P_type] = static_cast<uint8_t>(btype);
+    o[P_id] = id;
+    o[P_label] = label;
+    if (!embui_traits::is_empty_string(color)) o[P_color] =color;
+    return o;
 };
 
 template <typename T, typename V>
-void Interface::button_value(button_t btype, const T id, const V value, const T label, const char* color){
-    UI_button ui(btype, id, label);
-    ui.obj[P_value] = value;
-    ui.color(color);
-
-    json_frame_add(ui);
+JsonObject Interface::button_value(button_t btype, const T id, const V value, const T label, const char* color){
+    JsonObject o = button(btype, id, label, color);
+    o[P_value] = value;
+    return o;
 };
 
 template <typename T, typename V>
-void Interface::button_jscallback(const T id, const T label, const char* callback, const V value, const char* color){
-    UI_button ui(button_t::js, id, label);
-    ui.obj[P_function] = callback;
-    ui.obj[P_value] = value;
-    if (!embui_traits::is_empty_string(color)) ui.color(color);
-    ui.color(color);
-
-    json_frame_add(ui);
+JsonObject Interface::button_jscallback(const T id, const T label, const char* callback, const V value, const char* color){
+    JsonObject o = button(button_t::js, id, label, color);
+    o[P_value] = value;
+    o[P_function] = callback;
+    return o;
 };
-
-        template <typename T, typename V>
-        void button_jscallback(const T id, const T label, const V value = 0,  const char* color = P_EMPTY);
 
 template <typename ID, typename L>
 JsonObject Interface::comment(const ID id, const L label){
