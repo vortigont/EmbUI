@@ -7,6 +7,14 @@
 
 static constexpr const char* MGS_empty_stack =  "no opened section for an object!";
 
+Interface::~Interface(){
+    json_frame_clear();
+    if (_delete_handler_on_destruct){
+        delete send_hndl;
+        send_hndl = nullptr;
+    }
+}
+
 void Interface::json_frame(const char* type, const char* section_id){
     json[P_pkg] = type;
     json[P_final] = false;
@@ -63,6 +71,7 @@ void Interface::_json_frame_next(){
 }
 
 void Interface::json_frame_value(const JsonVariantConst val){
+    json_frame_flush();     // ensure this will purge existing frame
     json_frame(P_value);
     json_frame_add(val);
 }
@@ -84,23 +93,25 @@ JsonObject Interface::make_new_object(){
 }
 
 
-void Interface::uidata_xload(const char* key, const char* url, bool merge, unsigned version){
-    JsonObject obj = make_new_object();
+JsonObject Interface::uidata_xload(const char* key, const char* url, bool merge, unsigned version){
+    JsonObject obj(make_new_object());
     obj[P_action] = P_xload;
     obj[P_key] = key;
     obj[P_url] = url;
     if (merge) obj[P_merge] = true;
     if (version) obj[P_version] = version;
+    return obj;
 }
 
-void Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
-    JsonObject obj = make_new_object();
+JsonObject Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
+    JsonObject obj(make_new_object());
     obj[P_action] = P_pick;
     obj[P_key] = key;
     if (!embui_traits::is_empty_string(prefix))
         obj[P_prefix] = const_cast<char*>(prefix);
     if (!embui_traits::is_empty_string(suffix))
         obj[P_suffix] = const_cast<char*>(suffix);
+    return obj;
 }
 
 /**

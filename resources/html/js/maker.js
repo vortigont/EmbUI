@@ -352,7 +352,7 @@ var render = function(){
 				go("#main").append(tmpl_section_main.parse(obj));
 				if (!out.lockhist) out.history(obj.section);
 			} else {
-				if ( Object.keys(go("#"+obj.section)).length === 0 && !obj.noappend ){
+				if ( Object.keys(go("#"+obj.section)).length === 0 && !obj.replace ){
 					go("#main").append(tmpl_section_main.parse(obj));
 				} else {
 					console.log("replacing section:", obj.section)
@@ -387,7 +387,7 @@ var render = function(){
 									console.log("Opening update alert msg");
 									document.getElementById("update_alert").style.display = "block";
 								}
-								return
+								//return
 							}
 							// Pick UI object from a previously loaded UI data storage
 							if (v.action == "pick"){
@@ -409,7 +409,7 @@ var render = function(){
 									}
 									newblocks.push(ui_obj)
 								}
-								return
+								//return
 							}
 						})
 						// a function that will replace current section item with uidata items
@@ -445,7 +445,7 @@ var render = function(){
 					continue;
 				}
 				if (frame[i].section == "manifest"){
-					let manifest = frame[i].block[0];
+					let manifest = frame[i];
 					document.title = manifest.app + " - " + manifest.mc;
 					global.app = manifest.app;
 					global.macid = manifest.mc;
