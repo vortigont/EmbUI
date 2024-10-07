@@ -20,46 +20,6 @@ using ValidCharPtr_t = std::enable_if_t<embui_traits::is_string_ptr_v<TChar*>, v
 template<typename TString>
 using ValidString_t = std::enable_if_t<embui_traits::is_string_v<TString>, void>;
 
-/**
- * @brief a list of available ui elenets
- * changes to this list order MUST be reflected to 'static const char *const UI_T_DICT' in constants.h
- * 
- */
-enum class ui_element_t:uint8_t {
-    custom = 0,
-    button,
-    checkbox,
-    color,
-    comment,
-    constant,
-    date,
-    datetime,
-    display,
-    div,
-    email,      // 10
-    file,
-    form,
-    hidden,
-    iframe,
-    input,
-    option,
-    password,
-    range,
-    select,
-    spacer,     // 20
-    text,
-    textarea,
-    time,
-    value
-};
-
-enum class ui_param_t:uint8_t {
-    html = 0,
-    id,
-    hidden,
-    type,
-    value
-};
 
 // UI Button type enum
 enum class button_t:uint8_t {
@@ -67,122 +27,6 @@ enum class button_t:uint8_t {
     submit,
     js,
     href
-};
-
-class UIelement {
-protected:
-    ui_element_t _t;
-
-    // set UI html type, if any
-    void set_html_type(ui_element_t t){
-        // check if element type is within allowed range
-        if (static_cast<uint8_t>(t) < UI_T_DICT.size()){
-            switch(t){
-                case ui_element_t::custom :     // some elements does not need html_type
-                case ui_element_t::option :
-                case ui_element_t::value :
-                    return;
-                default :                       // default is to set element type from dict
-                    obj[P_html] = UI_T_DICT[static_cast<uint8_t>(t)];
-            }
-        }
-    }
-
-public:
-    JsonDocument obj;
-
-    // c-tor with ID by value
-    template <typename T>
-    UIelement(ui_element_t t, const T id, typename std::enable_if<embui_traits::is_string_ptr<T>::value, T>::type* = 0) : _t(t) {
-        if (!embui_traits::is_empty_string(id))
-            obj[P_id] = id;
-        //else
-        //    obj[P_id] = P_EMPTY;
-
-        set_html_type(t);
-    };
-
-    // c-tor with ID by ref
-    template <typename T>
-    UIelement(ui_element_t t, const T& id, typename std::enable_if<embui_traits::is_string_obj<T>::value, T>::type* = 0) : _t(t) {
-        if (!embui_traits::is_empty_string(id))
-            obj[P_id] = id;
-        //else
-        //    obj[P_id] = P_EMPTY;
-
-        set_html_type(t);
-    };
-
-    explicit UIelement(ui_element_t t) : UIelement(t, P_EMPTY) {};
-
-    template <typename ID, typename V>
-    UIelement(ui_element_t t, const ID id, const V value) : UIelement(t, id ){
-        obj[P_value] = value;
-    };
-
-    template <typename T>
-        typename std::enable_if<std::is_fundamental_v<T>, void>::type
-    param(ui_param_t key, const T value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
-
-    template <typename T>
-        typename std::enable_if<!std::is_fundamental_v<T>, void>::type
-    param(ui_param_t key, const T& value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
-
-    template <typename T>
-        typename std::enable_if<!std::is_fundamental_v<T>, void>::type
-    param(ui_param_t key, T* value){ obj[UI_KEY_DICT[static_cast<uint8_t>(key)]] = value; };
-
-
-    /**
-     * @brief set 'html' flag for element
-     * if set, than value updated for {{}} placeholders in html template, otherwise within dynamicaly created elements on page
-     * 
-     * @param v boolen
-     */
-    void html(bool v = true){ if (v) obj[P_html] = v; else obj.remove(P_html); }         // tend to null pattern
-
-    /**
-     * @brief add 'label' key to the UI element
-     * 
-     * @tparam T label literal type
-     * @param label 
-     */
-    template <typename T>
-        ValidCharPtr_t<T>
-    label(const T* string){ if (!embui_traits::is_empty_string(string)) obj[P_label] = string; }
-
-    template <typename T>
-        ValidStringRef_t<T>
-    label(const T& string){ if (!embui_traits::is_empty_string(string)) obj[P_label] = string; }
-
-    /**
-     * @brief add 'color' key to the UI element
-     * 
-     * @tparam T color literal type
-     * @param label 
-     */
-    template <typename T>
-        ValidStringRef_t<T>
-    color(const T& color){ if (!embui_traits::is_empty_string(color)) obj[P_color] = color; }
-
-    template <typename T>
-        ValidCharPtr_t<T>
-    color(const T* color){ if (!embui_traits::is_empty_string(color)) obj[P_color] = color; }
-};
-
-class UI_button : public UIelement {
-public:
-    template <typename T, typename L>
-    UI_button(button_t btype, const T* id, const L label) : UIelement(ui_element_t::button, id) {
-        UIelement::obj[P_type] = static_cast<uint8_t>(btype);
-        UIelement::obj[P_label] = label;
-    };
-
-    template <typename T, typename L>
-    UI_button(button_t btype, const T& id, const L label) : UIelement(ui_element_t::button, id) {
-        UIelement::obj[P_type] = static_cast<uint8_t>(btype);
-        UIelement::obj[P_label] = label;
-    };
 };
 
 class FrameSend {
@@ -383,12 +227,6 @@ class Interface {
          * attempts to retry on mem overflow
          */
         void json_frame_add(const JsonVariantConst obj);
-
-        /**
-         * @brief - add and object to current section block
-         * attempts to retry on mem overflow
-         */
-        void json_frame_add( UIelement &ui){ json_frame_add(ui.obj); }
 
         /**
          * @brief purge all frame data
