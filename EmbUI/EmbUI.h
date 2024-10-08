@@ -195,7 +195,7 @@ class EmbUI
 
 
     /***  config operations ***/
-    void save(const char *_cfg = nullptr, bool force = false);
+    void save(const char *_cfg = nullptr);
     void load(const char *cfgfile = nullptr);   // if null, than default cfg file is used
     void cfgclear();                            // clear current config, both in RAM and file
 

@@ -17,46 +17,18 @@
  #endif
 #endif
 
-void EmbUI::save(const char *_cfg, bool force){
-    File configFile;
-    if (_cfg == nullptr) {
-        LOGD(P_EmbUI, println, "Save config file");
-        LittleFS.rename(C_cfgfile,C_cfgfile_bkp);
-        embuifs::serialize2file(cfg, C_cfgfile);
-    } else {
-        LOGD(P_EmbUI, printf, "Save %s main config file\n", _cfg);
-        embuifs::serialize2file(cfg, _cfg);
-    }
+void EmbUI::save(const char *_cfg){
+    embuifs::serialize2file(cfg, _cfg ? _cfg : C_cfgfile);
+    LOGD(P_EmbUI, println, "Save config file");
 }
 
 void EmbUI::load(const char *cfgfile){
-
     LOGD(P_EmbUI, print, F("Config file load "));
-
-    if (cfgfile){
-        if (embuifs::deserializeFile(cfg, cfgfile))
-            return;
-    } else {
-        String f(C_cfgfile);
-        if (!embuifs::deserializeFile(cfg, f.c_str())){
-            LOGV(P_EmbUI, println, F("...failed, trying with backup"));
-            f = C_cfgfile_bkp;
-            if (embuifs::deserializeFile(cfg, f.c_str())){
-                LOGV(P_EmbUI, println, F("BackUp load OK!"));
-                return;
-            }
-        } else {
-            LOGD(P_EmbUI, println, F("OK!"));
-            return;
-        }
-    }
-
-    // тут выясняется, что оба конфига повреждены, очищаем конфиг, он будет заполнен значениями по-умолчанию
-    cfg.clear();
+    embuifs::deserializeFile(cfg, cfgfile ? cfgfile : C_cfgfile);
 }
 
 void EmbUI::cfgclear(){
-    LOGD(P_EmbUI, println, F("!CLEAR SYSTEM CONFIG!"));
+    LOGI(P_EmbUI, println, F("!CLEAR SYSTEM CONFIG!"));
     cfg.clear();
     autosave(true);
 }
