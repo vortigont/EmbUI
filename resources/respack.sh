@@ -152,7 +152,7 @@ cp -u html/js/lodash.custom.js* ${dst}/js/
 
 echo "Packing static files"
 # static gz files
-static_gz_files='js/ui_sys.json index.html favicon.ico'
+static_gz_files='js/ui_sys.json js/ui_sys.i18n.json js/ui_sys.lang.json index.html favicon.ico'
 for f in ${static_gz_files}
 do
     updlocalarchive $f

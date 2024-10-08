@@ -39,6 +39,15 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         LOGD(P_EmbUI, printf, "WS_EVT_CONNECT:%s id:%u\n", server->url(), client->id());
         {
             Interface interf(client);
+            // load locale data
+            String path(embui.getLang());
+            path += (char)0x2e; // '.'
+            path += P_data;
+            interf.json_frame_interface();
+            interf.json_section_uidata();
+                interf.uidata_xmerge("/js/ui_sys.i18n.json", P_sys, path.c_str());
+            interf.json_frame_flush();
+
             if (!embui.action.exec(&interf, nullptr, A_ui_page_main))    // call user defined mainpage callback
                 basicui::page_main(&interf, nullptr, NULL);             // if no callback was registered, then show default stub page
         }
@@ -142,6 +151,9 @@ void EmbUI::begin(){
 
     LOGD(P_EmbUI, print, "UI CONFIG: ");
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
+
+    // restore language value
+    _lang = cfg[V_LANGUAGE] | "en";
 
     // restore Time settings
     if (cfg[V_userntp])
@@ -346,6 +358,18 @@ void EmbUI::var_remove(const char* key){
     }
 }
 
+void EmbUI::setLang(const char* lang){
+    _lang = lang;
+    var_dropnulls(V_LANGUAGE, lang);
+    if (_lang_cb)
+        _lang_cb(_lang.c_str());
+    autosave();
+}
+
+const char* EmbUI::getLang() const {
+    return _lang.c_str();
+}
+
 
 void ActionHandler::add(const char* id, actionCallback_t callback){
     actions.emplace_back(id, callback);
@@ -405,3 +429,4 @@ void ActionHandler::set_settings_cb(actionCallback_t callback){
     remove(A_ui_blk_usersettings);
     add(A_ui_blk_usersettings, callback);
 }
+

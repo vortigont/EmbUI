@@ -109,7 +109,17 @@ JsonObject Interface::uidata_xload(const char* key, const char* url, bool merge,
     return obj;
 }
 
-JsonObject Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
+void Interface::uidata_xmerge(const char* url, const char* key, const char* source){
+    JsonObject obj(json_object_create());
+    obj[P_action] = P_xmerge;
+    obj[P_url] = url;
+    obj[P_key] = key;
+    obj[P_src] = source;
+    return obj;
+}
+
+
+void Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
     JsonObject obj(json_object_create());
     obj[P_action] = P_pick;
     obj[P_key] = key;

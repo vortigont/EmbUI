@@ -8,7 +8,7 @@ var global = {menu_id:0, menu: [], value:{}};
  * EmbUI's js api version
  * used to set compatibilty dependency between backend firmware and WebUI js
  */
-const ui_jsapi = 4;
+const ui_jsapi = 5;
 
 /**
  * User application versions - frontend/backend
@@ -388,6 +388,17 @@ var render = function(){
 									document.getElementById("update_alert").style.display = "block";
 								}
 								//return
+							}
+							if(v.action == "xmerge"){
+								let response = await fetch(v.url, {method: 'GET'});
+								if (!response.ok) return;
+								response = await response.json();
+								if(v.src)
+									_.merge(_.get(uiblocks, v.key), _.get(response, v.src))
+								else
+									_.merge(_.get(uiblocks, v.key), response)
+								//console.log("merge uiobj under:", v.key, "src:", v.src, "data:", response);
+								return
 							}
 							// Pick UI object from a previously loaded UI data storage
 							if (v.action == "pick"){

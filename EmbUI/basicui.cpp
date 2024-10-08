@@ -2,9 +2,12 @@
 #include "ftpsrv.h"
 #include "EmbUI.h"
 
-uint8_t lang = 0;            // default language for text resources (english)
+uint8_t lang = 0;
 
 namespace basicui {
+
+static constexpr const char* JSON_i18N = "/js/ui_sys.i18n.json";
+static constexpr const char* JSON_LANG_LIST = "/js/ui_sys.lang.json";
 
 /**
  * register handlers for system actions and setup pages
@@ -36,7 +39,7 @@ void register_handlers(){
     embui.action.add(A_set_ntwrk_wifiap, set_settings_wifiAP);          // обработка настроек WiFi AP
 }
 
-// dummy intro page that cimply calls for "system setup page"
+// dummy intro page that simply calls for "system setup page"
 void page_main(Interface *interf, const JsonObject *data, const char* action){
 
     interf->json_frame_interface();
@@ -73,22 +76,17 @@ void page_system_settings(Interface *interf, const JsonObject *data, const char*
 
     interf->json_section_main(A_ui_page_settings, T_DICT[lang][TD::D_SETTINGS]);
 
-    interf->select(A_set_sys_language, lang, T_DICT[lang][TD::D_LANG], true);
-        interf->option(0, "Eng");
-        interf->option(1, "Rus");
-    interf->json_section_end();
+    interf->json_section_xload();
+        // side load drop-down list of available languages /eff_list.json file
+        interf->select(A_set_sys_language, embui.getLang(), T_DICT[lang][TD::D_LANG], true, JSON_LANG_LIST);
+    interf->json_section_end(); // close xload section
 
     interf->spacer();
 
-    //interf->button_value(button_t::generic, A_ui_page, 0, T_GNRL_SETUP);                                    // кнопка перехода в общие настройки
-    interf->button_value(button_t::generic, A_ui_page, e2int(page::network), T_DICT[lang][TD::D_WiFi]);       // кнопка перехода в настройки сети
-    interf->button_value(button_t::generic, A_ui_page, e2int(page::datetime), T_DICT[lang][TD::D_DATETIME]);  // кнопка перехода в настройки времени
-    interf->button_value(button_t::generic, A_ui_page, e2int(page::mqtt), P_MQTT);                            // кнопка перехода в настройки MQTT
-
-#ifndef EMBUI_NOFTP
-    interf->button_value(button_t::generic, A_ui_page, e2int(page::ftp), "FTP Server");                       // кнопка перехода в настройки FTP
-#endif
-    interf->button_value(button_t::generic, A_ui_page, e2int(page::syssetup), T_DICT[lang][TD::D_SYSSET]);    // кнопка перехода в настройки System
+    // settings buttons
+    interf->json_section_uidata();
+        interf->uidata_pick("sys.settings.btns");
+    interf->json_section_end();
 
     interf->spacer();
 
@@ -483,8 +481,17 @@ void set_sys_datetime(Interface *interf, const JsonObject *data, const char* act
 void set_language(Interface *interf, const JsonObject *data, const char* action){
     if (!data) return;
 
-    embui.var_dropnulls(V_LANGUAGE, (*data)[A_set_sys_language]);
-    lang = (*data)[A_set_sys_language];
+    embui.setLang((*data)[A_set_sys_language]);
+
+    String path(embui.getLang());
+    path += (char)0x2e; // '.'
+    path += "data";
+    interf->json_frame_interface();
+    // load translation data for new lang
+    interf->json_section_uidata();
+        interf->uidata_xmerge(JSON_i18N, P_sys, path.c_str());
+    interf->json_frame_flush();
+
     page_system_settings(interf, nullptr, NULL);
 }
 
