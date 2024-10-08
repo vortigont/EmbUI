@@ -220,13 +220,7 @@ class Interface {
          * @brief - begin UI secton of the specified <type>
          * generic frame creation method, used by other calls to create custom-typed frames
          */
-        void json_frame(const char* type, const char* section_id = P_EMPTY);
-
-        /**
-         * @brief - add and object to current section block
-         * attempts to retry on mem overflow
-         */
-        void json_frame_add(const JsonVariantConst obj);
+        JsonObject json_frame(const char* type, const char* section_id = P_EMPTY);
 
         /**
          * @brief purge all frame data
@@ -244,11 +238,13 @@ class Interface {
          * @brief - begin Interface UI secton
          * used to construct WebUI html elements
          */
-        void json_frame_interface(){ json_frame(P_interface); };
+        JsonObject json_frame_interface(){ return json_frame(P_interface); };
+
         template <typename TString>
-        void json_frame_interface(const TString& section_id){ json_frame(P_interface, section_id); }
+        JsonObject json_frame_interface(const TString& section_id){ return json_frame(P_interface, section_id); }
+
         template <typename TChar>
-        void json_frame_interface(const TChar* section_id){ json_frame(P_interface, section_id); };
+        JsonObject json_frame_interface(const TChar* section_id){ return json_frame(P_interface, section_id); };
 
         /**
          * @brief frame that executes arbitrary js function on a page providing it a constructed object as an argument
@@ -282,7 +278,7 @@ class Interface {
          * @brief - begin Value UI frame
          * used to supply WebUI with data (key:value pairs)
          */
-        void json_frame_value(){ json_frame(P_value); };
+        JsonObject json_frame_value(){ return json_frame(P_value); };
 
         /**
          * @brief - begin Value UI secton with supplied json object
@@ -294,7 +290,55 @@ class Interface {
          * 
          * @param val json object with supplied data to be copied
          */
-        void json_frame_value(const JsonVariantConst val);
+        JsonObject json_frame_value(const JsonVariantConst val);
+
+        /* *** Object getters/setters *** */
+
+        /**
+         * @brief Get last section's block array
+         * i.e. it gives access to an array of current section's objects
+         * 
+         * @warning returned JsonArray is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
+         * @warning a lifetime of the returned JsonArray is limited to a lifetime of Interface object
+         * 
+         * @return JsonArray
+         */
+        JsonArray json_block_get();
+
+        /**
+         * @brief Get last html object in interface stack
+         * this method could be used to add/extend html object with arbitrary key:value objects that are
+         * not present in existing html element creation methods
+         * 
+         * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
+         * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
+         * 
+         * @return JsonObject 
+         */
+        JsonObject json_object_get();
+
+        /**
+         * @brief - add new object to current section block
+         * object is added via deep-copy
+         * 
+         * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
+         * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
+         * 
+         */
+        JsonObject json_object_add(const JsonVariantConst obj);
+
+        /**
+         * @brief create a new object at the end of current section's block
+         * if the is no section opened so far - returns null JsonObject
+         * 
+         * @note a frame should be created prior to calling this method
+         * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
+         * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
+         * 
+         * @return empty JsonObject
+         */
+        JsonObject json_object_create();
+
 
         /**
          * @brief start UI section
@@ -427,42 +471,6 @@ class Interface {
         void json_section_end();
 
 
-        /* *** Object getters *** */
-
-        /**
-         * @brief Get last section's block array
-         * i.e. it gives access to an array of current section's objects
-         * 
-         * @warning returned JsonArray is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
-         * @warning a lifetime of the returned JsonArray is limited to a lifetime of Interface object
-         * 
-         * @return JsonArray
-         */
-        JsonArray get_block(){ return section_stack.size() ? section_stack.back().block : JsonArray(); };
-
-        /**
-         * @brief Get last html object in interface stack
-         * this method could be used to add/extend html object with arbitrary key:value objects that are
-         * not present in existing html element creation methods
-         * 
-         * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
-         * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
-         * 
-         * @return JsonObject 
-         */
-        JsonObject get_last_object(){ return section_stack.size() ? JsonObject (section_stack.back().block[section_stack.back().block.size()-1]) : JsonObject(); };
-
-        /**
-         * @brief create a new object at the end of current section's block
-         * if the is no section opened so far - returns null JsonObject
-         * 
-         * @note a frame should be created prior to calling this method
-         * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
-         * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
-         * 
-         * @return empty JsonObject
-         */
-        JsonObject make_new_object();
 
 
         /* *** HTML Elements *** */
@@ -900,7 +908,7 @@ class Interface {
          * 
          * @param data - object to add as values. Might be an arrray 
          */
-        void value(const JsonVariantConst data){ return json_frame_add(data); }
+        JsonObject value(const JsonVariantConst data){ return json_object_add(data); }
 
 };
 
@@ -910,7 +918,7 @@ class Interface {
 
 template <typename T>
 JsonObject Interface::button(button_t btype, const T id, const T label, const char* color){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_button;
     o[P_type] = static_cast<uint8_t>(btype);
     o[P_id] = id;
@@ -936,7 +944,7 @@ JsonObject Interface::button_jscallback(const T id, const T label, const char* c
 
 template <typename ID, typename L>
 JsonObject Interface::comment(const ID id, const L label){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_comment;
     o[P_id] = id;
     o[P_label] = label;
@@ -946,7 +954,7 @@ JsonObject Interface::comment(const ID id, const L label){
 
 template <typename ID, typename L, typename V>
 JsonObject Interface::constant(const ID id, const L label, const V value){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_comment;
     o[P_id] = id;
     o[P_label] = label;
@@ -966,7 +974,7 @@ JsonObject Interface::display(const ID id, V&& value, const L label, String cssc
 
 template <typename ID, typename V, typename L, typename CSS>
 JsonObject Interface::div(const ID id, const ID type, const V value, const L label, const CSS css, const JsonVariantConst params){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_div;
     o[P_id] = id;
     o[P_label] = label;
@@ -984,7 +992,7 @@ JsonObject Interface::div(const ID id, const ID type, const V value, const L lab
 template <typename ID, typename V, typename L>
     typename std::enable_if<embui_traits::is_string_v<V>,JsonObject>::type
 Interface::file_form(const ID id, const V action, const L label, const L opt){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_file;
     o[P_id] = id;
     o[P_label] = label;
@@ -995,7 +1003,7 @@ Interface::file_form(const ID id, const V action, const L label, const L opt){
 
 template <typename ID, typename V>
 JsonObject Interface::hidden(const ID id, const V value){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_hidden;
     o[P_id] = id;
     o[P_value] = value;
@@ -1079,7 +1087,7 @@ Interface::json_section_manifest(const ID appname, const char* devid, unsigned a
 template <typename ID, typename T, typename L>
     typename std::enable_if<std::is_arithmetic_v<T>, JsonObject>::type
 Interface::number_constrained(const ID id, T value, const L label, T step, T min, T max){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_input;
     o[P_id] = id;
     o[P_label] = label;
@@ -1093,7 +1101,7 @@ Interface::number_constrained(const ID id, T value, const L label, T step, T min
 
 template <typename T, typename L>
 JsonObject Interface::option(const T value, const L label){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_label] = label;
     o[P_value] = value;
     return o;
@@ -1102,7 +1110,7 @@ JsonObject Interface::option(const T value, const L label){
 template <typename ID, typename T, typename L>
     typename std::enable_if<embui_traits::is_string_v<ID>,JsonObject>::type
 Interface::range(const ID id, T value, T min, T max, T step, const L label, bool onChange){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_input;
     o[P_id] = id;
     o[P_type] = "range";
@@ -1118,7 +1126,7 @@ Interface::range(const ID id, T value, T min, T max, T step, const L label, bool
 
 template <typename ID, typename T, typename L>
 JsonObject Interface::select(const ID id, const T value, const L label, bool onChange, const L exturl){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_select;
     o[P_id] = id;
     o[P_label] = label;
@@ -1134,7 +1142,7 @@ JsonObject Interface::select(const ID id, const T value, const L label, bool onC
 template <typename L>
     typename std::enable_if<embui_traits::is_string_v<L>,JsonObject>::type
 Interface::spacer(const L label){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_spacer;
     o[P_label] = label;
     return o;
@@ -1143,7 +1151,7 @@ Interface::spacer(const L label){
 template <typename ID, typename V, typename L>
     typename std::enable_if<embui_traits::is_string_v<V>,JsonObject>::type
 Interface::textarea(const ID id, const V value, const L label){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_textarea;
     o[P_id] = id;
     o[P_label] = label;
@@ -1153,7 +1161,7 @@ Interface::textarea(const ID id, const V value, const L label){
 
 template <typename ID, typename T>
 JsonObject Interface::value(const ID id, const T value, bool html){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     if (html){
         o[P_id] = id;
         o[P_value] = value;
@@ -1167,7 +1175,7 @@ JsonObject Interface::value(const ID id, const T value, bool html){
 template <typename TChar, typename V, typename L>
     std::enable_if_t<embui_traits::is_string_ptr_v<TChar*>, JsonObject>           //  ValidCharPtr_t<TChar>
 Interface::html_input(const TChar* id, const char* type, const V value, const L label, bool onChange){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_input;
     o[P_id] = id;
     o[P_type] = type;
@@ -1180,7 +1188,7 @@ Interface::html_input(const TChar* id, const char* type, const V value, const L 
 template <typename TString, typename V, typename L>
     std::enable_if_t<embui_traits::is_string_obj_v<TString>, JsonObject>     //  ValidStringRef_t<TString>
 Interface::html_input(const TString& id, const char* type, const V value, const L label, bool onChange){
-    JsonObject o(make_new_object());
+    JsonObject o(json_object_create());
     o[P_html] = P_input;
     o[P_id] = id;
     o[P_type] = type;

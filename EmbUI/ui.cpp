@@ -15,32 +15,38 @@ Interface::~Interface(){
     }
 }
 
-void Interface::json_frame(const char* type, const char* section_id){
+JsonArray Interface::json_block_get(){
+    return section_stack.size() ? section_stack.back().block : JsonArray();
+};
+
+JsonObject Interface::json_object_get(){
+    return section_stack.size() ? JsonObject (section_stack.back().block[section_stack.back().block.size()-1]) : JsonObject();
+};
+
+JsonObject Interface::json_object_add(const JsonVariantConst obj){
+    LOGV(P_EmbUI, printf, "Frame obj add %u items\n", obj.size());
+
+    //(section_stack.size() ? section_stack.back().block.add<JsonObject>() : json.as<JsonObject>())
+    if (!section_stack.size()) { LOGW(P_EmbUI, println, MGS_empty_stack); return {}; }
+    if ( section_stack.back().block.add(obj) ){
+        LOGV(P_EmbUI, printf, "...OK idx:%u\theap free: %u\n", section_stack.back().idx, ESP.getFreeHeap());
+        section_stack.back().idx++;        // incr idx for next obj
+    }
+    // return newly added object reference
+    return json_object_get();
+}
+
+JsonObject Interface::json_frame(const char* type, const char* section_id){
+    json_frame_flush();         // ensure to start a new frame purging any existing data
     json[P_pkg] = type;
     json[P_final] = false;
     json_section_begin(section_id);
+    return json.as<JsonObject>();
 };
 
 void Interface::json_frame_clear(){
     section_stack.clear();
     json.clear();
-}
-
-void Interface::json_frame_add(const JsonVariantConst obj){
-    LOGV(P_EmbUI, printf, "Frame add obj %u items\n", obj.size());
-
-    //(section_stack.size() ? section_stack.back().block.add<JsonObject>() : json.as<JsonObject>())
-    if (!section_stack.size()) { LOGW(P_EmbUI, println, MGS_empty_stack); return; }
-    if ( section_stack.back().block.add(obj) ){
-        LOGV(P_EmbUI, printf, "...OK idx:%u\theap free: %u\n", section_stack.back().idx, ESP.getFreeHeap());
-        section_stack.back().idx++;        // incr idx for next obj
-        return;
-    }
-
-    // this is no longer valid, but I do not know why it might probably return false, so let's just send and make next frame section
-    //LOGW(P_EmbUI, printf, " - Frame full! Heap free: %u\n", ESP.getFreeHeap());
-
-    json_frame_send();
 }
 
 void Interface::json_frame_flush(){
@@ -70,10 +76,10 @@ void Interface::_json_frame_next(){
     LOGI(P_EmbUI, printf, "json_frame_next: [#%u]\n", section_stack.size()-1);   // section index counts from 0
 }
 
-void Interface::json_frame_value(const JsonVariantConst val){
+JsonObject Interface::json_frame_value(const JsonVariantConst val){
     json_frame_flush();     // ensure this will purge existing frame
     json_frame(P_value);
-    json_frame_add(val);
+    return json_object_add(val);
 }
 
 void Interface::json_section_end(){
@@ -86,7 +92,7 @@ void Interface::json_section_end(){
     }
 }
 
-JsonObject Interface::make_new_object(){
+JsonObject Interface::json_object_create(){
     if (!section_stack.size()) { LOGW(P_EmbUI, println, MGS_empty_stack); return JsonObject(); }
     section_stack.back().idx++;        // incr idx for next obj
     return section_stack.back().block.add<JsonObject>();
@@ -94,7 +100,7 @@ JsonObject Interface::make_new_object(){
 
 
 JsonObject Interface::uidata_xload(const char* key, const char* url, bool merge, unsigned version){
-    JsonObject obj(make_new_object());
+    JsonObject obj(json_object_create());
     obj[P_action] = P_xload;
     obj[P_key] = key;
     obj[P_url] = url;
@@ -104,7 +110,7 @@ JsonObject Interface::uidata_xload(const char* key, const char* url, bool merge,
 }
 
 JsonObject Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
-    JsonObject obj(make_new_object());
+    JsonObject obj(json_object_create());
     obj[P_action] = P_pick;
     obj[P_key] = key;
     if (!embui_traits::is_empty_string(prefix))
