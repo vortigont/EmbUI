@@ -398,7 +398,7 @@ var render = function(){
 								else
 									_.merge(_.get(uiblocks, v.key), response)
 								//console.log("merge uiobj under:", v.key, "src:", v.src, "data:", response);
-								return
+								//return
 							}
 							// Pick UI object from a previously loaded UI data storage
 							if (v.action == "pick"){

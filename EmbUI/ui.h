@@ -883,7 +883,7 @@ class Interface {
          * @param key - a key to load data to, a dot sepparated notation (i.e. "app.page.controls")
          * @param source - a source key to load a subset object data from, a dot sepparated notation (i.e. "app.page.controls")
          */
-        void uidata_xmerge(const char* url, const char* key, const char* source = NULL );
+        JsonObject uidata_xmerge(const char* url, const char* key, const char* source = NULL );
 
         /**
          * @brief pick and implace UI structured data objects from front-end side-storage
