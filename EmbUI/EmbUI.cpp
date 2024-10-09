@@ -194,9 +194,7 @@ void EmbUI::begin(){
 
     // create and start MQTT client if properly configured
     mqttStart();
-#ifdef USE_SSDP
-    ssdp_begin(); LOG(println, "Start SSDP");
-#endif
+
 // FTP server
 #ifndef EMBUI_NOFTP
     if (cfg[P_ftp]) ftp_start();

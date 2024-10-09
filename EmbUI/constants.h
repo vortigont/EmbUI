@@ -231,19 +231,3 @@ static constexpr const char* P_EmbUI  = "EmbUI";
 static constexpr const char* P_EmbUI_WiFi  = "EmbUI WiFi";
 static constexpr const char* P_EmbUI_mqtt  = "EmbUI MQTT";
 static constexpr const char* P_EmbUI_time  = "EmbUI Time";
-
-#ifdef USE_SSDP
-  #ifndef EXTERNAL_SSDP
-    #define __SSDPNAME      ("EmbUI")
-    #define __SSDPURLMODEL  ("https://github.com/vortigont/")
-    #define __SSDPMODEL     EMBUI_VERSION_STRING
-    #define __SSDPURLMANUF  ("https://github.com/anton-zolotarev")
-    #define __SSDPMANUF     ("obliterator")
-  #endif
-
-  static constexpr const char* PGnameModel = TOSTRING(__SSDPNAME);
-  static constexpr const char* PGurlModel = TOSTRING(__SSDPURLMODEL);
-  static constexpr const char* PGversion = EMBUI_VERSION_STRING;
-  static constexpr const char* PGurlManuf = TOSTRING(__SSDPURLMANUF);
-  static constexpr const char* PGnameManuf = TOSTRING(__SSDPMANUF);
-#endif
