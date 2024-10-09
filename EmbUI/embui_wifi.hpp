@@ -12,14 +12,8 @@ version of EmbUI project https://github.com/DmytroKorniienko/EmbUI
 
 #pragma once
 
-#ifdef ESP32
- #include <WiFi.h>
- #include <ESPmDNS.h>
-#ifdef USE_SSDP
- #include <ESP32SSDP.h>
-#endif
-#endif
-
+#include <WiFi.h>
+#include <ESPmDNS.h>
 #include <DNSServerAsync.h>
 #include "ts.h"
 
