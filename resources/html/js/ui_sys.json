@@ -441,6 +441,46 @@
 					"label":"Выход"
 				}
 			]
+		},
+		"btns":{
+			"section": "ui_sys_settings_btns",
+			"block": [
+				{
+				  "id": "ui_page",
+				  "html": "button",
+				  "type": 0,
+				  "value": 2,
+				  "label": "WiFi Setup"
+				},
+				{
+				  "id": "ui_page",
+				  "html": "button",
+				  "type": 0,
+				  "value": 3,
+				  "label": "Date / Time / Time Zone"
+				},
+				{
+				  "id": "ui_page",
+				  "html": "button",
+				  "type": 0,
+				  "label": "MQTT",
+				  "value": 4
+				},
+				{
+				  "id": "ui_page",
+				  "html": "button",
+				  "type": 0,
+				  "label": "FTP Server",
+				  "value": 5
+				},
+				{
+				  "id": "ui_page",
+				  "html": "button",
+				  "type": 0,
+				  "label": "System setup",
+				  "value": 6
+				}
+			]
 		}
 	}
 }
