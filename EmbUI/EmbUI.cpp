@@ -48,8 +48,8 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                 interf.uidata_xmerge("/js/ui_sys.i18n.json", P_sys, path.c_str());
             interf.json_frame_flush();
 
-            if (!embui.action.exec(&interf, nullptr, A_ui_page_main))    // call user defined mainpage callback
-                basicui::page_main(&interf, nullptr, NULL);             // if no callback was registered, then show default stub page
+            if (!embui.action.exec(&interf, {}, A_ui_page_main))    // call user defined mainpage callback
+                basicui::page_main(&interf, {}, NULL);             // if no callback was registered, then show default stub page
         }
         embui.send_pub();
         return;
@@ -208,9 +208,9 @@ void EmbUI::begin(){
  * @brief - process posted data for the registered action
  * looks for registered action for the section name and calls the action with post data if found
  */
-void EmbUI::post(const JsonObject &data, bool inject){
+void EmbUI::post(JsonObjectConst data){
     LOGD(P_EmbUI, print, "post() "); //LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
-    JsonObject odata = data[P_data].as<JsonObject>();
+    JsonObjectConst odata = data[P_data].as<JsonObjectConst>();
     Interface interf(&feeders);
 
     // echo back injected data to all available feeders IF request 'data' object is not empty
@@ -224,7 +224,7 @@ void EmbUI::post(const JsonObject &data, bool inject){
     publish(C_pub_post, jvc);
 
     // execute callback actions
-    action.exec(&interf, &odata, data[P_action].as<const char*>());
+    action.exec(&interf, odata, data[P_action].as<const char*>());
 }
 
 void EmbUI::send_pub(){
@@ -232,7 +232,7 @@ void EmbUI::send_pub(){
     if (!ws.count()) return;
     Interface interf(&ws);     // only websocket publish!
     basicui::embuistatus(&interf);
-    action.exec(&interf, nullptr, A_publish);   // call user-callback for publishing task
+    action.exec(&interf, {}, A_publish);   // call user-callback for publishing task
 }
 
 /**
@@ -305,7 +305,7 @@ void EmbUI::setPubInterval(uint16_t _t){
 void EmbUI::autosave(bool force){
     if (force){
         tAutoSave.disable();
-        save(nullptr, force);
+        save();
     } else {
         tAutoSave.restartDelayed();
     }
@@ -389,7 +389,7 @@ void ActionHandler::remove(const char* id){
     actions.remove_if([&id](const section_handler_t &arg) { return std::string_view(arg.action).compare(id) == 0; });
 }
 
-size_t ActionHandler::exec(Interface *interf, JsonObject *data, const char* action){
+size_t ActionHandler::exec(Interface *interf, JsonObjectConst data, const char* action){
     size_t cnt{0};
     if (!action) return cnt;      // return if action is empty string
     std::string_view a(action);

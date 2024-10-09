@@ -25,7 +25,7 @@ bool ftp_status(){ return ftpsrv; };
 
 namespace basicui {
 
-void page_settings_ftp(Interface *interf, const JsonObject *data, const char* action){
+void page_settings_ftp(Interface *interf, const JsonObjectConst data, const char* action){
     interf->json_frame_interface();
         interf->json_section_uidata();
         interf->uidata_pick("sys.settings.ftp");
@@ -54,24 +54,24 @@ void page_settings_ftp(Interface *interf, const JsonObject *data, const char* ac
 */
 }
 
-void set_settings_ftp(Interface *interf, const JsonObject *data, const char* action){
+void set_settings_ftp(Interface *interf, const JsonObjectConst data, const char* action){
     if (!data) return;
 
-    bool newstate = (*data)[P_ftp];
+    bool newstate = data[P_ftp];
 
     embui.var_dropnulls(P_ftp, newstate);                           // ftp on/off
 
     // set ftp login
-    if ((*data)[P_ftp_usr] == P_ftp)
+    if (data[P_ftp_usr] == P_ftp)
       embui.var_remove(P_ftp_usr);   // do not save default login
     else
-      embui.var_dropnulls(P_ftp_usr, (*data)[P_ftp_usr]);
+      embui.var_dropnulls(P_ftp_usr, data[P_ftp_usr]);
 
     // set ftp passwd
-    if ((*data)[P_ftp_pwd] == P_ftp)
+    if (data[P_ftp_pwd] == P_ftp)
       embui.var_remove(P_ftp_pwd);
     else
-      embui.var_dropnulls(P_ftp_pwd, (*data)[P_ftp_pwd]);    // do not save default pwd
+      embui.var_dropnulls(P_ftp_pwd, data[P_ftp_pwd]);    // do not save default pwd
 
     ftp_stop();
     LOGD(P_EmbUI, println, "UI: Stopping FTP Server");
@@ -81,7 +81,7 @@ void set_settings_ftp(Interface *interf, const JsonObject *data, const char* act
       LOGD(P_EmbUI, println, "UI: Starting FTP Server");
     }
 
-    if (interf) basicui::page_system_settings(interf, nullptr, NULL);          // go to "Options" page
+    if (interf) basicui::page_system_settings(interf, {}, NULL);          // go to "Options" page
 }
 
 } // namespace basicui

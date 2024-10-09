@@ -40,16 +40,10 @@
 #define EMBUI_WEBSOCK_URI             "/ws"
 
 
-// Weak Callback functions (user code might override it)
-//void    __attribute__((weak)) section_main_frame(Interface *interf, JsonObject *data, const char* action);
-//void    __attribute__((weak)) pubCallback(Interface *interf);
-String  __attribute__((weak)) httpCallback(const String &param, const String &value, bool isset);
-//uint8_t __attribute__((weak)) uploadProgress(size_t len, size_t total);
-//void    __attribute__((weak)) create_parameters();
 
 //---------------------- Callbak functions
 using asyncsrv_callback_t = std::function< bool (AsyncWebServerRequest *req)>;
-using actionCallback_t = std::function< void (Interface *interf, const JsonObject *data, const char* action)>;
+using actionCallback_t = std::function< void (Interface *interf, JsonObjectConst data, const char* action)>;
 // embui's language setting callback
 using embui_lang_cb_t = std::function< void (const char* lang)>;
 
@@ -115,7 +109,7 @@ public:
      * 
      * @return number of callbacks executed, 0 - if no callback were registered for such action
      */
-    size_t exec(Interface *interf, JsonObject *data, const char* action);
+    size_t exec(Interface *interf, JsonObjectConst data, const char* action);
 
     /**
      * @brief Set mainpage callback with predefined id - 'mainpage' 
@@ -207,11 +201,10 @@ class EmbUI
 
     /**
      * @brief - process posted data for the registered action
-     * if post came from the WebUI echoes received data back to the WebUI,
-     * if post came from some other place - sends data to the WebUI
+     * echoes back posted data to all registed feeders
      * looks for registered action for the section name and calls the action with post data if found
      */
-    void post(const JsonObject &data, bool inject = false);
+    void post(JsonObjectConst data);
 
     /**
      * @brief Set EmbUI's language
@@ -403,7 +396,7 @@ class EmbUI
      * @param data  - JsonObject that will be serialized and send to MQTT broker 
      * @param retained - flag
      */
-    void publish(const char* topic, const JsonVariantConst& data, bool retained = false);
+    void publish(const char* topic, const JsonVariantConst data, bool retained = false);
 
 
     /**

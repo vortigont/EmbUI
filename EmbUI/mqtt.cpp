@@ -187,7 +187,7 @@ void EmbUI::publish(const char* topic, const char* payload, bool retained){
     mqttClient->publish(_mqttMakeTopic(topic).data(), 0, retained, payload);
 }
 
-void EmbUI::publish(const char* topic, const JsonVariantConst& data, bool retained){
+void EmbUI::publish(const char* topic, const JsonVariantConst data, bool retained){
     if (!mqttAvailable()) return;
     auto s = measureJson(data);
     std::vector<uint8_t> buff(s);
