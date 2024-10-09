@@ -145,7 +145,7 @@ class EmbUI
 
     AsyncWebServer server;
     AsyncWebSocket ws;
-    WiFiController *wifi;
+    std::unique_ptr<WiFiController> wifi;
 
     // action handler manager object
     ActionHandler action;
@@ -171,22 +171,13 @@ class EmbUI
     void handle();
 
     /**
-     * @brief obtain cfg parameter as String
-     * Method tries to cast arbitrary JasonVariant types to string or return "" otherwise
-     * @param key - required cfg key
-     * @return String
+     * @brief Get EmbUI's config object
+     * a raw access to cfg memeber
+     * @todo config functionality needs a reimplementation from scratch, this method is bare plain stub for now
+     * 
+     * @return JsonObject that maps to EmbUI's /config.json
      */
-    String param(const String &key);
-    const char* param(const char* key);
-
-    /**
-     * @brief - return JsonVariant of a config param
-     * this method allows accessing cfg param JsonVariantConst and use member functions, like .as<T>
-     * unlike param(), this method does not Stringify config values
-     */
-    template <typename T>
-    JsonVariantConst paramVariant(const T &key) const { return cfg[key]; }
-
+    JsonObject getConfig(){ return cfg.as<JsonObject>(); }
 
     /***  config operations ***/
     void save(const char *_cfg = nullptr);
@@ -247,50 +238,6 @@ class EmbUI
      * Publish status data to the WebUI
      */
     void send_pub();
-
-    /**
-     * @brief - set variable's value in the system config object
-     * @param key - variable's key
-     * @param value - value to set
-     * @param force - register new key in config if it does not exist
-     * Note: by default if key has not been registerred on init it won't be created
-     * beware of dangling pointers here passing non-static char*, use JsonVariant or String instead 
-     */
-    template <typename V>
-    void var(const char* key, const V& value);
-
-    /**
-     * @brief - create config varialbe if it does not exist yet
-     * it accepts types suitable to be added to the ArduinoJson cfg document used as a dictionary
-     * only non-existing variables are created/assigned a value. If var is already present in cfg
-     * it's value won't be replaced
-     */
-    template <typename T>
-    void var_create(const char* key, const T& value){ if(!cfg[key].is<T>()){ var(key, value); } }
-
-    /**
-     * @brief - remove key from config
-     */
-    void var_remove(const char* key);
-
-    /**
-     * @brief create/update cfg key only with non-null value
-     If value casted to <bool> returns 'true' than provided config key is created/updated,
-     otherwise key is to be removed from config (if exist). This could be used to reduce doc size and
-     does not keep any keys with default "null-ish" values, like:
-        bools == false
-        int == 0
-        *char == ""
-     Note: removing existing key leaks dict memory, should NOT be used for frequently modified keys
-
-     *
-     * @tparam T ArduinoJson acceptable types
-     * @param key - config key
-     * @param value - keys' value
-     */
-    template <typename T>
-    void var_dropnulls(const char *key, const T& value);
-
 
     // call-backs
 
@@ -639,59 +586,7 @@ public:
 extern EmbUI embui;
 
 
-// ----------------------- UI/VAR MACRO's
-
-/**
- * @brief save registered key from the (*data) object into sys config
- * 
- */
-#define SETPARAM(key) { embui.var(key, (*data)[key].as<JsonVariant>()); }
-
-/**
- * @brief save key from the (*data) in sys config but only if non empty/non null
- * and call function
- * if empty or null, then drop matching key from sys config
- */
-#define SETPARAM_NONULL(key) { embui.var_dropnulls(key, (*data)[key].as<JsonVariant>()); }
-
-/* ======================================== */
-/* Templated methods implementation follows */
-/* ======================================== */
-template <typename V>
-void EmbUI::var(const char* key, const V& value){
-    LOG(print, "UI Key:"); LOG(print, key);
-
-    // do not update key if new value is the same as existing one
-    if (cfg[key] == value){
-        LOG(println, " skip same value");
-        return;
-    }
-
-    if (cfg[key].set(value)){
-        LOG(printf, " WRITE val:'%s...'\n", cfg[key].template as<String>().substring(0, 10).c_str());
-        autosave();
-        return;
-    }
-
-    LOG(println, " cfg out of mem!");
-}
-
-
-template <typename T>
-void EmbUI::var_dropnulls(const char* key, const T& value){
-    if constexpr (embui_traits::is_string_v<decltype(value)>)
-      if (embui_traits::is_empty_string(value)) return var_remove(key);
-
-    if constexpr (std::is_arithmetic_v<T>)
-      if (value == 0) return var_remove(key);
-
-    if constexpr (std::is_same_v<T, JsonVariant>){  // JVars that points to strings must be treaded differently
-        if (value.template is<const char*>()) return var_dropnulls(key, value.template as<const char*>());
-    }
-
-    // deduce further???
-    var(key, value); // save value as-is
-}
+// ----------------------- Templated methods implementation
 
 template <typename P>
     typename std::enable_if< std::is_fundamental_v<P>, void >::type

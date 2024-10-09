@@ -14,9 +14,6 @@ static constexpr const char* JSON_LANG_LIST = "/js/ui_sys.lang.json";
  * 
  */
 void register_handlers(){
-    // variable for UI language (specific to basic UI translations)
-    lang = embui.paramVariant(V_LANGUAGE).as<uint8_t>();
-
     /**
      * UI action handlers
      */ 
@@ -150,59 +147,9 @@ void page_settings_netw(Interface *interf, JsonObjectConst data, const char* act
 
     interf->json_frame_value();
         interf->value(V_WCSSID, WiFi.SSID());                           // connected SSID
-        interf->value(V_NOCaptP, embui.paramVariant(V_NOCaptP));        // checkbox "Disable Captive-portal"
+        interf->value(V_NOCaptP, embui.getConfig()[V_NOCaptP]);        // checkbox "Disable Captive-portal"
     interf->json_frame_flush();
 
-/*
-    // Headline
-    interf->json_section_main(A_ui_page_network, T_EN_WiFi);
-
-    // Hostname setup
-    interf->json_section_hidden(A_set_sys_hostname, "Device name");
-    interf->json_section_line();
-    interf->comment(T_DICT[lang][TD::D_Hostname]);
-    interf->constant(embui.hostname());
-    interf->json_section_end(); // Line
-    interf->text(V_hostname, P_EMPTY, "Redefine hostname, or clear to reset to default");
-    interf->button(button_t::submit, A_set_sys_hostname, T_DICT[lang][TD::D_SAVE], P_GREEN);
-    interf->json_section_end(); // Hostname setup
-
-    // Wi-Fi Client setup block
-    interf->json_section_hidden(A_set_ntwrk_wifi, T_DICT[lang][TD::D_WiFiClient]);
-    interf->spacer(T_DICT[lang][TD::D_WiFiClientOpts]);
-    interf->text(V_WCSSID, WiFi.SSID().c_str(), T_DICT[lang][TD::D_WiFiSSID]);
-    interf->password(V_WCPASS, P_EMPTY, T_DICT[lang][TD::D_Password]);
-    interf->button(button_t::submit, A_set_ntwrk_wifi, T_DICT[lang][TD::D_CONNECT], P_GRAY);
-    interf->json_section_end();
-
-    // Wi-Fi AP setup block
-    interf->json_section_hidden(A_set_ntwrk_wifiap, T_DICT[lang][TD::D_WiFiAP]);
-    interf->spacer(T_DICT[lang][TD::D_WiFiAPOpts]);
-
-    interf->password(V_APpwd, embui.paramVariant(V_APpwd).as<const char*>(),  T_DICT[lang][TD::D_MSG_APProtect]);          // AP password
-
-    interf->json_section_line();
-    interf->comment("Access Point SSID (hostname)");
-    interf->constant(embui.hostname());
-    interf->json_section_end(); // Line
-
-    interf->json_section_line();
-    interf->checkbox(V_APonly, embui.paramVariant(V_APonly), T_DICT[lang][TD::D_APOnlyMode]);         // checkbox "AP-only mode"
-    interf->comment(T_DICT[lang][TD::D_MSG_APOnly]);
-    interf->json_section_end(); // Line
-
-    interf->json_section_line();
-    interf->checkbox(V_NOCaptP, embui.paramVariant(V_NOCaptP), "Disable WiFi Captive-Portal");         // checkbox "Disable Captive-portal"
-    interf->comment("Do not run catch-all DNS in AP mode");
-    interf->json_section_end(); // Line
-
-    interf->button(button_t::submit, A_set_ntwrk_wifiap, T_DICT[lang][TD::D_SAVE], P_GRAY);
-
-    interf->json_section_end(); // Wi-Fi AP
-
-    interf->spacer();
-    interf->button(button_t::submit, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
-*/
 }
 
 /**
@@ -226,61 +173,13 @@ void page_settings_time(Interface *interf, JsonObjectConst data, const char* act
             for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
                 interf->constant(TimeProcessor::getInstance().getserver(i));
     interf->json_frame_flush();
-/*
-    // Headline
-    interf->json_section_main(A_set_sys_timeoptions, T_DICT[lang][TD::D_DATETIME]);
 
-    // Simple Clock display
-    interf->json_section_line();
-        String clk("Device date/time: "); TimeProcessor::getDateTimeString(clk);
-        interf->constant(P_date, clk.c_str());
-        interf->button(button_t::js, P_dtime, "Set browser's time");     // run js function that post browser's date/time to device
-    interf->json_section_end(); // line
-
-    interf->comment(T_DICT[lang][TD::D_MSG_TZSet01]);     // комментарий-описание секции
-
-    // Current TIME Zone string from config
-    interf->text(V_timezone, embui.paramVariant(V_timezone), T_DICT[lang][TD::D_MSG_TZONE]);
-
-    // NTP servers section
-    interf->json_section_line();
-        interf->comment("NTP Servers");
-        interf->checkbox(V_noNTPoDHCP, embui.paramVariant(V_noNTPoDHCP), "Disable NTP over DHCP");
-    interf->json_section_end(); // line
-
-    // a list of ntp servers
-    interf->json_section_line();
-        for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
-            interf->constant(TimeProcessor::getInstance().getserver(i));
-    interf->json_section_end(); // line
-
-    // user-defined NTP server field
-    interf->text(V_userntp, embui.paramVariant(V_userntp), T_DICT[lang][TD::D_NTP_Secondary]);
-
-    // manual date and time setup
-    interf->comment(T_DICT[lang][TD::D_MSG_DATETIME]);
-    interf->json_section_line();
-        interf->datetime(P_datetime, P_EMPTY, P_EMPTY);   // placeholder for ISO date/time string
-        interf->button_value(button_t::js, P_dtime, P_datetime, "Paste local time");  // call js function that paste browser's date into P_dtime field
-    interf->json_section_end(); // line
-
-    // send form button
-    interf->button(button_t::submit, A_set_sys_timeoptions, T_DICT[lang][TD::D_SAVE], P_GRAY);
-
-    interf->spacer();
-
-    // exit button
-    interf->button(button_t::submit, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
-
-    // close and send frame
-    interf->json_frame_flush(); // main
-*/
     // формируем и отправляем кадр с запросом подгрузки внешнего ресурса со списком правил временных зон
     // полученные данные заместят предыдущее поле выпадающим списком с данными о всех временных зонах
     interf->json_frame(P_xload);
     interf->json_section_content();
                    //id        val                             label    direct  URL for external data
-    interf->select(V_timezone, embui.paramVariant(V_timezone), P_EMPTY, false,  "/js/tz.json");
+    interf->select(V_timezone, embui.getConfig()[V_timezone], P_EMPTY, false,  "/js/tz.json");
     interf->json_section_end(); // select
     interf->json_frame_flush(); // xload
 
@@ -301,59 +200,18 @@ void page_settings_mqtt(Interface *interf, JsonObjectConst data, const char* act
     interf->json_frame_flush();
 
     interf->json_frame_value();
-        interf->value(V_mqtt_enable, embui.paramVariant(V_mqtt_enable));    // enable MQTT checkbox
-        interf->value(V_mqtt_host, embui.paramVariant(V_mqtt_host));        // MQTT host text field
-        interf->value(V_mqtt_port, embui.paramVariant(V_mqtt_port).as<int>());        // MQTT port
-        interf->value(V_mqtt_user, embui.paramVariant(V_mqtt_user).as<const char*>());        // MQTT user
-        interf->value(V_mqtt_pass, embui.paramVariant(V_mqtt_pass).as<const char*>());        // MQTT passwd
-        interf->value(V_mqtt_topic, embui.paramVariant(V_mqtt_topic).as<const char*>());
-        int t = embui.paramVariant(V_mqtt_ka);
+        interf->value(V_mqtt_enable, embui.getConfig()[V_mqtt_enable]);    // enable MQTT checkbox
+        interf->value(V_mqtt_host, embui.getConfig()[V_mqtt_host]);        // MQTT host text field
+        interf->value(V_mqtt_port, embui.getConfig()[V_mqtt_port].as<int>());        // MQTT port
+        interf->value(V_mqtt_user, embui.getConfig()[V_mqtt_user].as<const char*>());        // MQTT user
+        interf->value(V_mqtt_pass, embui.getConfig()[V_mqtt_pass].as<const char*>());        // MQTT passwd
+        interf->value(V_mqtt_topic, embui.getConfig()[V_mqtt_topic].as<const char*>());
+        int t = embui.getConfig()[V_mqtt_ka];
         if (!t){    // default mqtt interval 30
             interf->value(V_mqtt_ka, t);
         }
     interf->json_frame_flush();
 
-/*
-    interf->json_frame_interface();
-
-    // Headline
-    interf->json_section_main(A_set_ntwrk_mqtt, P_MQTT);
-
-    // форма настроек MQTT
-    interf->checkbox(V_mqtt_enable, embui.paramVariant(V_mqtt_enable), "Enable MQTT Client");
-    interf->json_section_line();
-        interf->text(V_mqtt_host, embui.paramVariant(V_mqtt_host).as<const char*>(), T_DICT[lang][TD::D_MQTT_Host]);
-        interf->number(V_mqtt_port, embui.paramVariant(V_mqtt_port).as<int>(), T_DICT[lang][TD::D_MQTT_Port]);
-    interf->json_section_end();
-
-    interf->json_section_line();
-        interf->text(V_mqtt_user, embui.paramVariant(V_mqtt_user).as<const char*>(), T_DICT[lang][TD::D_User]);
-        interf->text(V_mqtt_pass, embui.paramVariant(V_mqtt_pass).as<const char*>(), T_DICT[lang][TD::D_Password]);
-    interf->json_section_end(); // select
-
-    interf->json_section_line();
-        // comment about mqtt prefix 
-        interf->comment(T_DICT[lang][TD::D_MQTT_Cmt]);
-        // current MQTT prefix
-        interf->constant(embui.mqttPrefix().c_str());
-    interf->json_section_end();
-
-    int t = embui.paramVariant(V_mqtt_ka);
-    if (!t) t = 30;     // default mqtt interval
-
-    interf->json_section_line();
-        // mqtt prefix
-        interf->text(V_mqtt_topic, embui.paramVariant(V_mqtt_topic).as<const char*>(), T_DICT[lang][TD::D_MQTT_Topic]);
-        interf->number(V_mqtt_ka, t, T_DICT[lang][TD::D_MQTT_Interval]);
-    interf->json_section_end();
-
-    interf->button(button_t::submit, A_set_ntwrk_mqtt, T_DICT[lang][TD::D_SAVE]);
-
-    interf->spacer();
-    interf->button(button_t::generic, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
-
-    interf->json_frame_flush();
-*/
 }
 
 /**
@@ -365,29 +223,6 @@ void page_settings_sys(Interface *interf, JsonObjectConst data, const char* acti
         interf->uidata_pick("sys.settings.system");
     interf->json_frame_flush();
 
-/*
-    interf->json_frame_interface();
-    // Headline
-    interf->json_section_main("sys", T_DICT[lang][TD::D_SYSSET]);
-
-    // FW update
-    interf->json_section_hidden(T_DO_OTAUPD, T_DICT[lang][TD::D_UPDATEFW]);
-    interf->spacer(T_DICT[lang][TD::D_FWLOAD]);
-    interf->file_form(T_DO_OTAUPD, T_DO_OTAUPD, T_DICT[lang][TD::D_UPLOADFW], "fw");
-    interf->file_form(T_DO_OTAUPD, T_DO_OTAUPD, T_DICT[lang][TD::D_UPLOADFS], "fs");
-    interf->json_section_end();
-
-    interf->button(button_t::generic, A_set_sys_cfgclr, "Clear sys config", P_RED);
-
-    interf->button(button_t::generic, A_set_sys_reboot, T_DICT[lang][TD::D_REBOOT], P_RED);
-
-    interf->spacer();
-
-    // exit button
-    interf->button(button_t::generic, A_ui_page_settings, T_DICT[lang][TD::D_EXIT]);
-
-    interf->json_frame_flush(); // main
-*/
 }
 
 /**
@@ -396,7 +231,7 @@ void page_settings_sys(Interface *interf, JsonObjectConst data, const char* acti
 void set_settings_wifi(Interface *interf, JsonObjectConst data, const char* action){
     if (!data) return;
 
-    embui.var_remove(V_APonly);              // remove "force AP mode" parameter when attempting connection to external AP
+    embui.getConfig().remove(V_APonly);              // remove "force AP mode" parameter when attempting connection to external AP
     embui.wifi->connect(data[V_WCSSID].as<const char*>(), data[V_WCPASS].as<const char*>());
 
     page_system_settings(interf, {});           // display "settings" page
@@ -408,12 +243,29 @@ void set_settings_wifi(Interface *interf, JsonObjectConst data, const char* acti
 void set_settings_wifiAP(Interface *interf, JsonObjectConst data, const char* action){
     if (!data) return;
 
-    embui.var_dropnulls(V_APonly, data[V_APonly]);     // AP-Only chkbx
-    embui.var_dropnulls(V_APpwd, data[V_APpwd]);       // AP password
-    embui.var_dropnulls(V_NOCaptP, data[V_NOCaptP]);                 // captive portal chkbx
+    // captive portal chkbx
+    JsonVariantConst val = data[V_NOCaptP];
+    if (val.as<bool>())
+        embui.getConfig()[V_NOCaptP] = val;
+    else
+        embui.getConfig().remove(V_NOCaptP);
 
-    embui.wifi->aponly(data[V_APonly]);
-    //embui.wifi->setupAP(true);        // no need to apply settings now?
+    // AP password
+    val = data[V_APpwd];
+    if (val.is<const char*>())
+        embui.getConfig()[V_APpwd] = val;
+    else    
+        embui.getConfig().remove(V_APpwd);
+
+    // AP-Only chkbx
+    val = data[V_APonly];
+    if (val.as<bool>())
+        embui.getConfig()[V_APonly] = val;
+    else
+        embui.getConfig().remove(V_APonly);
+
+    // apply AP-Only configuration
+    embui.wifi->aponly(val.as<bool>());
 
     if (interf) page_system_settings(interf, {});                // go to "Options" page
 }
@@ -424,14 +276,40 @@ void set_settings_wifiAP(Interface *interf, JsonObjectConst data, const char* ac
 void set_settings_mqtt(Interface *interf, JsonObjectConst data, const char* action){
     if (!data) return;
     // сохраняем настройки в конфиг
-    embui.var_dropnulls(V_mqtt_enable, data[V_mqtt_enable]);
-    embui.var_dropnulls(V_mqtt_host, data[V_mqtt_host]);
-    embui.var_dropnulls(V_mqtt_port, data[V_mqtt_port]);
-    embui.var_dropnulls(V_mqtt_user, data[V_mqtt_user]);
-    embui.var_dropnulls(V_mqtt_pass, data[V_mqtt_pass]);
-    embui.var_dropnulls(V_mqtt_topic, data[V_mqtt_topic]);
-    embui.var_dropnulls(V_mqtt_ka, data[V_mqtt_ka]);
-    embui.save();
+    if (data[V_mqtt_enable])
+        embui.getConfig()[V_mqtt_enable] = true;
+
+    if (data[V_mqtt_host])
+        embui.getConfig()[V_mqtt_host] = data[V_mqtt_host];
+    else
+        embui.getConfig().remove(V_mqtt_host);
+
+    if (data[V_mqtt_port])
+        embui.getConfig()[V_mqtt_port] = data[V_mqtt_port];
+    else
+        embui.getConfig().remove(V_mqtt_port);
+
+    if (data[V_mqtt_user])
+        embui.getConfig()[V_mqtt_user] = data[V_mqtt_user];
+    else
+        embui.getConfig().remove(V_mqtt_user);
+
+    if (data[V_mqtt_port])
+        embui.getConfig()[V_mqtt_pass] = data[V_mqtt_pass];
+    else
+        embui.getConfig().remove(V_mqtt_pass);
+
+    if (data[V_mqtt_topic])
+        embui.getConfig()[V_mqtt_topic] = data[V_mqtt_topic];
+    else
+        embui.getConfig().remove(V_mqtt_port);
+
+    if (data[V_mqtt_ka])
+        embui.getConfig()[V_mqtt_ka] = data[V_mqtt_ka];
+    else
+        embui.getConfig().remove(V_mqtt_ka);
+
+    embui.autosave();
 
     // reconnect/disconnect MQTT
     if (data[V_mqtt_enable])
@@ -450,14 +328,23 @@ void set_settings_time(Interface *interf, JsonObjectConst data, const char* acti
 
     // save and apply timezone
     if (data[V_timezone]) {
-        embui.var(V_timezone, data[V_timezone]);
+        embui.getConfig()[V_timezone] = data[V_timezone];
         std::string_view tzrule(data[V_timezone].as<const char*>());
         TimeProcessor::getInstance().tzsetup(tzrule.substr(4).data());   // cutoff '000_' prefix
     }
 
-    embui.var_dropnulls(V_userntp, data[V_userntp]);
+    if (data[V_userntp])
+        embui.getConfig()[V_userntp] = data[V_userntp];
+    else
+        embui.getConfig().remove(V_userntp);
+
     TimeProcessor::getInstance().setcustomntp(data[V_userntp]);
-    embui.var_dropnulls(V_noNTPoDHCP, data[V_noNTPoDHCP]);
+
+    if (data[V_noNTPoDHCP])
+        embui.getConfig()[V_noNTPoDHCP] = true;
+    else
+        embui.getConfig().remove(V_noNTPoDHCP);
+
     TimeProcessor::getInstance().ntpodhcp(!data[V_noNTPoDHCP]);
 
     // if there is a field with custom ISO date/time, call time setter
