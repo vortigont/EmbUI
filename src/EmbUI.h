@@ -40,16 +40,12 @@
 #define EMBUI_WEBSOCK_URI             "/ws"
 
 
-// Weak Callback functions (user code might override it)
-//void    __attribute__((weak)) section_main_frame(Interface *interf, JsonObject *data, const char* action);
-//void    __attribute__((weak)) pubCallback(Interface *interf);
-String  __attribute__((weak)) httpCallback(const String &param, const String &value, bool isset);
-//uint8_t __attribute__((weak)) uploadProgress(size_t len, size_t total);
-//void    __attribute__((weak)) create_parameters();
 
 //---------------------- Callbak functions
 using asyncsrv_callback_t = std::function< bool (AsyncWebServerRequest *req)>;
-using actionCallback_t = std::function< void (Interface *interf, const JsonObject *data, const char* action)>;
+using actionCallback_t = std::function< void (Interface *interf, JsonObjectConst data, const char* action)>;
+// embui's language setting callback
+using embui_lang_cb_t = std::function< void (const char* lang)>;
 
 
 /**
@@ -113,7 +109,7 @@ public:
      * 
      * @return number of callbacks executed, 0 - if no callback were registered for such action
      */
-    size_t exec(Interface *interf, JsonObject *data, const char* action);
+    size_t exec(Interface *interf, JsonObjectConst data, const char* action);
 
     /**
      * @brief Set mainpage callback with predefined id - 'mainpage' 
@@ -149,7 +145,7 @@ class EmbUI
 
     AsyncWebServer server;
     AsyncWebSocket ws;
-    WiFiController *wifi;
+    std::unique_ptr<WiFiController> wifi;
 
     // action handler manager object
     ActionHandler action;
@@ -175,25 +171,16 @@ class EmbUI
     void handle();
 
     /**
-     * @brief obtain cfg parameter as String
-     * Method tries to cast arbitrary JasonVariant types to string or return "" otherwise
-     * @param key - required cfg key
-     * @return String
+     * @brief Get EmbUI's config object
+     * a raw access to cfg memeber
+     * @todo config functionality needs a reimplementation from scratch, this method is bare plain stub for now
+     * 
+     * @return JsonObject that maps to EmbUI's /config.json
      */
-    String param(const String &key);
-    const char* param(const char* key);
-
-    /**
-     * @brief - return JsonVariant of a config param
-     * this method allows accessing cfg param JsonVariantConst and use member functions, like .as<T>
-     * unlike param(), this method does not Stringify config values
-     */
-    template <typename T>
-    JsonVariantConst paramVariant(const T &key) const { return cfg[key]; }
-
+    JsonObject getConfig(){ return cfg.as<JsonObject>(); }
 
     /***  config operations ***/
-    void save(const char *_cfg = nullptr, bool force = false);
+    void save(const char *_cfg = nullptr);
     void load(const char *cfgfile = nullptr);   // if null, than default cfg file is used
     void cfgclear();                            // clear current config, both in RAM and file
 
@@ -205,12 +192,20 @@ class EmbUI
 
     /**
      * @brief - process posted data for the registered action
-     * if post came from the WebUI echoes received data back to the WebUI,
-     * if post came from some other place - sends data to the WebUI
+     * echoes back posted data to all registed feeders
      * looks for registered action for the section name and calls the action with post data if found
      */
-    void post(const JsonObject &data, bool inject = false);
+    void post(JsonObjectConst data);
 
+    /**
+     * @brief Set EmbUI's language
+     * 
+     * @param lang - two-letter language code (string will be deep-copied to internal EmbUI's var) 
+     */
+    void setLang(const char* lang);
+
+    // return current ui's language string
+    const char* getLang() const;
 
 
     /*** WiFi/Network related methods***/
@@ -244,50 +239,6 @@ class EmbUI
      */
     void send_pub();
 
-    /**
-     * @brief - set variable's value in the system config object
-     * @param key - variable's key
-     * @param value - value to set
-     * @param force - register new key in config if it does not exist
-     * Note: by default if key has not been registerred on init it won't be created
-     * beware of dangling pointers here passing non-static char*, use JsonVariant or String instead 
-     */
-    template <typename V>
-    void var(const char* key, const V& value);
-
-    /**
-     * @brief - create config varialbe if it does not exist yet
-     * it accepts types suitable to be added to the ArduinoJson cfg document used as a dictionary
-     * only non-existing variables are created/assigned a value. If var is already present in cfg
-     * it's value won't be replaced
-     */
-    template <typename T>
-    void var_create(const char* key, const T& value){ if(!cfg[key].is<T>()){ var(key, value); } }
-
-    /**
-     * @brief - remove key from config
-     */
-    void var_remove(const char* key);
-
-    /**
-     * @brief create/update cfg key only with non-null value
-     If value casted to <bool> returns 'true' than provided config key is created/updated,
-     otherwise key is to be removed from config (if exist). This could be used to reduce doc size and
-     does not keep any keys with default "null-ish" values, like:
-        bools == false
-        int == 0
-        *char == ""
-     Note: removing existing key leaks dict memory, should NOT be used for frequently modified keys
-
-     *
-     * @tparam T ArduinoJson acceptable types
-     * @param key - config key
-     * @param value - keys' value
-     */
-    template <typename T>
-    void var_dropnulls(const char *key, const T& value);
-
-
     // call-backs
 
     /**
@@ -300,6 +251,14 @@ class EmbUI
      * @param cb call back function
      */
     void on_notfound(const asyncsrv_callback_t& cb){ cb_not_found = cb; };
+
+    /**
+     * @brief set language change callback
+     * user-defined callback is called when UI's language is changes via system menu
+     * 
+     * @param cb 
+     */
+    void onLangChange(embui_lang_cb_t cb);
 
 #ifdef EMBUI_UDP
     void udp(const String &message);
@@ -384,7 +343,7 @@ class EmbUI
      * @param data  - JsonObject that will be serialized and send to MQTT broker 
      * @param retained - flag
      */
-    void publish(const char* topic, const JsonVariantConst& data, bool retained = false);
+    void publish(const char* topic, const JsonVariantConst data, bool retained = false);
 
 
     /**
@@ -406,6 +365,11 @@ class EmbUI
   private:
     char mc[13];                            // chip's mac addr used as an ID
     std::unique_ptr<char[]> autohostname;   // pointer for autogenerated hostname
+
+    // EmbUI's language
+    String _lang;
+    // language change user-callback
+    embui_lang_cb_t _lang_cb{nullptr};
 
     // Scheduler tasks
     Task *tValPublisher = nullptr;    // Status data publisher
@@ -518,84 +482,6 @@ class EmbUI
     //void _onMqttUnsubscribe(uint16_t packetId);
     //void _onMqttPublish(uint16_t packetId);
 
-#ifdef USE_SSDP
-    void ssdp_begin() {
-          uint32_t chipId;
-          #ifdef ESP32
-              chipId = ESP.getEfuseMac();
-          #else
-              chipId = ESP.getChipId();    
-          #endif  
-          SSDP.setDeviceType("upnp:rootdevice");
-          SSDP.setSchemaURL("description.xml");
-          SSDP.setHTTPPort(80);
-          SSDP.setName(hostname());
-          SSDP.setSerialNumber(String(chipId));
-          SSDP.setURL("/");
-          SSDP.setModelName(PGnameModel);
-          SSDP.setModelNumber(PGversion);
-          SSDP.setModelURL(String("http://")+(WiFi.status() != WL_CONNECTED ? WiFi.softAPIP().toString() : WiFi.localIP().toString()));
-          SSDP.setManufacturer(PGnameManuf);
-          SSDP.setManufacturerURL(PGurlManuf);
-          SSDP.begin();
-
-          (&server)->on("/description.xml", HTTP_GET, [&](AsyncWebServerRequest *request){
-            request->send(200, PGmimexml, getSSDPSchema());
-          });
-    }
-    
-    String getSSDPSchema() {
-        uint32_t chipId;
-        #ifdef ESP32
-            chipId = ESP.getEfuseMac();
-        #else
-            chipId = ESP.getChipId();    
-        #endif  
-      String s = "";
-        s +="<?xml version=\"1.0\"?>\n";
-        s +="<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\n";
-        s +="\t<specVersion>\n";
-        s +="\t\t<major>1</major>\n";
-        s +="\t\t<minor>0</minor>\n";
-        s +="\t</specVersion>\n";
-        s +="<URLBase>";
-        s +=String("http://")+(WiFi.status() != WL_CONNECTED ? WiFi.softAPIP().toString() : WiFi.localIP().toString());
-        s +="</URLBase>";
-        s +="<device>\n";
-        s +="\t<deviceType>upnp:rootdevice</deviceType>\n";
-        s +="\t<friendlyName>";
-        s += param("hostname");
-        s +="</friendlyName>\r\n";
-        s +="\t<presentationURL>index.html</presentationURL>\r\n";
-        s +="\t<serialNumber>";
-        s += String(chipId);
-        s +="</serialNumber>\r\n";
-        s +="\t<modelName>";
-        s += PGnameModel;
-        s +="</modelName>\r\n";
-        s +="\t<modelNumber>";
-        s += PGversion;
-        s +="</modelNumber>\r\n";
-        s +="\t<modelURL>";
-        s += PGurlModel;
-        s +="</modelURL>\r\n";
-        s +="\t<manufacturer>";
-        s += PGnameManuf;
-        s +="</manufacturer>\r\n";
-        s +="\t<manufacturerURL>";
-        s += PGurlManuf;
-        s +="</manufacturerURL>\r\n";
-        //s +="\t<UDN>0543bd4e-53c2-4f33-8a25-1f75583a19a2";
-        s +="\t<UDN>0543bd4e-53c2-4f33-8a25-1f7558";
-        char cn[7];
-        sprintf_P(cn, "%02x%02x%02x", ((chipId >> 16) & 0xff), ((chipId >>  8) & 0xff), chipId & 0xff);
-        s += cn;
-        s +="</UDN>\r\n";
-        s +="\t</device>\n";
-        s +="</root>\r\n\r\n";
-      return s;
-    }
-#endif
 };
 
 
@@ -606,7 +492,7 @@ public:
     explicit FrameSendMQTT(EmbUI *emb) : _eu(emb){}
     virtual ~FrameSendMQTT() { _eu = nullptr; }
     bool available() const override { return _eu->mqttAvailable(); }
-    virtual void send(const String &data) override {};     // a do-nothig overload
+    virtual void send(const char* data) override {};     // a do-nothig overload
 
     /**
      * @brief method will publish to MQTT json-serialized data for EmbUI packets
@@ -622,59 +508,7 @@ public:
 extern EmbUI embui;
 
 
-// ----------------------- UI/VAR MACRO's
-
-/**
- * @brief save registered key from the (*data) object into sys config
- * 
- */
-#define SETPARAM(key) { embui.var(key, (*data)[key].as<JsonVariant>()); }
-
-/**
- * @brief save key from the (*data) in sys config but only if non empty/non null
- * and call function
- * if empty or null, then drop matching key from sys config
- */
-#define SETPARAM_NONULL(key) { embui.var_dropnulls(key, (*data)[key].as<JsonVariant>()); }
-
-/* ======================================== */
-/* Templated methods implementation follows */
-/* ======================================== */
-template <typename V>
-void EmbUI::var(const char* key, const V& value){
-    LOG(print, "UI Key:"); LOG(print, key);
-
-    // do not update key if new value is the same as existing one
-    if (cfg[key] == value){
-        LOG(println, " skip same value");
-        return;
-    }
-
-    if (cfg[key].set(value)){
-        LOG(printf, " WRITE val:'%s...'\n", cfg[key].template as<String>().substring(0, 10).c_str());
-        autosave();
-        return;
-    }
-
-    LOG(println, " cfg out of mem!");
-}
-
-
-template <typename T>
-void EmbUI::var_dropnulls(const char* key, const T& value){
-    if constexpr (embui_traits::is_string_v<decltype(value)>)
-      if (embui_traits::is_empty_string(value)) return var_remove(key);
-
-    if constexpr (std::is_arithmetic_v<T>)
-      if (value == 0) return var_remove(key);
-
-    if constexpr (std::is_same_v<T, JsonVariant>){  // JVars that points to strings must be treaded differently
-        if (value.template is<const char*>()) return var_dropnulls(key, value.template as<const char*>());
-    }
-
-    // deduce further???
-    var(key, value); // save value as-is
-}
+// ----------------------- Templated methods implementation
 
 template <typename P>
     typename std::enable_if< std::is_fundamental_v<P>, void >::type

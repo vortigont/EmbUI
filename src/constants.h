@@ -72,6 +72,7 @@ static constexpr const char* P_hidden = "hidden";
 static constexpr const char* P_hostname_const = "hostname_const";
 static constexpr const char* P_html = "html";
 static constexpr const char* P_id = "id";
+static constexpr const char* P_idx = "idx";
 static constexpr const char* P_iframe = "iframe";
 static constexpr const char* P_js = "js";
 static constexpr const char* P_jscall = "jscall";
@@ -80,9 +81,11 @@ static constexpr const char* P_input = "input";
 static constexpr const char* P_interface = "interface";
 static constexpr const char* P_key = "key";
 static constexpr const char* P_label = "label";
+static constexpr const char* P_line = "line";
 static constexpr const char* P_MQTT = "MQTT";
 static constexpr const char* P_MQTTTopic = "MQTTTopic";
 static constexpr const char* P_manifest = "manifest";
+static constexpr const char* P_main = "main";
 static constexpr const char* P_max = "max";
 static constexpr const char* P_menu = "menu";
 static constexpr const char* P_merge = "merge";
@@ -90,6 +93,7 @@ static constexpr const char* P_min = "min";
 static constexpr const char* P_number = "number";
 static constexpr const char* P_ntp_servers = "ntp_servers";     // section name with list of NTPs
 static constexpr const char* P_onChange = "onChange";
+static constexpr const char* P_opt = "opt";
 static constexpr const char* P_options = "options";
 static constexpr const char* P_params = "params";
 static constexpr const char* P_password = "password";
@@ -102,17 +106,21 @@ static constexpr const char* P_pRSSI = "pRSSI";
 static constexpr const char* P_pTime = "pTime";
 static constexpr const char* P_pUptime = "pUptime";
 static constexpr const char* P_range = "range";
+static constexpr const char* P_replace = "replace";
 static constexpr const char* P_section = "section";
 static constexpr const char* P_select = "select";
+static constexpr const char* P_src = "src";
 static constexpr const char* P_spacer = "spacer";
 static constexpr const char* P_step = "step";
 static constexpr const char* P_submit = "submit";
 static constexpr const char* P_suffix = "suffix";
+static constexpr const char* P_sys = "sys";
 static constexpr const char* P_tcp = "tcp";
 static constexpr const char* P_text = "text";
 static constexpr const char* P_textarea = "textarea";
 static constexpr const char* P_time = "time";
 static constexpr const char* P_type = "type";
+static constexpr const char* P_uidata = "uidata";
 static constexpr const char* P_uijsapi = "uijsapi";
 static constexpr const char* P_url = "url";
 static constexpr const char* P_uiver = "uiver";
@@ -120,6 +128,7 @@ static constexpr const char* P_value = "value";
 static constexpr const char* P_version = "version";
 static constexpr const char* P_wifi = "wifi";
 static constexpr const char* P_xload ="xload";
+static constexpr const char* P_xmerge ="xmerge";
 
 
 // order of elements MUST match with 'enum class ui_element_t' in ui.h
@@ -212,7 +221,6 @@ static constexpr const char* PGgzip = "gzip";
 static constexpr const char* PGhdrcachec = "Cache-Control";
 static constexpr const char* PGhdrcontentenc = "Content-Encoding";
 static constexpr const char* PGmimecss  = "text/css";
-static constexpr const char* PGmimejson = "application/json";
 static constexpr const char* PGmimexml  = "text/xml";
 static constexpr const char* PGnocache = "no-cache, no-store, must-revalidate";
 static constexpr const char* PG404  = "Not found";
@@ -223,19 +231,3 @@ static constexpr const char* P_EmbUI  = "EmbUI";
 static constexpr const char* P_EmbUI_WiFi  = "EmbUI WiFi";
 static constexpr const char* P_EmbUI_mqtt  = "EmbUI MQTT";
 static constexpr const char* P_EmbUI_time  = "EmbUI Time";
-
-#ifdef USE_SSDP
-  #ifndef EXTERNAL_SSDP
-    #define __SSDPNAME      ("EmbUI")
-    #define __SSDPURLMODEL  ("https://github.com/vortigont/")
-    #define __SSDPMODEL     EMBUI_VERSION_STRING
-    #define __SSDPURLMANUF  ("https://github.com/anton-zolotarev")
-    #define __SSDPMANUF     ("obliterator")
-  #endif
-
-  static constexpr const char* PGnameModel = TOSTRING(__SSDPNAME);
-  static constexpr const char* PGurlModel = TOSTRING(__SSDPURLMODEL);
-  static constexpr const char* PGversion = EMBUI_VERSION_STRING;
-  static constexpr const char* PGurlManuf = TOSTRING(__SSDPURLMANUF);
-  static constexpr const char* PGnameManuf = TOSTRING(__SSDPMANUF);
-#endif

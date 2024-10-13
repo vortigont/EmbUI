@@ -57,7 +57,7 @@
          "platforms": ["espressif32"]}
     ],
     "build": {
-        "srcDir": "EmbUI",
+        "srcDir": "src",
         "libLDFMode": "chain",
         "libCompatMode": "strict",
         "flags": "-std=gnu++17",

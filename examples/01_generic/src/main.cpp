@@ -24,7 +24,7 @@ void setup() {
   create_parameters();
 
   LOG(println, "restore LED state from configuration param");
-  digitalWrite( LED_BUILTIN, !embui.paramVariant(FPSTR(V_LED)) );
+  digitalWrite( LED_BUILTIN, !embui.getConfig()[V_LED] );
 }
 
 

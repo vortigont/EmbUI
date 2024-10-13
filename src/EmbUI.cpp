@@ -39,8 +39,17 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         LOGD(P_EmbUI, printf, "WS_EVT_CONNECT:%s id:%u\n", server->url(), client->id());
         {
             Interface interf(client);
-            if (!embui.action.exec(&interf, nullptr, A_ui_page_main))    // call user defined mainpage callback
-                basicui::page_main(&interf, nullptr, NULL);             // if no callback was registered, then show default stub page
+            // load locale data
+            String path(embui.getLang());
+            path += (char)0x2e; // '.'
+            path += P_data;
+            interf.json_frame_interface();
+            interf.json_section_uidata();
+                interf.uidata_xmerge("/js/ui_sys.i18n.json", P_sys, path.c_str());
+            interf.json_frame_flush();
+
+            if (!embui.action.exec(&interf, {}, A_ui_page_main))    // call user defined mainpage callback
+                basicui::page_main(&interf, {}, NULL);             // if no callback was registered, then show default stub page
         }
         embui.send_pub();
         return;
@@ -116,7 +125,6 @@ EmbUI::~EmbUI(){
     ts.deleteTask(tHouseKeeper);
     delete tValPublisher;
     delete tMqttReconnector;
-    delete wifi;
 #ifndef EMBUI_NOFTP
     ftp_stop();
 #endif
@@ -125,7 +133,7 @@ EmbUI::~EmbUI(){
 
 
 void EmbUI::begin(){
-    uint8_t retry_cnt = 3;
+    int retry_cnt = 3;
 
     // монтируем ФС только один раз при старте
     while(!LittleFS.begin(true)){   // format FS if corrupted
@@ -143,20 +151,23 @@ void EmbUI::begin(){
     LOGD(P_EmbUI, print, "UI CONFIG: ");
     LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
 
+    // restore language value
+    _lang = cfg[V_LANGUAGE] | "en";
+
     // restore Time settings
     if (cfg[V_userntp])
-        TimeProcessor::getInstance().setcustomntp(paramVariant(V_userntp).as<const char*>());
+        TimeProcessor::getInstance().setcustomntp(cfg[V_userntp].as<const char*>());
 
     if (cfg[V_timezone]){
         std::string_view tzrule(cfg[V_timezone].as<const char*>());
         TimeProcessor::getInstance().tzsetup(tzrule.substr(4).data());   // cutoff '000_' prefix
     }
 
-    if (paramVariant(V_noNTPoDHCP))
+    if (cfg[V_noNTPoDHCP])
         TimeProcessor::getInstance().ntpodhcp(false);
 
     // start-up WiFi
-    wifi = new WiFiController(this, paramVariant(V_APonly));
+    wifi = std::make_unique<WiFiController>(this, cfg[V_APonly]);
     wifi->init();
     
     // set WebSocket event handler
@@ -183,12 +194,10 @@ void EmbUI::begin(){
 
     // create and start MQTT client if properly configured
     mqttStart();
-#ifdef USE_SSDP
-    ssdp_begin(); LOG(println, "Start SSDP");
-#endif
+
 // FTP server
 #ifndef EMBUI_NOFTP
-    if (paramVariant(P_ftp)) ftp_start();
+    if (cfg[P_ftp]) ftp_start();
 #endif
 }
 
@@ -196,9 +205,9 @@ void EmbUI::begin(){
  * @brief - process posted data for the registered action
  * looks for registered action for the section name and calls the action with post data if found
  */
-void EmbUI::post(const JsonObject &data, bool inject){
+void EmbUI::post(JsonObjectConst data){
     LOGD(P_EmbUI, print, "post() "); //LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
-    JsonObject odata = data[P_data].as<JsonObject>();
+    JsonObjectConst odata = data[P_data].as<JsonObjectConst>();
     Interface interf(&feeders);
 
     // echo back injected data to all available feeders IF request 'data' object is not empty
@@ -212,7 +221,7 @@ void EmbUI::post(const JsonObject &data, bool inject){
     publish(C_pub_post, jvc);
 
     // execute callback actions
-    action.exec(&interf, &odata, data[P_action].as<const char*>());
+    action.exec(&interf, odata, data[P_action].as<const char*>());
 }
 
 void EmbUI::send_pub(){
@@ -220,45 +229,7 @@ void EmbUI::send_pub(){
     if (!ws.count()) return;
     Interface interf(&ws);     // only websocket publish!
     basicui::embuistatus(&interf);
-    action.exec(&interf, nullptr, A_publish);   // call user-callback for publishing task
-}
-
-/**
- * Возвращает указатель на строку со значением параметра из конфига
- * В случае отсутствующего параметра возвращает пустой указатель
- * (метод оставлен для совместимости)
- */
-const char* EmbUI::param(const char* key)
-{
-    LOGV(P_EmbUI, printf, "UI READ KEY: '%s'", key);
-
-    const char* value = cfg[key] | "";
-    if (value){
-        LOGV(P_EmbUI, printf, " value (%s)\n", value);
-    } else {
-        LOGV(P_EmbUI, println, " key is missing or not a *char\n");
-    }
-    return value;
-}
-
-/**
- * @brief obtain cfg parameter as String
- * Method tries to cast arbitrary JasonVariant types to string or return "" otherwise
- * @param key - required cfg key
- * @return String
- * TODO: эти методы толком не работают с объектами типа "не строка", нужна нормальная реализация с шаблонами и ДжейсонВариант
- */
-String EmbUI::param(const String &key)
-{
-    LOGV(P_EmbUI, printf, "READ key: '%s'", key.c_str());
-    String v;
-    if (cfg[key].is<int>()){ v += cfg[key].as<int>(); }
-    else if (cfg[key].is<float>()) { v += cfg[key].as<float>(); }
-    else if (cfg[key].is<bool>())  { v += cfg[key] ? 1 : 0; }
-    else { v = cfg[key] | ""; } // откат, все что не специальный тип, то строка (пустая если null)
-
-    LOGV(P_EmbUI, printf, " VAL: '%s'\n", v.c_str());
-    return v;
+    action.exec(&interf, {}, A_publish);   // call user-callback for publishing task
 }
 
 void EmbUI::handle(){
@@ -293,7 +264,7 @@ void EmbUI::setPubInterval(uint16_t _t){
 void EmbUI::autosave(bool force){
     if (force){
         tAutoSave.disable();
-        save(nullptr, force);
+        save();
     } else {
         tAutoSave.restartDelayed();
     }
@@ -308,8 +279,8 @@ void EmbUI::autosave(bool force){
  */
 const char* EmbUI::hostname(){
 
-    JsonVariantConst h = paramVariant(V_hostname);
-    if (h && strlen(h.as<const char*>()))
+    JsonVariant h = cfg[V_hostname];
+    if (h.is<const char*>())
         return h.as<const char*>();
 
     if (autohostname.get())
@@ -323,7 +294,11 @@ const char* EmbUI::hostname(){
 }
 
 const char* EmbUI::hostname(const char* name){
-    var_dropnulls(V_hostname, (char*)name);
+    if (name)
+        cfg[V_hostname] = name;
+    else
+        cfg.remove(V_hostname);
+
     return hostname();
 };
 
@@ -338,12 +313,17 @@ void EmbUI::_getmacid(){
     LOGD(P_EmbUI, printf,"UI ID:%s\n", mc);
 }
 
-void EmbUI::var_remove(const char* key){
-    if (cfg[key].is<JsonVariant>()){
-        LOGD(P_EmbUI, printf, "cfg remove key:'%s'\n", key);
-        cfg.remove(key);
-        autosave();
-    }
+void EmbUI::setLang(const char* lang){
+    if (!lang) return;
+    _lang = lang;
+    cfg[V_LANGUAGE] = lang;
+    if (_lang_cb)
+        _lang_cb(lang);
+    autosave();
+}
+
+const char* EmbUI::getLang() const {
+    return _lang.c_str();
 }
 
 
@@ -365,7 +345,7 @@ void ActionHandler::remove(const char* id){
     actions.remove_if([&id](const section_handler_t &arg) { return std::string_view(arg.action).compare(id) == 0; });
 }
 
-size_t ActionHandler::exec(Interface *interf, JsonObject *data, const char* action){
+size_t ActionHandler::exec(Interface *interf, JsonObjectConst data, const char* action){
     size_t cnt{0};
     if (!action) return cnt;      // return if action is empty string
     std::string_view a(action);
@@ -405,3 +385,4 @@ void ActionHandler::set_settings_cb(actionCallback_t callback){
     remove(A_ui_blk_usersettings);
     add(A_ui_blk_usersettings, callback);
 }
+

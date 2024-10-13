@@ -47,10 +47,10 @@ void EmbUI::_connectToMqtt() {
         mqtt_topic += (char)0x2f; // "/"
     }
 
-    mqtt_host = paramVariant(V_mqtt_host).as<const char*>();
-    mqtt_port = cfg[V_mqtt_port];
-    mqtt_user = paramVariant(V_mqtt_user).as<const char*>();
-    mqtt_pass = paramVariant(V_mqtt_pass).as<const char*>();
+    mqtt_host = cfg[V_mqtt_host].as<const char*>();
+    mqtt_port = cfg[V_mqtt_port] | 1883;
+    mqtt_user = cfg[V_mqtt_user].as<const char*>();
+    mqtt_pass = cfg[V_mqtt_pass].as<const char*>();
     //mqtt_lwt=id("embui/pub/online");
 
     //if (mqttClient->connected())
@@ -187,7 +187,7 @@ void EmbUI::publish(const char* topic, const char* payload, bool retained){
     mqttClient->publish(_mqttMakeTopic(topic).data(), 0, retained, payload);
 }
 
-void EmbUI::publish(const char* topic, const JsonVariantConst& data, bool retained){
+void EmbUI::publish(const char* topic, const JsonVariantConst data, bool retained){
     if (!mqttAvailable()) return;
     auto s = measureJson(data);
     std::vector<uint8_t> buff(s);

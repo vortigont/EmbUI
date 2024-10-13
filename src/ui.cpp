@@ -5,27 +5,48 @@
 
 #include "ui.h"
 
-void Interface::json_frame_clear(){
-    section_stack.clear();
-    json.clear();
+static constexpr const char* MGS_empty_stack =  "no opened section for an object!";
+
+Interface::~Interface(){
+    json_frame_clear();
+    if (_delete_handler_on_destruct){
+        delete send_hndl;
+        send_hndl = nullptr;
+    }
 }
 
-void Interface::json_frame_add(const JsonVariantConst obj){
-    LOGV(P_EmbUI, printf, "Frame add obj %u items\n", obj.size());
+JsonArray Interface::json_block_get(){
+    return section_stack.size() ? section_stack.back().block : JsonArray();
+};
+
+JsonObject Interface::json_object_get(){
+    return section_stack.size() ? JsonObject (section_stack.back().block[section_stack.back().block.size()-1]) : JsonObject();
+};
+
+JsonObject Interface::json_object_add(const JsonVariantConst obj){
+    LOGV(P_EmbUI, printf, "Frame obj add %u items\n", obj.size());
 
     //(section_stack.size() ? section_stack.back().block.add<JsonObject>() : json.as<JsonObject>())
-    if (!section_stack.size()) { LOGW(P_EmbUI, println, "Empty section stack!"); return; }
+    if (!section_stack.size()) { LOGW(P_EmbUI, println, MGS_empty_stack); return {}; }
     if ( section_stack.back().block.add(obj) ){
         LOGV(P_EmbUI, printf, "...OK idx:%u\theap free: %u\n", section_stack.back().idx, ESP.getFreeHeap());
         section_stack.back().idx++;        // incr idx for next obj
-        return;
     }
+    // return newly added object reference
+    return json_object_get();
+}
 
-    // this is no longer valid, but I do not know why it might probably return false, so let's just send and make next frame section
-    //LOGW(P_EmbUI, printf, " - Frame full! Heap free: %u\n", ESP.getFreeHeap());
+JsonObject Interface::json_frame(const char* type, const char* section_id){
+    json_frame_flush();         // ensure to start a new frame purging any existing data
+    json[P_pkg] = type;
+    json[P_final] = false;
+    json_section_begin(section_id);
+    return json.as<JsonObject>();
+};
 
-    json_frame_send();
-    json_frame_next();
+void Interface::json_frame_clear(){
+    section_stack.clear();
+    json.clear();
 }
 
 void Interface::json_frame_flush(){
@@ -33,26 +54,32 @@ void Interface::json_frame_flush(){
     json[P_final] = true;
     json_section_end();
     LOGD(P_EmbUI, println, "json_frame_flush");
-    json_frame_send();
+    _json_frame_send();
     json_frame_clear();
 }
 
-void Interface::json_frame_next(){
+void Interface::json_frame_send(){
+    _json_frame_send();
+    _json_frame_next();
+}
+
+void Interface::_json_frame_next(){
     json.clear();
     JsonObject obj = json.to<JsonObject>();
     for ( auto i = std::next(section_stack.begin()); i != section_stack.end(); ++i ){
         obj = (*std::prev(i)).block.add<JsonObject>();
         obj[P_section] = (*i).name;
-        obj["idx"] = (*i).idx;
+        obj[P_idx] = (*i).idx;
         (*i).block = obj[P_block].to<JsonArray>();
         //LOG(printf, "nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
     }
     LOGI(P_EmbUI, printf, "json_frame_next: [#%u]\n", section_stack.size()-1);   // section index counts from 0
 }
 
-void Interface::json_frame_value(const JsonVariantConst val){
+JsonObject Interface::json_frame_value(const JsonVariantConst val){
+    json_frame_flush();     // ensure this will purge existing frame
     json_frame(P_value);
-    json_frame_add(val);
+    return json_object_add(val);
 }
 
 void Interface::json_section_end(){
@@ -65,29 +92,42 @@ void Interface::json_section_end(){
     }
 }
 
-JsonObject Interface::get_last_object(){
-    return JsonObject (section_stack.back().block[section_stack.back().block.size()-1]);    // find last array element and return it as an Jobject
+JsonObject Interface::json_object_create(){
+    if (!section_stack.size()) { LOGW(P_EmbUI, println, MGS_empty_stack); return JsonObject(); }
+    section_stack.back().idx++;        // incr idx for next obj
+    return section_stack.back().block.add<JsonObject>();
 }
 
-void Interface::uidata_xload(const char* key, const char* url, bool merge, unsigned version){
-    JsonDocument obj;
+
+JsonObject Interface::uidata_xload(const char* key, const char* url, bool merge, unsigned version){
+    JsonObject obj(json_object_create());
     obj[P_action] = P_xload;
     obj[P_key] = key;
     obj[P_url] = url;
     if (merge) obj[P_merge] = true;
     if (version) obj[P_version] = version;
-    json_frame_add(obj);
+    return obj;
 }
 
-void Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
-    JsonDocument obj;
+JsonObject Interface::uidata_xmerge(const char* url, const char* key, const char* source){
+    JsonObject obj(json_object_create());
+    obj[P_action] = P_xmerge;
+    obj[P_url] = url;
+    obj[P_key] = key;
+    obj[P_src] = source;
+    return obj;
+}
+
+
+JsonObject Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
+    JsonObject obj(json_object_create());
     obj[P_action] = P_pick;
     obj[P_key] = key;
     if (!embui_traits::is_empty_string(prefix))
         obj[P_prefix] = const_cast<char*>(prefix);
     if (!embui_traits::is_empty_string(suffix))
         obj[P_suffix] = const_cast<char*>(suffix);
-    json_frame_add(obj);
+    return obj;
 }
 
 /**
@@ -103,12 +143,7 @@ void FrameSendWSServer::send(const JsonVariantConst& data){
         return;
     }
 
-#ifndef YUBOXMOD
     serializeJson(data, (char*)buffer->get(), length);
-#else
-    serializeJson(data, (char*)buffer->data() , length);
-#endif
-
     ws->textAll(buffer);
 };
 
@@ -123,11 +158,7 @@ void FrameSendWSClient::send(const JsonVariantConst& data){
     if (!buffer)
         return;
 
-#ifndef YUBOXMOD
     serializeJson(data, (char*)buffer->get(), length);
-#else
-    serializeJson(data, (char*)buffer->data(), length);
-#endif
     cl->text(buffer);
 };
 
@@ -153,7 +184,7 @@ void FrameSendChain::send(const JsonVariantConst& data){
         i.handler->send(data);
 }
 
-void FrameSendChain::send(const String& data){
+void FrameSendChain::send(const char* data){
     for (auto &i : _hndlr_chain)
         i.handler->send(data);
 }
@@ -179,3 +210,16 @@ FrameSendAsyncJS::~FrameSendAsyncJS() {
     }
     req = nullptr;
 }
+
+void FrameSendHttp::send(const char* data){
+    AsyncWebServerResponse* r = req->beginResponse(200, asyncsrv::T_application_json, data);
+    r->addHeader(asyncsrv::T_Cache_Control, asyncsrv::T_no_cache);
+    req->send(r);
+}
+
+void FrameSendHttp::send(const JsonVariantConst& data) {
+    AsyncResponseStream* stream = req->beginResponseStream(asyncsrv::T_application_json);
+    stream->addHeader(asyncsrv::T_Cache_Control, asyncsrv::T_no_cache);
+    serializeJson(data, *stream);
+    req->send(stream);
+};

@@ -6,7 +6,7 @@ name: PlatformIO CI
 
 on:
   workflow_dispatch:      # Manual start
-  push:
+#  push:
 #    branches: [ main, feat, v2.6, 2.6tst, stage ]
   pull_request:
     branches: [ main ]
@@ -23,7 +23,7 @@ on:
 jobs:
   CI_Build:
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: false
     strategy:
       max-parallel: 2
       matrix:
@@ -65,7 +65,10 @@ jobs:
       env: 
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
       run: |
-        cd $GITHUB_WORKSPACE/examples/01_generic && platformio run -c ${{ matrix.example }}
-        cd $GITHUB_WORKSPACE/examples/02_sensors && platformio run -c ${{ matrix.example }}
+        pwd
+        ls -la
+        mv $GITHUB_WORKSPACE/examples ~/
+        cd ~/examples/01_generic && platformio run -c ${{ matrix.example }}
+        cd ~/examples/02_sensors && platformio run -c ${{ matrix.example }}
         #platformio run -c ${{ matrix.example }}/platformio.ini
         #pio ci -c ${{ matrix.example }}/platformio.ini

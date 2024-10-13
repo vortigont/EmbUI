@@ -21,7 +21,7 @@
  * переопределенный метод фреймфорка, который начинает строить корень нашего Web-интерфейса
  * 
  */
-void section_main_frame(Interface *interf, const JsonObject *data, const char* action){
+void section_main_frame(Interface *interf, JsonObjectConst data, const char* action){
   if (!interf) return;
 
   interf->json_frame_interface();                                 // open interface frame
@@ -32,11 +32,11 @@ void section_main_frame(Interface *interf, const JsonObject *data, const char* a
   block_menu(interf, data, NULL);                   // Строим UI блок с меню выбора других секций
   interf->json_frame_flush();                       // close frame
 
-  if(WiFi.getMode() & WIFI_MODE_STA){            // if WiFI is no connected to external AP, than show page with WiFi setup
-    block_demopage(interf, data, NULL);                   // Строим блок с demo переключателями
+  if(WiFi.getMode() & WIFI_MODE_STA){               // if WiFI is no connected to external AP, than show page with WiFi setup
+    block_demopage(interf, data, NULL);             // Строим блок с demo переключателями
   } else {
     LOG(println, "UI: Opening network setup page");
-    basicui::page_settings_netw(interf, nullptr, NULL);
+    basicui::page_settings_netw(interf, {});
   }
 
 };
@@ -46,7 +46,7 @@ void section_main_frame(Interface *interf, const JsonObject *data, const char* a
  * This code builds UI section with menu block on the left
  * 
  */
-void block_menu(Interface *interf, const JsonObject *data, const char* action){
+void block_menu(Interface *interf, JsonObjectConst data, const char* action){
     if (!interf) return;
     // создаем меню
     interf->json_section_menu();
@@ -69,16 +69,16 @@ void block_menu(Interface *interf, const JsonObject *data, const char* action){
  * Demo controls
  * 
  */
-void block_demopage(Interface *interf, const JsonObject *data, const char* action){
+void block_demopage(Interface *interf, JsonObjectConst data, const char* action){
     // Headline
     // параметр FPSTR(T_SET_DEMO) определяет зарегистрированный обработчик данных для секции
     interf->json_section_main(T_SET_DEMO, "Some demo controls");
     interf->comment("Комментарий: набор контролов для демонстрации");     // комментарий-описание секции
 
     // переключатель, связанный с переменной конфигурации V_LED - Изменяется синхронно
-    interf->checkbox(V_LED, embui.paramVariant(V_LED),"Onboard LED", true);
+    interf->checkbox(V_LED, embui.getConfig()[V_LED],"Onboard LED", true);
 
-    interf->text(V_VAR1, embui.paramVariant(V_VAR1), "text field label");   // create text field with value from the system config
+    interf->text(V_VAR1, embui.getConfig()[V_VAR1], "text field label");   // create text field with value from the system config
     interf->text(V_VAR2, "some default val", "another text label");         // текстовое поле со значением "по-умолчанию"
 
     /*  кнопка отправки данных секции на обработку
@@ -94,23 +94,22 @@ void block_demopage(Interface *interf, const JsonObject *data, const char* actio
  * @brief action handler for demo form data
  * 
  */
-void action_demopage(Interface *interf, const JsonObject *data, const char* action){
+void action_demopage(Interface *interf, JsonObjectConst data, const char* action){
     if (!data) return;
 
     LOG(println, "processing section demo");
 
     // сохраняем значение 1-й переменной в конфиг фреймворка
-    SETPARAM(V_VAR1);
+    embui.getConfig()[V_VAR1] = data[V_VAR1];
+    embui.autosave();
 
     // выводим значение 1-й переменной в serial
-    const char *text = (*data)[V_VAR1];
+    const char *text = data[V_VAR1];
     Serial.printf("Varialble_1 value:%s\n", text );
 
     // берем указатель на 2-ю переменную
-    text = (*data)[V_VAR2];
-    // или так:
-    // String var2 = (*data)[FPSTR(V_VAR2)];
-    // выводим значение 2-й переменной в serial
+    text = data[V_VAR2];
+
     Serial.printf("Varialble_2 value:%s\n", text);
 }
 
@@ -118,14 +117,13 @@ void action_demopage(Interface *interf, const JsonObject *data, const char* acti
  * @brief interactive handler for LED switchbox
  * 
  */
-void action_blink(Interface *interf, const JsonObject *data, const char* action){
-  if (!data) return;  // здесь обрабатывает только данные
-
-  SETPARAM(V_LED);  // save new LED state to the config
+void action_blink(Interface *interf, JsonObjectConst data, const char* action){
+  bool state = data[V_LED];
+  embui.getConfig()[V_LED] = state;  // save new LED state to the config
 
   // set LED state to the new checkbox state
-  digitalWrite(LED_BUILTIN, !(*data)[V_LED]); // write inversed signal for build-in LED
-  Serial.printf("LED: %u\n", (*data)[V_LED].as<bool>());
+  digitalWrite(LED_BUILTIN, !state ); // write inversed signal for build-in LED
+  Serial.printf("LED: %u\n", state);
 }
 
 /**
@@ -134,12 +132,6 @@ void action_blink(Interface *interf, const JsonObject *data, const char* action)
  */
 void create_parameters(){
     LOG(println, F("UI: Creating application vars"));
-
-    /**
-     * регистрируем свои переменные
-     */
-    embui.var_create(V_LED, true);              // LED default status is on
-    embui.var_create(V_VAR1, "ipsum lorum");    // заводим текстовую переменную V_VAR1 со значением по умолчанию "ipsum lorum"
 
     // регистрируем обработчики активностей
     embui.action.set_mainpage_cb(section_main_frame);                            // заглавная страница веб-интерфейса
