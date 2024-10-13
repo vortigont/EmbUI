@@ -31,21 +31,21 @@ Task tDisplayUpdater(SENSOR_UPDATE_RATE * TASK_SECOND, TASK_FOREVER, &sensorPubl
  * переопределенный метод фреймфорка, который начинает строить корень нашего Web-интерфейса
  * 
  */
-void section_main_frame(Interface *interf, const JsonObject *data, const char* action){
+void section_main_frame(Interface *interf, JsonObjectConst data, const char* action){
 
   interf->json_frame_interface();
 
   interf->json_section_manifest("EmbUI Example", embui.macid(), 0, "v1.0");      // app name/jsapi/version manifest
   interf->json_section_end();                                     // manifest section MUST be closed!
 
-  block_menu(interf, data, NULL);                         // Строим UI блок с меню выбора других секций
-  interf->json_frame_flush();                       // flush frame, we will create a new one later
+  block_menu(interf, data, NULL);                       // Строим UI блок с меню выбора других секций
+  interf->json_frame_flush();                           // flush frame, we will create a new one later
 
-  if(WiFi.getMode() & WIFI_MODE_STA){            // if WiFI is no connected to external AP, than show page with WiFi setup
-    block_demopage(interf, data, NULL);                   // Строим блок с demo переключателями
+  if(WiFi.getMode() & WIFI_MODE_STA){                   // if WiFI is no connected to external AP, than show page with WiFi setup
+    block_demopage(interf, data, NULL);                 // Строим блок с demo переключателями
   } else {
     LOG(println, "UI: Opening network setup page");
-    basicui::page_settings_netw(interf, data, NULL);
+    basicui::page_settings_netw(interf, {});
   }
 
 };
@@ -55,7 +55,7 @@ void section_main_frame(Interface *interf, const JsonObject *data, const char* a
  * This code builds UI section with menu block on the left
  * 
  */
-void block_menu(Interface *interf, const JsonObject *data, const char* action){
+void block_menu(Interface *interf, JsonObjectConst data, const char* action){
     if (!interf) return;
     // создаем меню
     interf->json_section_menu();
@@ -78,7 +78,7 @@ void block_menu(Interface *interf, const JsonObject *data, const char* action){
  * Demo controls
  * 
  */
-void block_demopage(Interface *interf, const JsonObject *data, const char* action){
+void block_demopage(Interface *interf, JsonObjectConst data, const char* action){
     if (!interf) return;
     interf->json_frame_interface();
 
@@ -87,7 +87,7 @@ void block_demopage(Interface *interf, const JsonObject *data, const char* actio
     interf->json_section_main(T_SET_DEMO, "Some demo sensors");
 
     // переключатель, связанный со светодиодом. Изменяется синхронно
-    interf->checkbox(V_LED, embui.paramVariant(V_LED), "Onboard LED", true);
+    interf->checkbox(V_LED, embui.getConfig()[V_LED], "Onboard LED", true);
 
     interf->comment("A comment: simple live-displays");     // комментарий-описание секции
 
@@ -96,7 +96,7 @@ void block_demopage(Interface *interf, const JsonObject *data, const char* actio
     // Now I create a string of text that will follow LED's state
     String cmt = "Onboard LED is ";
 
-    if ( embui.paramVariant(V_LED) ) // get LED's state from a configuration variable
+    if ( embui.getConfig()[V_LED] ) // get LED's state from a configuration variable
       cmt += "ON!";
     else
       cmt += "OFF!";
@@ -137,14 +137,16 @@ void block_demopage(Interface *interf, const JsonObject *data, const char* actio
  * @brief interactive handler for LED switchbox
  * every change of a checkbox triggers this action
  */
-void action_blink(Interface *interf, const JsonObject *data, const char* action){
+void action_blink(Interface *interf, JsonObjectConst data, const char* action){
   if (!data) return;  // process only data
 
-  SETPARAM(V_LED);  // save new LED state to the config
+  // save new LED state to the config
+  embui.getConfig()[V_LED] = data[V_LED];
+  embui.autosave();
 
   // set LED state to the new checkbox state
-  digitalWrite(LED_BUILTIN, !(*data)[V_LED]); // write inversed signal to the build-in LED's GPIO
-  Serial.printf("LED: %u\n", (*data)[V_LED].as<bool>());
+  digitalWrite(LED_BUILTIN, !data[V_LED]); // write inversed signal to the build-in LED's GPIO
+  Serial.printf("LED: %u\n", data[V_LED].as<bool>());
 
   // if we have an interface ws object, 
   // than we can publish some changes to the web pages change comment text to reflect LED state
@@ -156,7 +158,7 @@ void action_blink(Interface *interf, const JsonObject *data, const char* action)
 
   String cmt = "Onboard LED is ";
 
-  if ( (*data)[V_LED] )      // find new LED's state from an incoming data
+  if ( data[V_LED] )      // find new LED's state from an incoming data
     cmt += "ON!";
   else
     cmt += "Off!";
@@ -206,13 +208,12 @@ void sensorPublisher() {
 /**
  * Change sensor update rate callback
  */
-void setRate(Interface *interf, const JsonObject *data, const char* action) {
-  if (!data) return;
+void setRate(Interface *interf, JsonObjectConst data, const char* action) {
 
-  if (!(*data)[V_UPDRATE]){    // disable update on interval '0'
+  if (!data[V_UPDRATE]){    // disable update on interval '0'
       tDisplayUpdater.disable();
   } else {
-    tDisplayUpdater.setInterval( (*data)[V_UPDRATE].as<unsigned int>() * TASK_SECOND ); // set update rate in seconds
+    tDisplayUpdater.setInterval( data[V_UPDRATE].as<unsigned int>() * TASK_SECOND ); // set update rate in seconds
     tDisplayUpdater.enableIfNot();
   }
 
@@ -224,11 +225,6 @@ void setRate(Interface *interf, const JsonObject *data, const char* action) {
  */
 void create_parameters(){
     LOG(println, "UI: Creating application vars");
-
-    /**
-     * регистрируем свои переменные
-     */
-    embui.var_create(V_LED, true);    // LED default status is on
 
     // регистрируем обработчики активностей
     embui.action.set_mainpage_cb(section_main_frame);                            // заглавная страница веб-интерфейса
