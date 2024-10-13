@@ -23,7 +23,7 @@ on:
 jobs:
   CI_Build:
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: false
     strategy:
       max-parallel: 2
       matrix:
