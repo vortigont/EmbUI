@@ -263,6 +263,7 @@ var render = function(){
 			out.menu_change(id);
 		}
 	}),
+
 	fn_section = {
 		on_input: function(d, id){
 			var value = this.value, type = this.type;
@@ -306,6 +307,7 @@ var render = function(){
 
 			ws.send_post(id, data);
 		},
+		// show or hide section on a page
 		on_showhide: function(d, id) {
 			go("#"+id).showhide();
 		},

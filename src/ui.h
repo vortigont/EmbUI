@@ -1147,8 +1147,7 @@ JsonObject Interface::select(const ID id, const T value, const L label, bool onC
     if (!embui_traits::is_empty_string(exturl)) o[P_url] = exturl;
 
     // open new nested section for 'option' elements
-    json_section_extend(P_options);
-    return o;
+    return json_section_extend(P_options);
 };
 
 template <typename L>
