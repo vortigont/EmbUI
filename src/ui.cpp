@@ -64,16 +64,21 @@ void Interface::json_frame_send(){
 }
 
 void Interface::_json_frame_next(){
+    if (!section_stack.size()) return;
     json.clear();
     JsonObject obj = json.to<JsonObject>();
-    for ( auto i = std::next(section_stack.begin()); i != section_stack.end(); ++i ){
-        obj = (*std::prev(i)).block.add<JsonObject>();
-        obj[P_section] = (*i).name;
-        obj[P_idx] = (*i).idx;
-        (*i).block = obj[P_block].to<JsonArray>();
-        //LOG(printf, "nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
+    if (section_stack.size() > 1){
+        size_t idx{0};
+        for ( auto i = section_stack.begin(); i != section_stack.end(); ++i ){
+            if (idx++)
+                obj = (*std::prev(i)).block.add<JsonObject>();
+            obj[P_section] = (*i).name;
+            obj[P_idx] = (*i).idx;
+            (*i).block = obj[P_block].to<JsonArray>();
+            //LOG(printf, "nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
+        }
     }
-    LOGI(P_EmbUI, printf, "json_frame_next: [#%u]\n", section_stack.size()-1);   // section index counts from 0
+    LOGI(P_EmbUI, printf, "json_frame_next: [#%d]\n", section_stack.size()-1);   // section index counts from 0
 }
 
 JsonObject Interface::json_frame_value(const JsonVariantConst val){

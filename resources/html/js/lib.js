@@ -98,14 +98,16 @@ go.path = function(el, p, st){
 	if (el[i] instanceof Object && p.length) return this.path(el[i], p, st);
 	return el[i];
 }
+// merge data coming in sepparate frames
 go.merge = function(base, data, idx) {
 	for (var i in data) {
 		var id = idx? idx + parseInt(i) : i;
 		if (typeof data[i] == 'object') {
 			if (typeof base[id] != 'object') base[id] = (data[i] instanceof Array)? [] : {};
-			this.merge(base[id], data[i], (i == "block")? data.idx : undefined);
+			this.merge(base[id], data[i], (i == "block") ? data.idx : undefined);
 		} else base[id] = data[i];
 	}
+	//console.log("merged base", JSON.parse( JSON.stringify(base) ))
 	return base;
 }
 go.eval = function(th, data) {
@@ -162,11 +164,16 @@ GO.prototype = new Array();
 		return this;
 	}
 	$_.alias({
-		'go':'querySelectorAll', 'query':'querySelectorAll',
+		'go':'querySelectorAll',
+		'query':'querySelectorAll',
 		'attr':'getAttribute','sattr':'setAttribute','rattr':'removeAttribute',
-		'byid':'getElementById', 'bytag':'getElementsByTagName',
-		'byname':'getElementsByName', 'byclass':'getElementsByClassName',
-		'css':'style', 'style':'style', 'display':'style.display',
+		'byid':'getElementById',
+		'bytag':'getElementsByTagName',
+		'byname':'getElementsByName',
+		'byclass':'getElementsByClassName',
+		'css':'style',
+		'style':'style',
+		'display':'style.display',
 		'left': 'style.left', 'right': 'style.right', 'top': 'style.top', 'bottom': 'style.bottom',
 		'height': 'style.height', 'width': 'style.width',
 		'innerHTML': 'innerHTML', 'src': 'src', 'href': 'href',
