@@ -1,5 +1,34 @@
 ## Changelog
 
+### v4.0.0
+- ArduinoJson to 7.2
+- remove deprecated containskey()
+* match WiFi event handler input types to Arduino core version
++ Implement language translation for UI data
++ update UI resources with lang translations Rus/Eng
++ make /data dir with web resources, obsolete resources/data.zip
++ Rework of Interface class, now JsonDocument could be manipulated in-place avoiding useless copies
+  - Method JsonArray Interface::get_block() allows to get last section's block array
+  - add new method Interface::make_new_object()
+  - add Interface::json_frame_send() method, send accumulated data and clears memory while preserving sections stack
+  - Interface methods return JsonObject on UI objects addition
+  - reimplement Interface::button* methods
+  - obsolete UIelement related objects
+* refactor Interface::json* methods
+  - added
+  - Interface::json_block_get() to access block array
+  - Interface::json_object_get() to access last added object
+  - Interface::json_object_create() replaces Interface::make_new_object()
+  - Interface::json_frame_add replaced with Interface::json_object_add 
+  - Interface::json_frame_* methods new return reference to JsonObjectwith a frame (in fact private json member)
+* replace FrameSend::send() with const char* argument
+- reduce EmbUI::save* metods, remove backup file save/load, use bare minimum
+* change actionCallback_t prototype to accept json data via JsonObjectConst value
+- remove all EmbUI config related methods
+- obsolete SSDP related code
+* fix Interface::_json_frame_next()
+
+
 ### v3.2.4
 + Arduino Core 3.x support
 + add Core3 to CI builder
