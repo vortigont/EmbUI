@@ -21,9 +21,9 @@
 #endif
 #define TOSTRING(x) __STRINGIFY(x)
 
-#define EMBUI_VERSION_MAJOR     3
-#define EMBUI_VERSION_MINOR     2
-#define EMBUI_VERSION_REVISION  4
+#define EMBUI_VERSION_MAJOR     4
+#define EMBUI_VERSION_MINOR     0
+#define EMBUI_VERSION_REVISION  0
 
 // API version for JS frontend
 #define EMBUI_JSAPI             5
