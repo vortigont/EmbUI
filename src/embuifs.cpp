@@ -11,43 +11,69 @@
 #include "embuifs.hpp"
 #include "StreamUtils.h"
 #include "globals.h"
-//#include "char_const.h"
+
+static constexpr const char* T_load_file = "Lod file: %s\n";
+static constexpr const char* T_cant_open_file = "Can't open file: %s\n";
+static constexpr const char* T_deserialize_err = "failed to load json file: %s, deserialize error: %s\n";
 
 namespace embuifs {
 
-    bool deserializeFile(JsonDocument& doc, const String& filepath){ return deserializeFile(doc, filepath.c_str()); };
+    DeserializationError deserializeFile(JsonDocument& doc, const String& filepath, size_t buffsize){ return deserializeFile(doc, filepath.c_str(), buffsize); };
 
-    bool deserializeFile(JsonDocument& doc, const char* filepath){
+    DeserializationError deserializeFile(JsonDocument& doc, const char* filepath, size_t buffsize){
         if (!filepath || !*filepath)
-            return false;
+            return DeserializationError::Code::InvalidInput;
 
-        LOGV(P_EmbUI, printf, "Load file: %s\n", filepath);
-        File jfile = LittleFS.open(filepath, "r");
+        LOGV(P_EmbUI, printf, T_load_file, filepath);
+        File jfile = LittleFS.open(filepath);
 
         if (!jfile){
-            LOGD(P_EmbUI, printf,"Can't open file: %s\n", filepath);
-            return false;
+            LOGD(P_EmbUI, printf, T_cant_open_file, filepath);
+            return DeserializationError::Code::InvalidInput;
         }
 
-        DeserializationError error = deserializeJson(doc, jfile);
-        jfile.close();
+        ReadBufferingStream bufferingStream(jfile, buffsize);
 
-        if (!error) return true;
-        LOGE(P_EmbUI, printf, "File: failed to load json file: %s, deserialize error: ", filepath);
-        LOGE(P_EmbUI, println, error.code());
-        return false;
+        DeserializationError error = deserializeJson(doc, jfile);
+
+        if (!error) return error;
+        LOGE(P_EmbUI, printf, T_deserialize_err, filepath, error.c_str());
+        return error;
     }
 
-    size_t serialize2file(const JsonDocument& doc, const String& filepath, size_t bufsize){ return serialize2file(doc, filepath.c_str(), bufsize); };
+    size_t serialize2file(const JsonDocument& doc, const String& filepath, size_t buffsize){ return serialize2file(doc, filepath.c_str(), buffsize); };
 
-    size_t serialize2file(const JsonDocument& doc, const char* filepath, size_t bufsize){
+    size_t serialize2file(const JsonDocument& doc, const char* filepath, size_t buffsize){
         File hndlr = LittleFS.open(filepath, "w");
-        WriteBufferingStream bufferedFile(hndlr, bufsize);
+        WriteBufferingStream bufferedFile(hndlr, buffsize);
         size_t len = serializeJson(doc, bufferedFile);
         bufferedFile.flush();
         hndlr.close();
         return len;
     }
 
+
+    DeserializationError deserializeFileWFilter(JsonDocument& doc, const char* filepath, JsonDocument& filter, size_t buffsize){
+        if (!filepath || !*filepath)
+            return DeserializationError::Code::InvalidInput;
+
+        LOGV(P_EmbUI, printf, T_load_file, filepath);
+        File jfile = LittleFS.open(filepath);
+
+        if (!jfile){
+            LOGD(P_EmbUI, printf, T_cant_open_file, filepath);
+            return DeserializationError::Code::InvalidInput;
+        }
+
+        ReadBufferingStream bufferingStream(jfile, buffsize);
+
+        DeserializationError error = deserializeJson(doc, jfile, DeserializationOption::Filter(filter));
+
+        if (!error) return error;
+        LOGE(P_EmbUI, printf, T_deserialize_err, filepath, error.c_str());
+        return error;
+    }
+
+    DeserializationError deserializeFileWFilter(JsonDocument& doc, const String& filepath, JsonDocument& filter, size_t buffsize){ return deserializeFileWFilter(doc, filepath, filter, buffsize); };
 
 }

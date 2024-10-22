@@ -28,7 +28,7 @@ void EmbUI::load(const char *cfgfile){
 }
 
 void EmbUI::cfgclear(){
-    LOGI(P_EmbUI, println, F("!CLEAR SYSTEM CONFIG!"));
+    LOGI(P_EmbUI, println, "!CLEAR SYSTEM CONFIG!");
     cfg.clear();
     autosave(true);
 }
