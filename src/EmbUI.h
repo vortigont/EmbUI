@@ -207,6 +207,8 @@ class EmbUI
     // return current ui's language string
     const char* getLang() const;
 
+    // generate and publish manifest and traslation request for the saved lang variable
+    void publish_language(Interface *interf);
 
     /*** WiFi/Network related methods***/
 

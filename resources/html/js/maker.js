@@ -1,14 +1,21 @@
+
 /**
  * global objects placeholder
  */
-var global = {menu_id:0, menu: [], value:{}};
-
+var global = {
+	menu_id:0,
+	menu: [],
+	value:{},
+	manifest:{
+		lang:"en"
+	}
+};
 
 /**
  * EmbUI's js api version
  * used to set compatibilty dependency between backend firmware and WebUI js
  */
-const ui_jsapi = 5;
+const ui_jsapi = 6;
 
 /**
  * User application versions - frontend/backend
@@ -245,7 +252,169 @@ function recurseforeachkey(obj, f) {
 		}
 	}
 }
-  
+
+/**
+ * scan frame object for 'uidata' instruction objects
+ * loads/updates objects in uidata container or implaces data into packet from uidata
+ * 
+ * @param {*} arr a reference to  section.block array
+ * @returns 
+ */
+async function process_uidata(arr){
+	if (!(arr instanceof Array)) arr
+
+	//for await (item of arr){
+	for (let i = 0; i != arr.length; ++i){
+		let item = arr[i]
+		// skip objects without 'block' obj
+		if (!(item.block instanceof Array)) continue;
+
+		// process uidata sections
+		if (item.section == "uidata" ){
+			let newblocks = []	// an array for sideloaded blocks
+			// scan command objects
+			for await (obj of item.block){
+				if(obj.action == "xload"){
+					let req = await fetch(obj.url, {method: 'GET'});
+					if (!req.ok) return;
+					let response = await req.json();
+					console.log("Get responce:", response);
+					if (obj.merge){
+						if (obj.src)
+							_.merge(_.get(uiblocks, obj.key), _.get(response, obj.src))
+						else
+							_.merge(_.get(uiblocks, obj.key), response)
+					} else {
+						if (obj.src)
+							_.set(uiblocks, obj.key, _get(response, obj.src))
+						else
+							_.set(uiblocks, obj.key, response);
+					}
+					console.log("loaded uiobj:", _.get(uiblocks, obj.key));
+					//console.log("loaded uiobj:", response, " ver:", response.version);
+					// check if loaded data is older then requested from backend
+					//console.log("Req ver: ", v.version, " vs loaded ver:", _.get(uiblocks, v.key).version)
+					if (obj.version > _.get(uiblocks, obj.key).version){
+						console.log("Opening update alert msg");
+						document.getElementById("update_alert").style.display = "block";
+					}
+					continue
+				}
+				// Pick UI object from a previously loaded UI data storage
+				if (obj.action == "pick"){
+					//console.log("pick obj:", obj.key, _.get(uiblocks, obj.key));
+					let ui_obj = structuredClone(_.get(uiblocks, obj.key))	// make a deep-copy to prevent mangling with further processing
+					if (ui_obj == undefined){
+						// alternate object is available?
+						if (obj.alt){
+							//console.log("UIData alt:", obj.key, obj.alt);
+							ui_obj = obj.alt
+						}
+						else {
+							console.log("UIData is missing:", obj.key);
+							continue
+						}
+					}
+					if (Object.keys(ui_obj).length !== 0){
+						if (obj.prefix){
+							ui_obj.section = obj.prefix + obj[key];
+							recurseforeachkey(ui_obj, function(key, obj){ if (key === "id"){ obj[key] = obj.prefix + obj[key]; } })
+						}
+						if (obj.suffix){
+							ui_obj.section += obj.suffix;
+							recurseforeachkey(ui_obj, function(key, obj){ if (key === "id"){ obj[key] += obj.suffix; } })
+						}
+						newblocks.push(ui_obj)
+					}
+					continue
+				}
+				// Set/update UI object with supplied data
+				if (obj.action == "set"){
+					_.set(uiblocks, obj.key, obj.data)
+					continue
+				}
+				// Set/update UI object with supplied data
+				if (obj.action == "merge"){
+					_.merge(_.get(uiblocks, obj.key), obj.data)
+					continue
+				}
+	
+	
+			}
+
+			// a function that will replace current section item with uidata items
+			function implaceArrayAt(array, idx, arrayToInsert) {
+				Array.prototype.splice.apply(array, [idx, 1].concat(arrayToInsert));
+				return array;
+			}
+
+			// replace processed section with processed data
+			if (newblocks.length){
+				implaceArrayAt(arr, i, newblocks)
+				// since array has changed, I must reiterate it all over again
+				const chained = await process_uidata(arr)
+				// after reiteration no need to continue
+				return chained
+			} else
+				arr.splice(i, 1)	// remove uidata section
+			return arr
+		}
+
+		// for non-uidata objects just dive into nested block sections
+		if (item.block instanceof Array){
+			await process_uidata(item.block)
+		}
+	}
+	return arr
+}
+
+
+/**
+ * recourse object looking for section named "xload",
+ * each object inside this section is checked for {"xload":true} pair, if found then an external object is http-loaded via "xload_url" URL and merged into block:[] array
+ * @note on load, "xload" key is set to result state of an http load
+ * @note on load, the section's value is renamed to the value of "sect_id" key, if "sect_id" is not present, then "xload_{somerandomstring}" is used
+ * @param {*} obj - receives an objects referencing section in an "pkg":"interface" frame, or the frame object itself
+ */
+async function process_XLoadSection(arr){
+	if (!(arr instanceof Array)) return arr
+	for await (item of arr){
+		// skip objects without 'block' obj
+		if (!(item.block instanceof Array)) continue;
+
+		// process xload sections
+		if (item.section == "xload" ){
+			for await (obj of item.block){
+				if (obj.xload && obj.xload_url){
+					let resp = await fetch(obj.xload_url, {method: 'GET'})
+					if (resp.ok){
+						resp = await resp.json();
+						if (resp instanceof Array)
+							obj.block.push(...resp)
+						else
+							obj.block.push(resp)
+
+						obj.xload = true
+					} else
+						obj.xload = false
+
+					if (item.sect_id){
+						item.section = item.sect_id
+						delete item.sect_id
+					} else
+						item.section += Math.round( Math.random() * 1000 )
+				}
+			}
+			continue
+		}
+		// for non-xload section just dive into nested block sections
+		if (item.block instanceof Array)
+			await process_XLoadSection(item.block)
+	}
+	return arr
+}
+
+
 
 // template renderer
 var render = function(){
@@ -348,6 +517,12 @@ var render = function(){
 		menu: function(){
 			go("#menu").clear().append(tmpl_menu.parse(global));
 		},
+		content: function(obj){
+			console.log("Process content:", obj);
+			for (i of obj.block){
+				go("#"+i.id).replace(tmpl_content.parse(i));
+			}
+		},
 		section: function(obj){
 			if (obj.main) {
 				go("#main > section").remove();
@@ -363,103 +538,25 @@ var render = function(){
 			}
 		},
 		// process "pkg":"interface" messages and render template
-		make: function(obj){
+		make: async function(obj){
 			if (!obj.block) return;
 			let frame = obj.block;
 
-			function recourseUIData(arr){
-				for (let i = 0; i != arr.length; ++i){
-					if (typeof arr[i] != "object") continue;
-					if(arr[i].section == "uidata" && arr[i].block.length){
-						let newblocks = []	// an array for sideloaded blocks
-						arr[i].block.forEach(async function(v, idx, array){
-							// Load UI data objects from external resource, i.e. json file
-							if(v.action == "xload"){
-								let response = await fetch(v.url, {method: 'GET'});
-								if (!response.ok) return;
-								response = await response.json();
-								if(v.merge)
-									_.merge(_.get(uiblocks, v.key), response)
-								else
-									_.set(uiblocks, v.key, response);
-								//console.log("loaded uiobj:", response, " ver:", response.version);
-								// check if loaded data is older then requested from backend
-								//console.log("Req ver: ", v.version, " vs loaded ver:", _.get(uiblocks, v.key).version)
-								if (v.version > _.get(uiblocks, v.key).version){
-									console.log("Opening update alert msg");
-									document.getElementById("update_alert").style.display = "block";
-								}
-								//return
-							}
-							if(v.action == "xmerge"){
-								let response = await fetch(v.url, {method: 'GET'});
-								if (!response.ok) return;
-								response = await response.json();
-								if(v.src)
-									_.merge(_.get(uiblocks, v.key), _.get(response, v.src))
-								else
-									_.merge(_.get(uiblocks, v.key), response)
-								//console.log("merge uiobj under:", v.key, "src:", v.src, "data:", response);
-								//return
-							}
-							// Pick UI object from a previously loaded UI data storage
-							if (v.action == "pick"){
-								//console.log("pick obj:", v.key);
-								let ui_obj = {};
-								if (v.prefix || v.suffix)
-									// make a deep copy, 'cause we'll modify the object
-									ui_obj = JSON.parse(JSON.stringify(_.get(uiblocks, v.key)));
-								else
-									ui_obj = _.get(uiblocks, v.key)
-								if (Object.keys(ui_obj).length !== 0){
-									if (v.prefix){
-										ui_obj.section = v.prefix + obj[key];
-										recurseforeachkey(ui_obj, function(key, obj){ if (key === "id"){ obj[key] = v.prefix + obj[key]; } })
-									}
-									if (v.suffix){
-										ui_obj.section += v.suffix;
-										recurseforeachkey(ui_obj, function(key, obj){ if (key === "id"){ obj[key] += v.suffix; } })
-									}
-									newblocks.push(ui_obj)
-								}
-								//return
-							}
-						})
-						// a function that will replace current section item with uidata items
-						function implaceArrayAt(array, idx, arrayToInsert) {
-							Array.prototype.splice.apply(array, [idx, 1].concat(arrayToInsert));
-							return array;
-						}
-						if (newblocks.length)
-							implaceArrayAt(arr, i, newblocks)
-						else
-							arr.splice(i, 1)
-						// since array has changed, I must reiterate it
-						recourseUIData(arr)
-						break
-					}
-
-					// dive into nested section
-					if (arr[i].section && arr[i].block.length)
-						recourseUIData(arr[i].block)
-				}
-			}
-
 			// deep iterate and process "uidata" sections
-			recourseUIData(frame);
+			const ui_processed = await process_uidata(frame);
+			const xload_processed = await process_XLoadSection(frame);
 			console.log("Processed packet:", obj);
 
-			// go through 1-st level section and render it according to type of data
-			for (let i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
-				if (frame[i].section == "content") {
-					for (let n = 0; n < frame[i].block.length; n++) {
-						go("#"+frame[i].block[n].id).replace(tmpl_content.parse(frame[i].block[n]));
+			// go through sections and render it according to type of data
+			frame.forEach(function(v, idx, frame){
+				if (v.section == "manifest"){
+					for (item of v.block){
+						_.merge(global, "manifest", item)
 					}
-					continue;
-				}
-				if (frame[i].section == "manifest"){
-					let manifest = frame[i];
-					document.title = manifest.app + " - " + manifest.mc;
+					if (global.manifest.app && global.manifest.mc)
+						document.title = global.manifest.app + " - " + global.manifest.mc;
+				/*
+					let manifest = v;
 					global.app = manifest.app;
 					global.macid = manifest.mc;
 					global.uiver = manifest.uiver;
@@ -467,21 +564,39 @@ var render = function(){
 					global.uiobjects = manifest.uiobjects;
 					global.appver = manifest.appver;
 					global.appjsapi = manifest.appjsapi;
+				*/
 					if (global.uijsapi > ui_jsapi || global.appjsapi > app_jsapi || global.uiobjects > uiblocks.sys.version)
 						document.getElementById("update_alert").style.display = "block";
-					continue;
+					return;
 				}
-				if (frame[i].section == "menu"){
-					global.menu =  frame[i].block;
+				if (v.section == "menu"){
+					global.menu =  v.block;
 					if (!global.menu_id) global.menu_id = global.menu[0].value
 					this.menu();
-					continue;
+					return;
 				}
+				if (v.section == "content") {
+					this.content(v)
+					return;
+				}
+				// callback section contains actions that UI should request back from MCU
+				if (v.section == "callback") {
+					for (item of v.block){
+						let data = {};
+						if (item.data)
+							data = item.data
+						ws.send_post(item.action, data);
+					}
+					return;
+				}
+
 				// look for nested xload sections and await for side-load, if found
-				section_xload(frame[i]).then( () => { this.section(frame[i]); } );
-			}
+				//section_xload(v).then( () => { this.section(v); } );
+				this.section(v)
+			}, this)	// need this to refer to .menu and .section inside forEach
 			out.lockhist = false;
 		},
+
 		// processing packets with values - "pkg":"value"
 		// блок разбирается на объекты по id и их value применяются к элементам шаблона на html странице
 		value: function(obj){
@@ -537,13 +652,13 @@ var render = function(){
 			}
 
 			for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
-				// check if the object contains just an array with key:value pairs (comes from echo-back packets)
+				/* check if the object contains just an object with key:value pairs (comes from echo-back packets)
+					{ "id": "someid", "value": "somevalue", "html": true }
+				*/
 				if ('id' in frame[i] && 'value' in frame[i]){
-					/* otherwise it must be a dict
-						{ "id": "someid", "value": "somevalue", "html": true }
-					*/
 					setValue(frame[i].id, frame[i].value, frame[i].html);
 				} else {
+					// else it's an object with k:v pairs
 					for(let k in frame[i]) {
 						setValue(k, frame[i][k]);
 					}
@@ -587,6 +702,9 @@ window.addEventListener("load", async function(ev){
 		uiblocks['sys'] = response;
 		//console.log("loaded obj:", uiblocks.sys);
 	}
+	// preload i18n
+	let i18n = await fetch("/js/ui_embui.i18n.json", {method: 'GET'});
+	let lang = await fetch("/js/ui_embui.lang.json", {method: 'GET'});
 
 	ws.connect();
 

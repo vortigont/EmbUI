@@ -183,10 +183,18 @@
           "label":"TimeZone shift/daylight saving rules applied automatically, no need to adjust it mannualy."
         },
         {
-          "id":"timezone",
-          "html":"input",
-          "label":"Time zone",
-          "type":"text"
+          "section":"xload",
+          "block":[
+            {
+              "id":"timezone",
+              "html":"select",
+              "label":"Time zone",
+              "xload": true,
+              "xload_url": "/js/tz.json",
+              "section":"options",
+              "block":[]
+            }    
+          ]
         },
         {
           "section":"ntp_opts",
@@ -206,9 +214,7 @@
         },
         {
           "section":"ntp_servers",
-          "block":[
-            
-          ]
+          "block":[]
         },
         {
           "id":"userntp",
@@ -442,9 +448,30 @@
         }
       ]
     },
-    "btns":{
-      "section": "ui_sys_settings_btns",
+    "settings":{
+      "section": "ui_page_settings",
+      "label": "Settings",
+      "main": true,
       "block": [
+        {
+          "section": "xload",
+          "block": [
+            {
+              "html": "select",
+              "id": "sys_language",
+              "label": "Interface language",
+              "onChange": true,
+              "xload": true,
+              "xload_url": "/js/ui_embui.lang.json",
+              "section":"options",
+              "block": []
+            }
+          ]
+        },
+        {
+          "html": "spacer",
+          "label": null
+        },
         {
           "id": "ui_page",
           "html": "button",

@@ -39,14 +39,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         LOGD(P_EmbUI, printf, "WS_EVT_CONNECT:%s id:%u\n", server->url(), client->id());
         {
             Interface interf(client);
-            // load locale data
-            String path(embui.getLang());
-            path += (char)0x2e; // '.'
-            path += P_data;
-            interf.json_frame_interface();
-            interf.json_section_uidata();
-                interf.uidata_xmerge("/js/ui_sys.i18n.json", P_sys, path.c_str());
-            interf.json_frame_flush();
+            embui.publish_language(&interf);
 
             if (!embui.action.exec(&interf, {}, A_ui_page_main))    // call user defined mainpage callback
                 basicui::page_main(&interf, {}, NULL);             // if no callback was registered, then show default stub page
@@ -316,15 +309,33 @@ void EmbUI::_getmacid(){
 void EmbUI::setLang(const char* lang){
     if (!lang) return;
     _lang = lang;
-    cfg[V_LANGUAGE] = lang;
+    cfg[V_LANGUAGE] = _lang;
     if (_lang_cb)
-        _lang_cb(lang);
+        _lang_cb(_lang.c_str());
     autosave();
 }
 
 const char* EmbUI::getLang() const {
     return _lang.c_str();
 }
+
+void EmbUI::publish_language(Interface *interf){
+    interf->json_frame_interface();
+    // load translation data for new lang
+    String path(getLang());
+    path += (char)0x2e; // '.'
+    path += P_data;
+    interf->json_section_uidata();
+        interf->uidata_xload(P_sys, EMBUI_JSON_i18N, path.c_str(), true);
+    interf->json_section_end();
+    interf->json_section_begin(P_manifest);
+        JsonObject o( interf->json_object_create() );
+        o[P_lang] = getLang();
+
+    interf->json_frame_flush();
+}
+
+
 
 
 void ActionHandler::add(const char* id, actionCallback_t callback){

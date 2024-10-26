@@ -104,25 +104,18 @@ JsonObject Interface::json_object_create(){
 }
 
 
-JsonObject Interface::uidata_xload(const char* key, const char* url, bool merge, unsigned version){
+JsonObject Interface::uidata_xload(const char* key, const char* url, const char* src_path, bool merge){
     JsonObject obj(json_object_create());
     obj[P_action] = P_xload;
     obj[P_key] = key;
     obj[P_url] = url;
-    if (merge) obj[P_merge] = true;
-    if (version) obj[P_version] = version;
+    if (src_path)
+        obj[P_src] = src_path;
+    if (merge)
+        obj[P_merge] = true;
+    //if (version) obj[P_version] = version;
     return obj;
 }
-
-JsonObject Interface::uidata_xmerge(const char* url, const char* key, const char* source){
-    JsonObject obj(json_object_create());
-    obj[P_action] = P_xmerge;
-    obj[P_url] = url;
-    obj[P_key] = key;
-    obj[P_src] = source;
-    return obj;
-}
-
 
 JsonObject Interface::uidata_pick(const char* key, const char* prefix, const char* suffix){
     JsonObject obj(json_object_create());
@@ -132,6 +125,22 @@ JsonObject Interface::uidata_pick(const char* key, const char* prefix, const cha
         obj[P_prefix] = const_cast<char*>(prefix);
     if (!embui_traits::is_empty_string(suffix))
         obj[P_suffix] = const_cast<char*>(suffix);
+    return obj;
+}
+
+JsonObject Interface::uidata_set(const char* key, JsonVariantConst data){
+    JsonObject obj(json_object_create());
+    obj[P_action] = P_set;
+    obj[P_key] = key;
+    obj[P_data] = data;
+    return obj;
+}
+
+JsonObject Interface::uidata_merge(const char* key, JsonVariantConst data){
+    JsonObject obj(json_object_create());
+    obj[P_action] = P_merge;
+    obj[P_key] = key;
+    obj[P_data] = data;
     return obj;
 }
 

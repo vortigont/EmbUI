@@ -26,7 +26,7 @@
 #define EMBUI_VERSION_REVISION  0
 
 // API version for JS frontend
-#define EMBUI_JSAPI             5
+#define EMBUI_JSAPI             6
 // loadable UI blocks version requirement (loaded from js/ui_sys.json)
 #define EMBUI_UIOBJECTS         3
 

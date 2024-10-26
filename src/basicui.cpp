@@ -6,9 +6,6 @@ uint8_t lang = 0;
 
 namespace basicui {
 
-static constexpr const char* JSON_i18N = "/js/ui_sys.i18n.json";
-static constexpr const char* JSON_LANG_LIST = "/js/ui_sys.lang.json";
-
 /**
  * register handlers for system actions and setup pages
  * 
@@ -28,7 +25,7 @@ void register_handlers(){
 #endif  // #ifdef EMBUI_NOFTP
     embui.action.add(A_set_sys_cfgclr, set_sys_cfgclear);               // clear sysconfig
     embui.action.add(A_set_sys_datetime, set_sys_datetime);             // set system date/time from a ISO string value
-    embui.action.add(A_set_sys_language, set_language);                 // смена языка интерфейса
+    embui.action.add(A_sys_language, set_language);                     // смена языка интерфейса
     embui.action.add(A_set_ntwrk_mqtt, set_settings_mqtt);              // обработка настроек MQTT
     embui.action.add(A_set_sys_reboot, set_sys_reboot);                 // ESP reboot action
     embui.action.add(A_set_sys_timeoptions, set_settings_time);         // установки даты/времени
@@ -71,26 +68,18 @@ void page_system_settings(Interface *interf, JsonObjectConst data, const char* a
     if (!interf) return;
     interf->json_frame_interface();
 
-    interf->json_section_main(A_ui_page_settings, T_DICT[lang][TD::D_SETTINGS]);
-
-    interf->json_section_xload();
-        // side load drop-down list of available languages /eff_list.json file
-        interf->select(A_set_sys_language, embui.getLang(), T_DICT[lang][TD::D_LANG], true, JSON_LANG_LIST);
-    interf->json_section_end(); // close xload section
-
-    interf->spacer();
-
     // settings buttons
     interf->json_section_uidata();
-        interf->uidata_pick("sys.settings.btns");
+        interf->uidata_pick("sys.settings.settings");
     interf->json_section_end();
 
-    interf->spacer();
+    interf->json_section_begin(P_callback);
+        JsonObject o( interf->json_object_create() );
+        o[P_action] = A_sys_language;
+    interf->json_section_end();
 
     // call for user_defined function that may add more elements to the "settings page"
     embui.action.exec(interf, {}, A_ui_blk_usersettings);
-
-    interf->json_frame_flush();
 }
 
 /**
@@ -159,10 +148,9 @@ void page_settings_time(Interface *interf, JsonObjectConst data, const char* act
     if (!interf) return;
     interf->json_frame_interface();
         interf->json_section_uidata();
-        interf->uidata_pick("sys.settings.datetime");
-    interf->json_frame_flush();
+            interf->uidata_pick("sys.settings.datetime");
+        interf->json_section_end();
 
-    interf->json_frame_interface();
         interf->json_section_content();
             String clk("Device date/time: "); TimeProcessor::getDateTimeString(clk);
             interf->constant(P_date, clk.c_str());
@@ -172,17 +160,10 @@ void page_settings_time(Interface *interf, JsonObjectConst data, const char* act
         interf->json_section_begin(P_ntp_servers, "Configured NTP Servers", false, false, true);
             for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
                 interf->constant(TimeProcessor::getInstance().getserver(i));
+
+    interf->json_frame_value();
+        interf->value(V_timezone, embui.getConfig()[V_timezone]);
     interf->json_frame_flush();
-
-    // формируем и отправляем кадр с запросом подгрузки внешнего ресурса со списком правил временных зон
-    // полученные данные заместят предыдущее поле выпадающим списком с данными о всех временных зонах
-    interf->json_frame(P_xload);
-    interf->json_section_content();
-                   //id        val                             label    direct  URL for external data
-    interf->select(V_timezone, embui.getConfig()[V_timezone], P_EMPTY, false,  "/js/tz.json");
-    interf->json_section_end(); // select
-    interf->json_frame_flush(); // xload
-
 }
 
 /**
@@ -366,20 +347,18 @@ void set_sys_datetime(Interface *interf, JsonObjectConst data, const char* actio
 }
 
 void set_language(Interface *interf, JsonObjectConst data, const char* action){
-    if (!data) return;
+    JsonVariantConst lang = data[A_sys_language];
 
-    embui.setLang(data[A_set_sys_language]);
-
-    String path(embui.getLang());
-    path += (char)0x2e; // '.'
-    path += "data";
-    interf->json_frame_interface();
-    // load translation data for new lang
-    interf->json_section_uidata();
-        interf->uidata_xmerge(JSON_i18N, P_sys, path.c_str());
-    interf->json_frame_flush();
-
-    page_system_settings(interf, {});
+    // if variant exists then it's SET action, otherwise GET
+    if (lang.is<const char*>()){
+        embui.setLang(lang);
+        embui.publish_language(interf);
+        page_system_settings(interf, {});
+    } else {
+        interf->json_frame_value();
+        interf->value(A_sys_language, embui.getLang());
+        interf->json_frame_flush();
+    }
 }
 
 void embuistatus(Interface *interf){

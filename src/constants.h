@@ -24,7 +24,7 @@ static constexpr const char* A_set_ntwrk_mqtt = "set_ntwrk_mqtt";
 static constexpr const char* A_set_sys_timeoptions = "set_sys_timeoptions";
 static constexpr const char* A_set_sys_hostname = "set_sys_hostname";
 static constexpr const char* A_set_sys_datetime = "set_sys_datetime";
-static constexpr const char* A_set_sys_language = "set_sys_language";
+static constexpr const char* A_sys_language = "sys_language";
 
 // bare setter actions (IDs)
 static constexpr const char* A_set_sys_cfgclr = "set_sys_cfgclr";
@@ -46,6 +46,7 @@ static constexpr const char* P_appjsapi = "appjsapi";
 static constexpr const char* P_apssid = "apssid";
 static constexpr const char* P_block = "block";
 static constexpr const char* P_button = "button";
+static constexpr const char* P_callback = "callback";
 static constexpr const char* P_color = "color";
 static constexpr const char* P_content = "content";
 static constexpr const char* P_chckbox = "checkbox";
@@ -81,6 +82,7 @@ static constexpr const char* P_input = "input";
 static constexpr const char* P_interface = "interface";
 static constexpr const char* P_key = "key";
 static constexpr const char* P_label = "label";
+static constexpr const char* P_lang = "lang";
 static constexpr const char* P_line = "line";
 static constexpr const char* P_MQTT = "MQTT";
 static constexpr const char* P_MQTTTopic = "MQTTTopic";
@@ -109,6 +111,7 @@ static constexpr const char* P_range = "range";
 static constexpr const char* P_replace = "replace";
 static constexpr const char* P_section = "section";
 static constexpr const char* P_select = "select";
+static constexpr const char* P_set = "set";
 static constexpr const char* P_src = "src";
 static constexpr const char* P_spacer = "spacer";
 static constexpr const char* P_step = "step";
@@ -128,6 +131,7 @@ static constexpr const char* P_value = "value";
 static constexpr const char* P_version = "version";
 static constexpr const char* P_wifi = "wifi";
 static constexpr const char* P_xload ="xload";
+static constexpr const char* P_xload_url ="xload_url";
 static constexpr const char* P_xmerge ="xmerge";
 
 
@@ -182,8 +186,9 @@ static constexpr const char* P_BLACK = "black";
 static constexpr const char* P_WHITE = "white";
 
 // System configuration variables and constants
-static constexpr const char* C_cfgfile = "/config.json";
-static constexpr const char* C_cfgfile_bkp = "/config_bkp.json";
+static constexpr const char* EMBUI_cfgfile = "/config.json";
+static constexpr const char* EMBUI_JSON_i18N = "/js/ui_embui.i18n.json";
+static constexpr const char* EMBUI_JSON_LANG_LIST = "/js/ui_embui.lang.json";
 
 static constexpr const char* V_APonly = "APonly";        // AccessPoint-only mode
 static constexpr const char* V_APpwd = "APpwd";          // AccessPoint password

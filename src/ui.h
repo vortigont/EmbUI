@@ -808,7 +808,24 @@ class Interface {
          * with label/value pairs arranged in assoc array
          */
         template <typename ID, typename T, typename L = const char*>
-        JsonObject select(const ID id, const T value, const L label = P_EMPTY, bool onChange = false, const L exturl = P_EMPTY);
+        JsonObject select(const ID id, const T value, const L label = P_EMPTY, bool onChange = false);
+
+        /**
+         * @brief  - create drop-down selection list which loads items data via an external http json array object
+         * @attention this element MUST be enclosed into 'xload' section
+         * 
+         * @tparam ID 
+         * @tparam T 
+         * @tparam char* 
+         * @param id 
+         * @param value 
+         * @param label 
+         * @param onChange 
+         * @param exturl 
+         * @return JsonObject 
+         */
+        template <typename ID, typename T, typename L = const char*>
+        JsonObject select_xload(const ID id, const T value, const L exturl, const L label = P_EMPTY, bool onChange = false);
 
         /**
          * @brief create spacer line with optional text label
@@ -871,19 +888,7 @@ class Interface {
          * @param url - url to fetch json from, could be relative to /
          * @param merge - if 'true', then try to merge/update data under existing key, otherwise replace it
          */
-        JsonObject uidata_xload(const char* key, const char* url, bool merge = false, unsigned version = 0);
-
-        /**
-         * @brief merge data into uidata storage
-         * generates object with instruction to merge into uidata an object structure from specified url
-         * and save it under specified key 
-         * this method should be wrapped in json_section_uidata()
-         * 
-         * @param url - url to load json from
-         * @param key - a key to load data to, a dot sepparated notation (i.e. "app.page.controls")
-         * @param source - a source key to load a subset object data from, a dot sepparated notation (i.e. "app.page.controls")
-         */
-        JsonObject uidata_xmerge(const char* url, const char* key, const char* source = NULL );
+        JsonObject uidata_xload(const char* key, const char* url, const char* src_path = NULL, bool merge = false);
 
         /**
          * @brief pick and implace UI structured data objects from front-end side-storage
@@ -896,6 +901,28 @@ class Interface {
          * @param suffix - if not null, then to all ID's in loaded objects will be concatenated with provided suffix
          */
         JsonObject uidata_pick(const char* key, const char* prefix = NULL, const char* suffix = NULL);
+
+        /**
+         * @brief set/update UIData in browser with data supplied from backend
+         * 
+         * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
+         * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
+         * 
+         * @param key - a key to set data to, a dot sepparated notation (i.e. "app.page.controls")
+         * @param data - data object to set/update with
+         */
+        JsonObject uidata_set(const char* key, JsonVariantConst data);
+
+        /**
+         * @brief set/merge UIData in browser with data supplied from backend
+         * 
+         * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
+         * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
+         * 
+         * @param key - a key to set data to, a dot sepparated notation (i.e. "app.page.controls")
+         * @param data - data object to set/merge with
+         */
+        JsonObject uidata_merge(const char* key, JsonVariantConst data);
 
         /**
          * @brief - Add 'value' object to the Interface frame
@@ -1086,13 +1113,14 @@ template  <typename ID, typename L>
 Interface::json_section_manifest(const ID appname, const char* devid, unsigned appjsapi, const L appversion){
     JsonObject obj = json_section_begin("manifest");
     //JsonObject obj( section_stack.back().block.add<JsonObject>() );
-    obj[P_uijsapi] = EMBUI_JSAPI;
-    obj[P_uiver] = EMBUI_VERSION_STRING;
-    obj["uiobjects"] = EMBUI_UIOBJECTS;
-    obj[P_app] = appname;
-    obj[P_appjsapi] = appjsapi;
-    if (!embui_traits::is_empty_string(appversion)) obj["appver"] = appversion;
-    obj["mc"] = devid;
+    JsonObject o(json_object_create());
+    o[P_uijsapi] = EMBUI_JSAPI;
+    o[P_uiver] = EMBUI_VERSION_STRING;
+    o["uiobjects"] = EMBUI_UIOBJECTS;
+    o[P_app] = appname;
+    o[P_appjsapi] = appjsapi;
+    if (!embui_traits::is_empty_string(appversion)) o["appver"] = appversion;
+    o["mc"] = devid;
     return obj;
 }
 
@@ -1137,18 +1165,31 @@ Interface::range(const ID id, T value, T min, T max, T step, const L label, bool
 };
 
 template <typename ID, typename T, typename L>
-JsonObject Interface::select(const ID id, const T value, const L label, bool onChange, const L exturl){
+JsonObject Interface::select(const ID id, const T value, const L label, bool onChange){
     JsonObject o(json_object_create());
     o[P_html] = P_select;
     o[P_id] = id;
     o[P_label] = label;
     o[P_value] = value;
     if (onChange) o[P_onChange] = true;
-    if (!embui_traits::is_empty_string(exturl)) o[P_url] = exturl;
 
     // open new nested section for 'option' elements
     return json_section_extend(P_options);
 };
+
+template <typename ID, typename T, typename L>
+JsonObject Interface::select_xload(const ID id, const T value, const L exturl, const L label, bool onChange){
+    JsonObject o(json_object_create());
+    o[P_html] = P_select;
+    o[P_id] = id;
+    o[P_label] = label;
+    o[P_value] = value;
+    if (onChange) o[P_onChange] = true;
+    o[P_xload] = true;
+    o[P_xload_url] = exturl;
+    o[P_block].to<JsonArray>();
+    return o;
+}
 
 template <typename L>
     typename std::enable_if<embui_traits::is_string_v<L>,JsonObject>::type

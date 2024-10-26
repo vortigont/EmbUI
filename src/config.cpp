@@ -18,13 +18,13 @@
 #endif
 
 void EmbUI::save(const char *_cfg){
-    embuifs::serialize2file(cfg, _cfg ? _cfg : C_cfgfile);
+    embuifs::serialize2file(cfg, _cfg ? _cfg : EMBUI_cfgfile);
     LOGD(P_EmbUI, println, "Save config file");
 }
 
 void EmbUI::load(const char *cfgfile){
-    LOGD(P_EmbUI, print, F("Config file load "));
-    embuifs::deserializeFile(cfg, cfgfile ? cfgfile : C_cfgfile);
+    LOGD(P_EmbUI, print, "Config file load ");
+    embuifs::deserializeFile(cfg, cfgfile ? cfgfile : EMBUI_cfgfile);
 }
 
 void EmbUI::cfgclear(){

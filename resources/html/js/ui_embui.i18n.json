@@ -258,25 +258,34 @@
             }
           ]
         },
-        "btns":{
+        "settings":{
+          "label": "Settings",
           "block": [
-              {
-                "label": "WiFi Setup"
-              },
-              {
-                "label": "Date / Time / Time Zone"
-              },
-              {
-                "label": "MQTT"
-              },
-              {
-                "label": "FTP Server"
-              },
-              {
-                "label": "System setup"
-              }
-            ]
-        }    
+            {
+              "block": [
+                {
+                  "label": "Interface language"
+                }
+              ]
+            },
+            {},
+            {
+              "label": "WiFi Setup"
+            },
+            {
+              "label": "Date / Time / Time Zone"
+            },
+            {
+              "label": "MQTT"
+            },
+            {
+              "label": "FTP Server"
+            },
+            {
+              "label": "System setup"
+            }
+          ]
+        }
       }
     }
   },
@@ -543,25 +552,34 @@
             }
           ]
         },
-        "btns":{
+        "settings":{
+          "label": "Настройки",
           "block": [
-              {
-                "label": "Настройки WiFi"
-              },
-              {
-                "label": "Дата/Время/Часовая зона"
-              },
-              {
-                "label": "MQTT"
-              },
-              {
-                "label": "FTP сервер"
-              },
-              {
-                "label": "Системные параметры"
-              }
-            ]
-        }    
+            {
+              "block": [
+                {
+                  "label": "Interface language"
+                }
+              ]
+            },
+            {},
+            {
+              "label": "Настройки WiFi"
+            },
+            {
+              "label": "Дата/Время/Часовая зона"
+            },
+            {
+              "label": "MQTT"
+            },
+            {
+              "label": "FTP сервер"
+            },
+            {
+              "label": "Системные параметры"
+            }
+          ]
+        }
       }
     }
   }
