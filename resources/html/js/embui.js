@@ -1240,7 +1240,7 @@ window.addEventListener("load", async function(ev){
   ws.onUnknown = function(msg){ unknown_pkg_callback(msg) }
 
   // load sys UI objects
-  let response = await fetch("/js/ui_sys.json", {method: 'GET'});
+  let response = await fetch("/js/ui_embui.json", {method: 'GET'});
   if (response.ok){
     response = await response.json();
     uiblocks['sys'] = response;

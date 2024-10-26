@@ -1,6 +1,6 @@
 {
   "type":"interface",
-  "version":3,
+  "version":4,
   "descr":"EmbUI settings and configuration UI object blocks",
   "settings":{
     "network":{
