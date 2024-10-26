@@ -140,7 +140,7 @@ cp -u html/css/*.webp ${dst}/css/
 cp -u html/css/*.svg* ${dst}/css/
 
 echo "Packing EmbUI js" 
-embui_js="dyncss.js lib.js maker.js"
+embui_js="embui.js"
 # combine and compress js files in one bundle
 for f in ${embui_js}
 do
