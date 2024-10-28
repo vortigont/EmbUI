@@ -1,5 +1,12 @@
 ## Changelog
 
+### v4.0.1
+major js API braking changes. In fact it should all be in 4.0.0 :)
+improved async xloads in ui data
+added set/merge objects
+fixed wrong scope in jscall pkg's
+reworked basicui main page loading
+
 ### v4.0.0
 - ArduinoJson to 7.2
 - remove deprecated containskey()
