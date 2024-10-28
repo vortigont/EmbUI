@@ -552,6 +552,13 @@ var global = {
   menu: [],
   value:{},
   manifest:{
+	app:"embui",
+	appver:0,
+	appjsapi:0,
+	macid:"000000",
+	uiver:0,
+	uijsapi:0,
+	uiobjects:0,
     lang:"en"
   }
 };
@@ -786,14 +793,14 @@ function recurseforeachkey(obj, f) {
     if (typeof obj[key] === 'object') {
       if (Array.isArray(obj[key])) {
         for (let i = 0; i < obj[key].length; i++) {
-        recurseforeachkey(obj[key][i], f);
+          recurseforeachkey(obj[key][i], f);
         }
       } else {
         recurseforeachkey(obj[key], f);
       }
     } else {
-    // run callback
-    f(key, obj);
+      // run callback
+      f(key, obj);
     }
   }
 }
@@ -806,67 +813,76 @@ function recurseforeachkey(obj, f) {
  * @returns 
  */
 async function process_uidata(arr){
-  if (!(arr instanceof Array)) arr
+  if (!(arr instanceof Array))return
 
   for (let i = 0; i != arr.length; ++i){
     let item = arr[i]
-    // skip objects without 'block' obj
-    if (!(item.block instanceof Array)) continue;
+    // skip objects without 'block' key
+    if (!(item.block instanceof Array)){
+      continue
+    } 
 
     // process uidata sections
     if (item.section == "uidata" ){
       let newblocks = []  // an array for sideloaded blocks
       // scan command objects
-      for await (obj of item.block){
-        if(obj.action == "xload"){
-          let req = await fetch(obj.url, {method: 'GET'});
-          if (!req.ok) return;
-          let response = await req.json();
-          console.log("Get responce:", response);
-          if (obj.merge){
-            if (obj.src)
-              _.merge(_.get(uiblocks, obj.key), _.get(response, obj.src))
+      for await (aw of item.block){
+        if(aw.action == "xload"){
+          // obj can mutate hell knows why while promise it resolved, so make a deep copy here
+          let lobj = structuredClone(aw)
+          const req = await fetch(lobj.url, {method: 'GET'});
+          if (!req.ok){
+            console.log("Xload failed:", req.status);
+            return;
+          } 
+          const response = await req.json();
+          //console.log("Get responce for:", lobj.url);
+          if (lobj.merge){
+            if (lobj.src)
+              _.merge(_.get(uiblocks, lobj.key), _.get(response, lobj.src))
             else
-              _.merge(_.get(uiblocks, obj.key), response)
+              _.merge(_.get(uiblocks, lobj.key), response)
+            //console.log("Merged key:", lobj.key, lobj.src, aw.key, aw.src);
           } else {
-            if (obj.src)
-              _.set(uiblocks, obj.key, _get(response, obj.src))
+            if (lobj.src)
+              _.set(uiblocks, lobj.key, _get(response, lobj.src))
             else
-              _.set(uiblocks, obj.key, response);
+            _.set(uiblocks, lobj.key, response);
+            //console.log("Set key:", lobj.key, lobj.src, obj.key, obj.src);
           }
           //console.log("loaded uiobj:", _.get(uiblocks, obj.key));
           //console.log("loaded uiobj:", response, " ver:", response.version);
           // check if loaded data is older then requested from backend
           //console.log("Req ver: ", v.version, " vs loaded ver:", _.get(uiblocks, v.key).version)
-          if (obj.version > _.get(uiblocks, obj.key).version){
+          if (lobj.version > _.get(uiblocks, lobj.key).version){
             console.log("Opening update alert msg");
             document.getElementById("update_alert").style.display = "block";
           }
           continue
         }
         // Pick UI object from a previously loaded UI data storage
-        if (obj.action == "pick"){
-          //console.log("pick obj:", obj.key, _.get(uiblocks, obj.key));
-          let ui_obj = structuredClone(_.get(uiblocks, obj.key))  // make a deep-copy to prevent mangling with further processing
+        if (aw.action == "pick"){
+          //console.log("pick obj:", aw.key, _.get(uiblocks, aw.key));
+          let ui_obj = structuredClone(_.get(uiblocks, aw.key))  // make a deep-copy to prevent mangling with further processing
           if (ui_obj == undefined){
             // alternate object is available?
-            if (obj.alt){
-              //console.log("UIData alt:", obj.key, obj.alt);
-              ui_obj = obj.alt
+            if (aw.alt){
+              //console.log("UIData alt:", aw.key, aw.alt);
+              ui_obj = aw.alt
             }
             else {
-              console.log("UIData is missing:", obj.key);
+              console.log("UIData is missing:", aw.key);
               continue
             }
           }
           if (Object.keys(ui_obj).length !== 0){
-            if (obj.prefix){
-              ui_obj.section = obj.prefix + obj[key];
-              recurseforeachkey(ui_obj, function(key, obj){ if (key === "id"){ obj[key] = obj.prefix + obj[key]; } })
+            if (aw.prefix){
+              ui_obj.section = aw.prefix + ui_obj.section;
+              recurseforeachkey(ui_obj, function(key, object){ if (key === "id"){ object[key] = aw.prefix + obj[key]; } })
             }
-            if (obj.suffix){
-              ui_obj.section += obj.suffix;
-              recurseforeachkey(ui_obj, function(key, obj){ if (key === "id"){ obj[key] += obj.suffix; } })
+            if (aw.suffix){
+              ui_obj.section += aw.suffix;
+              recurseforeachkey(ui_obj, function(key, object){ if (key === "id"){ object[key] += aw.suffix; } })
             }
             newblocks.push(ui_obj)
           }
@@ -883,25 +899,24 @@ async function process_uidata(arr){
           continue
         }
   
-  
       }
 
       // a function that will replace current section item with uidata items
       function implaceArrayAt(array, idx, arrayToInsert) {
         Array.prototype.splice.apply(array, [idx, 1].concat(arrayToInsert));
-        return array;
+        return
       }
 
       // replace processed section with processed data
       if (newblocks.length){
         implaceArrayAt(arr, i, newblocks)
+      } else
+        arr.splice(i, 1)  // remove uidata section
+
         // since array has changed, I must reiterate it all over again
         const chained = await process_uidata(arr)
         // after reiteration no need to continue
-        return chained
-      } else
-        arr.splice(i, 1)  // remove uidata section
-      return arr
+      return
     }
 
     // for non-uidata objects just dive into nested block sections
@@ -909,7 +924,6 @@ async function process_uidata(arr){
       await process_uidata(item.block)
     }
   }
-  return arr
 }
 
 
@@ -921,7 +935,7 @@ async function process_uidata(arr){
  * @param {*} obj - receives an objects referencing section in an "pkg":"interface" frame, or the frame object itself
  */
 async function process_XLoadSection(arr){
-  if (!(arr instanceof Array)) return arr
+  if (!(arr instanceof Array)) return
   for await (item of arr){
     // skip objects without 'block' obj
     if (!(item.block instanceof Array)) continue;
@@ -930,9 +944,9 @@ async function process_XLoadSection(arr){
     if (item.section == "xload" ){
       for await (obj of item.block){
         if (obj.xload && obj.xload_url){
-          let resp = await fetch(obj.xload_url, {method: 'GET'})
-          if (resp.ok){
-            resp = await resp.json();
+          const req = await fetch(obj.xload_url, {method: 'GET'})
+          if (req.ok){
+            const resp = await req.json();
             if (resp instanceof Array)
               obj.block.push(...resp)
             else
@@ -955,7 +969,7 @@ async function process_XLoadSection(arr){
     if (item.block instanceof Array)
       await process_XLoadSection(item.block)
   }
-  return arr
+  return
 }
 
 
@@ -1099,17 +1113,8 @@ var render = function(){
           }
           if (global.manifest.app && global.manifest.mc)
             document.title = global.manifest.app + " - " + global.manifest.mc;
-        /*
-          let manifest = v;
-          global.app = manifest.app;
-          global.macid = manifest.mc;
-          global.uiver = manifest.uiver;
-          global.uijsapi = manifest.uijsapi;
-          global.uiobjects = manifest.uiobjects;
-          global.appver = manifest.appver;
-          global.appjsapi = manifest.appjsapi;
-        */
-          if (global.uijsapi > ui_jsapi || global.appjsapi > app_jsapi || global.uiobjects > uiblocks.sys.version)
+
+    		  if (global.manifest.uijsapi > ui_jsapi || global.manifest.appjsapi > app_jsapi || (uiblocks.sys.version != undefined && global.manifest.uiobjects > uiblocks.sys.version))
             document.getElementById("update_alert").style.display = "block";
           return;
         }
@@ -1221,12 +1226,13 @@ window.addEventListener("load", async function(ev){
 
   ws.oninterface = function(msg) { rdr.make(msg) }
 
-  // run any js function in window context
+  // run custom js function in window context
   ws.onjscall = function(msg) {
-    if ( msg.jsfunc && typeof window[msg.jsfunc] == "function"){
+    if ( msg.jsfunc in customFuncs){
       try {   console.log("JSCall: ", msg.jsfunc);
-          window[msg.jsfunc](msg);
-        } catch(e){ console.log('Error on calling function:'+msg.function, e); }
+        customFuncs[msg.jsfunc](msg)
+        //window[msg.jsfunc](msg);
+      } catch(e){ console.log('Error on calling function:'+msg.function, e); }
     };
   }
 
@@ -1247,8 +1253,8 @@ window.addEventListener("load", async function(ev){
     //console.log("loaded obj:", uiblocks.sys);
   }
   // preload i18n
-  let i18n = await fetch("/js/ui_embui.i18n.json", {method: 'GET'});
-  let lang = await fetch("/js/ui_embui.lang.json", {method: 'GET'});
+  //let i18n = await fetch("/js/ui_embui.i18n.json", {method: 'GET'});
+  //let lang = await fetch("/js/ui_embui.lang.json", {method: 'GET'});
 
   ws.connect();
 
