@@ -63,6 +63,7 @@
         "flags": "-std=gnu++17",
         "unflags": "-std=gnu++11"
     },
+    "headers": ["EmbUI.h", "basicui.h", "ts.h", "ui.h"],
     "export": {
         "include": [
             "EmbUI/*",

@@ -705,7 +705,7 @@ class Interface {
          * @brief - create empty div and call js-function over this div
          * js function receives DOM id and params obj as arguments
          * 
-         * @note function must be predefined in front-end's WebUI .js files
+         * @note function must be added to 'customFuncs' object in front-end's WebUI .js files
          * 
          * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls
          * @warning a lifetime of the returned JsonObject is limited to a lifetime of Interface object
@@ -716,7 +716,9 @@ class Interface {
          * @param params - additional parameters (reserved to be used in template processor)
          */
         template <typename ID, typename V, typename L = const char*>
-        JsonObject jscall(const ID id, const V value, const L label = P_EMPTY, const L css = P_EMPTY, JsonVariantConst params = JsonVariantConst() ){ return div(id, P_js, value, label, css, params); };
+        JsonObject jscall(
+            const ID id, const V value, const L label = P_EMPTY, const L css = P_EMPTY, JsonVariantConst params = JsonVariantConst() )
+            { return div(id, P_js, value, label, css, params); };
 
         /**
          * @brief - create "number" html field with optional step, min, max constraints
