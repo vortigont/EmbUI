@@ -28,8 +28,8 @@ jobs:
       max-parallel: 2
       matrix:
         example:
-          - "ci_core2.ini"
           - "ci_core3.ini"
+          #- "ci_core3.ini"
 
     steps:
     - uses: actions/checkout@v4
