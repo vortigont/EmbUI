@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "globals.h"
-#include <WiFi.h>
+#include "WiFi.h"
 #include <string>
+#include "embui_log.h"
 
 /*
  * COUNTRY macro allows to select a specific country pool for ntp requests, like ru.pool.ntp.org, eu.pool.ntp.org, etc...

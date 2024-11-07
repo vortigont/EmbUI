@@ -5,11 +5,13 @@
 
 #pragma once
 
-#include "globals.h"
-#include "traits.hpp"
 #include <list>
+#include "traits.hpp"
+//#include "ESPAsyncWebServer.h"
 #include "AsyncJson.h"
-
+#include "embui_constants.h"
+#include "embui_defines.h"
+#include "embui_log.h"
 
 template<typename TString>
 using ValidStringRef_t = std::enable_if_t<embui_traits::is_string_obj_v<TString>, void>;
