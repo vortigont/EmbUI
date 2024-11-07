@@ -17,18 +17,18 @@ static constexpr const char* A_ui_page_main = "ui_page_main";
 static constexpr const char* A_ui_blk_usersettings = "ui_blk_usersettings";
 
 // setter actions (IDs)
-static constexpr const char* A_set_ntwrk_ftp = "set_ntwrk_ftp";
-static constexpr const char* A_set_ntwrk_wifi = "set_ntwrk_wifi";
-static constexpr const char* A_set_ntwrk_wifiap = "set_ntwrk_wifiap";
-static constexpr const char* A_set_ntwrk_mqtt = "set_ntwrk_mqtt";
-static constexpr const char* A_set_sys_timeoptions = "set_sys_timeoptions";
-static constexpr const char* A_set_sys_hostname = "set_sys_hostname";
-static constexpr const char* A_set_sys_datetime = "set_sys_datetime";
+static constexpr const char* A_sys_ntwrk_ftp = "sys_ntwrk_ftp";
+static constexpr const char* A_sys_ntwrk_wifi = "sys_ntwrk_wifi";
+static constexpr const char* A_sys_ntwrk_wifiap = "sys_ntwrk_wifiap";
+static constexpr const char* A_sys_ntwrk_mqtt = "sys_ntwrk_mqtt";
+static constexpr const char* A_sys_timeoptions = "sys_timeoptions";
+static constexpr const char* A_sys_hostname = "sys_hostname";
+static constexpr const char* A_sys_datetime = "sys_datetime";
 static constexpr const char* A_sys_language = "sys_language";
 
 // bare setter actions (IDs)
-static constexpr const char* A_set_sys_cfgclr = "set_sys_cfgclr";
-static constexpr const char* A_set_sys_reboot = "set_sys_reboot";
+static constexpr const char* A_sys_cfgclr = "sys_cfgclr";
+static constexpr const char* A_sys_reboot = "sys_reboot";
 
 // GET actions than only query for data
 
@@ -235,4 +235,3 @@ static constexpr const char* PGimg = "img";
 static constexpr const char* P_EmbUI  = "EmbUI";
 static constexpr const char* P_EmbUI_WiFi  = "EmbUI WiFi";
 static constexpr const char* P_EmbUI_mqtt  = "EmbUI MQTT";
-static constexpr const char* P_EmbUI_time  = "EmbUI Time";

@@ -16,6 +16,7 @@
 
 // stub zone for a  <+-nn> names
 static const char P_LOC[] = "LOC";
+static constexpr const char* P_EmbUI_time  = "EmbUI Time";
 
 // static member must be defined outside the class
 callback_function_t TimeProcessor::timecb = nullptr;

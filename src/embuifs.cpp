@@ -10,7 +10,8 @@
 
 #include "embuifs.hpp"
 #include "StreamUtils.h"
-#include "globals.h"
+#include "embui_constants.h"
+#include "embui_log.h"
 
 static constexpr const char* T_load_file = "Lod file: %s\n";
 static constexpr const char* T_cant_open_file = "Can't open file: %s\n";

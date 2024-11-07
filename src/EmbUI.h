@@ -5,40 +5,25 @@
 
 #pragma once
 
+#include <Arduino.h>
 #include <list>
-#include "globals.h"
 #include "embuifs.hpp"
 #include "ts.h"
 #include "timeProcessor.h"
 #include "embui_wifi.hpp"
 #include "ui.h"
+//#include "AsyncJson.h"
+#include "AsyncMqttClient.h"
 
-#include <ESPAsyncWebServer.h>
-#include <AsyncJson.h>
-#include <AsyncMqttClient.h>
 
-#define U_FS   U_SPIFFS
 
-#ifndef EMBUI_PUB_PERIOD
-#define EMBUI_PUB_PERIOD              10      // Values Publication period, s
+#ifdef ESP8266
+#error "Sorry, esp8266 is no longer supported"
+#error "use v2.6 branch for 8266 https://github.com/vortigont/EmbUI/tree/v2.6"
+#include "no_esp8266"
 #endif
 
-#ifndef EMBUI_AUTOSAVE_TIMEOUT
-#define EMBUI_AUTOSAVE_TIMEOUT        30        // configuration autosave timer, sec
-#endif
-
-// Default Hostname/AP prefix
-#ifndef EMBUI_IDPREFIX
-#define EMBUI_IDPREFIX                "EmbUI"
-#endif
-
-// maximum number of websocket client connections
-#ifndef EMBUI_MAX_WS_CLIENTS
-#define EMBUI_MAX_WS_CLIENTS          4
-#endif
-
-#define EMBUI_WEBSOCK_URI             "/ws"
-
+//#define U_FS   U_SPIFFS
 
 
 //---------------------- Callbak functions
