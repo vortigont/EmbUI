@@ -567,7 +567,7 @@ var global = {
  * EmbUI's js api version
  * used to set compatibilty dependency between backend firmware and WebUI js
  */
-const ui_jsapi = 6;
+const ui_jsapi = 7;
 
 /**
  * User application versions - frontend/backend
@@ -1118,16 +1118,19 @@ var render = function(){
             document.getElementById("update_alert").style.display = "block";
           return;
         }
+
         if (v.section == "menu"){
           global.menu =  v.block;
           if (!global.menu_id) global.menu_id = global.menu[0].value
           this.menu();
           return;
         }
+
         if (v.section == "content") {
           this.content(v)
           return;
         }
+
         // callback section contains actions that UI should request back from MCU
         if (v.section == "callback") {
           for (item of v.block){
@@ -1138,6 +1141,13 @@ var render = function(){
           }
           return;
         }
+
+        // section with value - process as value frame
+        if (v.section == "value") {
+          this.value(v)
+          return;
+        }
+
 
         // look for nested xload sections and await for side-load, if found
         //section_xload(v).then( () => { this.section(v); } );

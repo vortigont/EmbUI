@@ -1,6 +1,6 @@
 {
   "type":"interface",
-  "version":4,
+  "version":5,
   "descr":"EmbUI settings and configuration UI object blocks",
   "settings":{
     "network":{
@@ -9,7 +9,7 @@
       "main":true,
       "block":[
         {
-          "section":"set_sys_hostname",
+          "section":"sys_hostname",
           "label":"Device HostName",
           "hidden":true,
           "block":[
@@ -35,7 +35,7 @@
               "type":"text"
             },
             {
-              "id":"set_sys_hostname",
+              "id":"sys_hostname",
               "html":"button",
               "type":1,
               "label":"Save",
@@ -156,7 +156,7 @@
       ]
     },
     "datetime":{
-      "section":"set_sys_timeoptions",
+      "section":"sys_timeoptions",
       "label":"Дата / Время / Часовая зона",
       "main":true,
       "block":[
@@ -232,7 +232,7 @@
           "type":"datetime-local"
         },
         {
-          "id":"set_sys_timeoptions",
+          "id":"sys_timeoptions",
           "html":"button",
           "type":1,
           "label":"Save",
@@ -424,14 +424,14 @@
           ]
         },
         {
-          "id":"set_sys_cfgclr",
+          "id":"sys_cfgclr",
           "html":"button",
           "type":0,
           "label":"Clear sys config",
           "color":"red"
         },
         {
-          "id":"set_sys_reboot",
+          "id":"sys_reboot",
           "html":"button",
           "type":0,
           "label":"Перезагрузка",

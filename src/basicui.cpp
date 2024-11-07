@@ -19,18 +19,18 @@ void register_handlers(){
     embui.action.add(A_ui_page,  show_uipage);                      // display UI section template
 
     // обработка базовых настроек
-    embui.action.add(A_set_sys_hostname, set_sys_hostname);             // hostname setup
+    embui.action.add(A_sys_hostname, set_sys_hostname);             // hostname setup
 #ifndef EMBUI_NOFTP
-    embui.action.add(A_set_ntwrk_ftp, set_settings_ftp);           // обработка настроек FTP Client
+    embui.action.add(A_sys_ntwrk_ftp, set_settings_ftp);           // обработка настроек FTP Client
 #endif  // #ifdef EMBUI_NOFTP
-    embui.action.add(A_set_sys_cfgclr, set_sys_cfgclear);               // clear sysconfig
-    embui.action.add(A_set_sys_datetime, set_sys_datetime);             // set system date/time from a ISO string value
+    embui.action.add(A_sys_cfgclr, set_sys_cfgclear);               // clear sysconfig
+    embui.action.add(A_sys_datetime, set_sys_datetime);             // set system date/time from a ISO string value
     embui.action.add(A_sys_language, set_language);                     // смена языка интерфейса
-    embui.action.add(A_set_ntwrk_mqtt, set_settings_mqtt);              // обработка настроек MQTT
-    embui.action.add(A_set_sys_reboot, set_sys_reboot);                 // ESP reboot action
-    embui.action.add(A_set_sys_timeoptions, set_settings_time);         // установки даты/времени
-    embui.action.add(A_set_ntwrk_wifi, set_settings_wifi);              // обработка настроек WiFi Client
-    embui.action.add(A_set_ntwrk_wifiap, set_settings_wifiAP);          // обработка настроек WiFi AP
+    embui.action.add(A_sys_ntwrk_mqtt, set_settings_mqtt);              // обработка настроек MQTT
+    embui.action.add(A_sys_reboot, set_sys_reboot);                 // ESP reboot action
+    embui.action.add(A_sys_timeoptions, set_settings_time);         // установки даты/времени
+    embui.action.add(A_sys_ntwrk_wifi, set_settings_wifi);              // обработка настроек WiFi Client
+    embui.action.add(A_sys_ntwrk_wifiap, set_settings_wifiAP);          // обработка настроек WiFi AP
 }
 
 // dummy intro page that simply calls for "system setup page"
@@ -160,9 +160,11 @@ void page_settings_time(Interface *interf, JsonObjectConst data, const char* act
         interf->json_section_begin(P_ntp_servers, "Configured NTP Servers", false, false, true);
             for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
                 interf->constant(TimeProcessor::getInstance().getserver(i));
+        interf->json_section_end();
 
-    interf->json_frame_value();
-        interf->value(V_timezone, embui.getConfig()[V_timezone]);
+        interf->json_section_begin(P_value);
+            interf->value(V_timezone, embui.getConfig()[V_timezone]);
+
     interf->json_frame_flush();
 }
 
@@ -305,7 +307,15 @@ void set_settings_mqtt(Interface *interf, JsonObjectConst data, const char* acti
  * Обработчик настроек даты/времени
  */
 void set_settings_time(Interface *interf, JsonObjectConst data, const char* action){
-    if (!data) return;
+    // if no data supplied, consider it as request for data
+    if (data.isNull()){
+        if (!interf) return;    // todo: create new iface object
+
+        interf->json_frame_value();
+            interf->value(V_timezone, embui.getConfig()[V_timezone]);
+        interf->json_frame_flush();
+        return;
+    }
 
     // save and apply timezone
     if (data[V_timezone]) {
@@ -341,7 +351,7 @@ void set_settings_time(Interface *interf, JsonObjectConst data, const char* acti
  */
 void set_sys_datetime(Interface *interf, JsonObjectConst data, const char* action){
     if (!data) return;
-    TimeProcessor::getInstance().setTime(data[A_set_sys_datetime].as<const char*>());
+    TimeProcessor::getInstance().setTime(data[A_sys_datetime].as<const char*>());
     if (interf)
         page_settings_time(interf, {});
 }
