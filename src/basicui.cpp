@@ -25,12 +25,13 @@ void register_handlers(){
 #endif  // #ifdef EMBUI_NOFTP
     embui.action.add(A_sys_cfgclr, set_sys_cfgclear);               // clear sysconfig
     embui.action.add(A_sys_datetime, set_sys_datetime);             // set system date/time from a ISO string value
-    embui.action.add(A_sys_language, set_language);                     // смена языка интерфейса
-    embui.action.add(A_sys_ntwrk_mqtt, set_settings_mqtt);              // обработка настроек MQTT
+    embui.action.add(A_sys_language, set_language);                 // смена языка интерфейса
     embui.action.add(A_sys_reboot, set_sys_reboot);                 // ESP reboot action
     embui.action.add(A_sys_timeoptions, set_settings_time);         // установки даты/времени
-    embui.action.add(A_sys_ntwrk_wifi, set_settings_wifi);              // обработка настроек WiFi Client
-    embui.action.add(A_sys_ntwrk_wifiap, set_settings_wifiAP);          // обработка настроек WiFi AP
+    embui.action.add(A_sys_ntwrk_wifi, set_settings_wifi);          // обработка настроек WiFi Client
+    embui.action.add(A_sys_ntwrk_wifiap, set_settings_wifiAP);      // обработка настроек WiFi AP
+    embui.action.add(A_sys_ntwrk_mqtt, set_settings_mqtt);          // обработка настроек MQTT
+    embui.action.add(A_sys_ntwrk_ftp, set_settings_ftp);            // обработка настроек FTP
 }
 
 // dummy intro page that simply calls for "system setup page"
