@@ -1,6 +1,6 @@
 {
   "type":"interface",
-  "version":5,
+  "version":6,
   "descr":"EmbUI settings and configuration UI object blocks",
   "settings":{
     "network":{
@@ -44,7 +44,7 @@
           ]
         },
         {
-          "section":"set_ntwrk_wifi",
+          "section":"sys_ntwrk_wifi",
           "label":"WiFi Client",
           "hidden":true,
           "block":[
@@ -65,7 +65,7 @@
               "type":"password"
             },
             {
-              "id":"set_ntwrk_wifi",
+              "id":"sys_ntwrk_wifi",
               "html":"button",
               "type":1,
               "label":"Connect",
@@ -74,7 +74,7 @@
           ]
         },
         {
-          "section":"set_ntwrk_wifiap",
+          "section":"sys_ntwrk_wifiap",
           "label":"WiFi AP",
           "hidden":true,
           "block":[
@@ -136,7 +136,7 @@
               ]
             },
             {
-              "id":"set_ntwrk_wifiap",
+              "id":"sys_ntwrk_wifiap",
               "html":"button",
               "type":1,
               "label":"Save",
@@ -250,7 +250,7 @@
       ]
     },
     "mqtt":{
-      "section":"set_ntwrk_mqtt",
+      "section":"sys_ntwrk_mqtt",
       "label":"MQTT",
       "main":true,
       "block":[
@@ -332,7 +332,7 @@
           ]
         },
         {
-          "id":"set_ntwrk_mqtt",
+          "id":"sys_ntwrk_mqtt",
           "html":"button",
           "type":1,
           "label":"Save",
@@ -350,7 +350,7 @@
       ]
     },
     "ftp":{
-      "section":"set_ntwrk_ftp",
+      "section":"sys_ntwrk_ftp",
       "label":"FTP Сервер",
       "main":true,
       "block":[
@@ -377,7 +377,7 @@
           "type":"password"
         },
         {
-          "id":"set_ntwrk_ftp",
+          "id":"sys_ntwrk_ftp",
           "html":"button",
           "type":1,
           "label":"Сохранить",
