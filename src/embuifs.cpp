@@ -35,7 +35,7 @@ namespace embuifs {
 
         ReadBufferingStream bufferingStream(jfile, buffsize);
 
-        DeserializationError error = deserializeJson(doc, jfile);
+        DeserializationError error = deserializeJson(doc, bufferingStream);
 
         if (!error) return error;
         LOGE(P_EmbUI, printf, T_deserialize_err, filepath, error.c_str());

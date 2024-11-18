@@ -30,7 +30,7 @@ void EmbUI::_notFound(AsyncWebServerRequest *request) {
     if (cb_not_found && cb_not_found(request)) return;      // process redirect via external call-back if set
 
     // if external cb is not defined or returned false, than handle it via captive-portal or return 404
-    if (!cfg[V_NOCaptP] && WiFi.getMode() & WIFI_AP){         // return redirect to root page in Captive-Portal mode
+    if (!_cfg[V_NOCaptP] && WiFi.getMode() & WIFI_AP){         // return redirect to root page in Captive-Portal mode
         request->redirect("/");
         return;
     }
@@ -53,7 +53,7 @@ void EmbUI::http_set_handlers(){
         AsyncResponseStream *response = request->beginResponseStream(asyncsrv::T_application_json);
         response->addHeader(asyncsrv::T_Cache_Control, asyncsrv::T_no_cache);
 
-        serializeJson(cfg, *response);
+        serializeJson(_cfg, *response);
 
         request->send(response);
     });

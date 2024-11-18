@@ -323,7 +323,12 @@ void set_settings_time(Interface *interf, JsonObjectConst data, const char* acti
 
     // save and apply timezone
     if (data[V_timezone]) {
+        //LOGE("basicui", printf, "recv timezone:%s\n", data[V_timezone].as<const char*>());
         embui.getConfig()[V_timezone] = data[V_timezone];
+        if (embui.getConfig()[V_timezone].is<const char*>()){
+            LOGD("basicui", printf, "Set timezone:%s\n", embui.getConfig()[V_timezone].as<const char*>());
+        }
+
         std::string_view tzrule(data[V_timezone].as<const char*>());
         TimeProcessor::getInstance().tzsetup(tzrule.substr(4).data());   // cutoff '000_' prefix
     }

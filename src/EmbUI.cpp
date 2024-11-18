@@ -142,25 +142,25 @@ void EmbUI::begin(){
     load();                 // load embui's config from json file
 
     LOGD(P_EmbUI, print, "UI CONFIG: ");
-    LOG_CALL(serializeJson(cfg, EMBUI_DEBUG_PORT));
+    LOG_CALL(serializeJson(_cfg, EMBUI_DEBUG_PORT));
 
     // restore language value
-    _lang = cfg[V_LANGUAGE] | "en";
+    _lang = _cfg[V_LANGUAGE] | "en";
 
     // restore Time settings
-    if (cfg[V_userntp])
-        TimeProcessor::getInstance().setcustomntp(cfg[V_userntp].as<const char*>());
+    if (_cfg[V_userntp])
+        TimeProcessor::getInstance().setcustomntp(_cfg[V_userntp].as<const char*>());
 
-    if (cfg[V_timezone]){
-        std::string_view tzrule(cfg[V_timezone].as<const char*>());
+    if (_cfg[V_timezone]){
+        std::string_view tzrule(_cfg[V_timezone].as<const char*>());
         TimeProcessor::getInstance().tzsetup(tzrule.substr(4).data());   // cutoff '000_' prefix
     }
 
-    if (cfg[V_noNTPoDHCP])
+    if (_cfg[V_noNTPoDHCP])
         TimeProcessor::getInstance().ntpodhcp(false);
 
     // start-up WiFi
-    wifi = std::make_unique<WiFiController>(this, cfg[V_APonly]);
+    wifi = std::make_unique<WiFiController>(this, _cfg[V_APonly]);
     wifi->init();
     
     // set WebSocket event handler
@@ -190,7 +190,7 @@ void EmbUI::begin(){
 
 // FTP server
 #ifndef EMBUI_NOFTP
-    if (cfg[P_ftp]) ftp_start();
+    if (_cfg[P_ftp]) ftp_start();
 #endif
 }
 
@@ -272,7 +272,7 @@ void EmbUI::autosave(bool force){
  */
 const char* EmbUI::hostname(){
 
-    JsonVariant h = cfg[V_hostname];
+    JsonVariant h = _cfg[V_hostname];
     if (h.is<const char*>())
         return h.as<const char*>();
 
@@ -288,9 +288,9 @@ const char* EmbUI::hostname(){
 
 const char* EmbUI::hostname(const char* name){
     if (name)
-        cfg[V_hostname] = name;
+        _cfg[V_hostname] = name;
     else
-        cfg.remove(V_hostname);
+        _cfg.remove(V_hostname);
 
     return hostname();
 };
@@ -309,7 +309,7 @@ void EmbUI::_getmacid(){
 void EmbUI::setLang(const char* lang){
     if (!lang) return;
     _lang = lang;
-    cfg[V_LANGUAGE] = _lang;
+    _cfg[V_LANGUAGE] = _lang;
     if (_lang_cb)
         _lang_cb(_lang.c_str());
     autosave();
@@ -335,6 +335,25 @@ void EmbUI::publish_language(Interface *interf){
     interf->json_frame_flush();
 }
 
+void EmbUI::save(const char *cfg){
+    embuifs::serialize2file(_cfg, cfg ? cfg : EMBUI_cfgfile);
+    LOGD(P_EmbUI, println, "Save config file");
+}
+
+void EmbUI::load(const char *cfgfile){
+    LOGD(P_EmbUI, print, "Config file load ");
+    auto err = embuifs::deserializeFile(_cfg, cfgfile ? cfgfile : EMBUI_cfgfile);
+    if (err.code() != DeserializationError::Code::Ok || _cfg.isNull()){
+        _cfg.to<JsonObject>();
+        LOGD(P_EmbUI, println, "Convert to JObj ");
+    }
+}
+
+void EmbUI::cfgclear(){
+    LOGI(P_EmbUI, println, "!CLEAR SYSTEM CONFIG!");
+    _cfg.to<JsonObject>();
+    LittleFS.remove(EMBUI_cfgfile);
+}
 
 
 

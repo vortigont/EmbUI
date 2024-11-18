@@ -38,8 +38,8 @@ void EmbUI::_mqttConnTask(bool state){
 void EmbUI::_connectToMqtt() {
     LOGI(P_EmbUI_mqtt, println, "Connecting to MQTT...");
 
-    if (cfg[V_mqtt_topic]){
-        mqtt_topic = cfg[V_mqtt_topic].as<const char*>();
+    if (_cfg[V_mqtt_topic]){
+        mqtt_topic = _cfg[V_mqtt_topic].as<const char*>();
         mqtt_topic.replace("$id", mc);
     } else {
         mqtt_topic = "EmbUI/";
@@ -47,10 +47,10 @@ void EmbUI::_connectToMqtt() {
         mqtt_topic += (char)0x2f; // "/"
     }
 
-    mqtt_host = cfg[V_mqtt_host].as<const char*>();
-    mqtt_port = cfg[V_mqtt_port] | 1883;
-    mqtt_user = cfg[V_mqtt_user].as<const char*>();
-    mqtt_pass = cfg[V_mqtt_pass].as<const char*>();
+    mqtt_host = _cfg[V_mqtt_host].as<const char*>();
+    mqtt_port = _cfg[V_mqtt_port] | 1883;
+    mqtt_user = _cfg[V_mqtt_user].as<const char*>();
+    mqtt_pass = _cfg[V_mqtt_pass].as<const char*>();
     //mqtt_lwt=id("embui/pub/online");
 
     //if (mqttClient->connected())
@@ -70,7 +70,7 @@ void EmbUI::_connectToMqtt() {
 }
 
 void EmbUI::mqttStart(){
-    if (cfg[V_mqtt_enable] != true || !cfg[V_mqtt_host].is<const char*>()){
+    if (_cfg[V_mqtt_enable] != true || !_cfg[V_mqtt_host].is<const char*>()){
         LOGD(P_EmbUI_mqtt, println, "MQTT disabled or no host set");
         return;   // выходим если host не задан
     }
