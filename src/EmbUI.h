@@ -119,7 +119,7 @@ public:
 
 class EmbUI
 {
-    JsonDocument cfg;                        // system config
+    JsonDocument _cfg;                        // system config
 
   public:
     EmbUI();
@@ -162,10 +162,10 @@ class EmbUI
      * 
      * @return JsonObject that maps to EmbUI's /config.json
      */
-    JsonObject getConfig(){ return cfg.as<JsonObject>(); }
+    JsonObject getConfig(){ return _cfg.as<JsonObject>(); }
 
     /***  config operations ***/
-    void save(const char *_cfg = nullptr);
+    void save(const char *cfg = nullptr);
     void load(const char *cfgfile = nullptr);   // if null, than default cfg file is used
     void cfgclear();                            // clear current config, both in RAM and file
 

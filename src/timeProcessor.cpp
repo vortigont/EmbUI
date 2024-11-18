@@ -60,7 +60,7 @@ String TimeProcessor::getFormattedShortTime()
 time_t TimeProcessor::setTime(const char *datetimestr){
     if (!datetimestr) return 0;
     //"YYYY-MM-DDThh:mm:ss"    [19]
-    LOG(print, "Set datetime to: "); LOG(println, datetimestr);
+    LOGI(P_EmbUI_time, print, "Set datetime to: "); LOG(println, datetimestr);
 
     struct tm tmStruct;
     memset(&tmStruct, 0, sizeof(tmStruct));
@@ -103,13 +103,13 @@ void TimeProcessor::tzsetup(const char* tz){
       }
       _tzfix += _tz.substring(_tz.lastIndexOf('>')+1, _tz.length());
       setenv("TZ", _tzfix.c_str(), 1/*overwrite*/);
-      LOG(printf_P, PSTR("TIME: TZ fix applied: %s\n"), _tzfix.c_str());
+      LOGI(P_EmbUI_time, printf, "TZ fix applied: %s\n", _tzfix.c_str());
     } else {
       setenv("TZ", tz, 1/*overwrite*/);
     }
 
     tzset();
-    LOG(printf_P, PSTR("TIME: TZSET rules changed to: %s\n"), tz);
+    LOGI(P_EmbUI_time, printf_P, PSTR("TZSET rules changed to: %s\n"), tz);
 }
 
 
@@ -240,7 +240,7 @@ void TimeProcessor::ntpodhcp(bool enable){
     #endif
 
     if (!enable){
-        LOGI(P_EmbUI_time, println, "TIME: Disabling NTP over DHCP");
+        LOGI(P_EmbUI_time, println, "Disabling NTP over DHCP");
         esp_sntp_setservername(0, (char*)ntp1);
         esp_sntp_setservername(1, (char*)ntp2);
         if (userntp)
@@ -257,7 +257,7 @@ void TimeProcessor::ntpodhcp(bool enable){
 
 
     if (!enable){
-        LOGI(P_EmbUI_time, println, "TIME: Disabling NTP over DHCP");
+        LOGI(P_EmbUI_time, println, "Disabling NTP over DHCP");
         sntp_setservername(0, (char*)ntp1);
         sntp_setservername(1, (char*)ntp2);
         if (userntp)
