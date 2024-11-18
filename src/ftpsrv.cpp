@@ -66,6 +66,7 @@ void set_settings_ftp(Interface *interf, const JsonObjectConst data, const char*
     }
 
     if (interf) basicui::page_system_settings(interf, {}, NULL);          // go to "Options" page
+    embui.autosave();
 }
 
 } // namespace basicui

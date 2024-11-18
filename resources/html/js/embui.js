@@ -623,8 +623,8 @@ var customFuncs = {
     } else {
       // if there was no 'value' given, than simply post browser's date string to MCU that triggers time/date setup
       console.log("Set browser's date:", isodate)
-      data["set_sys_datetime"] = isodate;
-      ws.send_post("set_sys_datetime", data);
+      data["sys_datetime"] = isodate;
+      ws.send_post("sys_datetime", data);
     }
   }//,
   //func2: function (event) {     console.log('Called func 2'); }

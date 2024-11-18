@@ -137,7 +137,7 @@ void page_settings_netw(Interface *interf, JsonObjectConst data, const char* act
 
     interf->json_frame_value();
         interf->value(V_WCSSID, WiFi.SSID());                           // connected SSID
-        interf->value(V_NOCaptP, embui.getConfig()[V_NOCaptP]);        // checkbox "Disable Captive-portal"
+        interf->value(V_NOCaptP, embui.getConfig()[V_NOCaptP]);         // checkbox "Disable Captive-portal"
     interf->json_frame_flush();
 
 }
@@ -215,10 +215,11 @@ void page_settings_sys(Interface *interf, JsonObjectConst data, const char* acti
 void set_settings_wifi(Interface *interf, JsonObjectConst data, const char* action){
     if (!data) return;
 
-    embui.getConfig().remove(V_APonly);              // remove "force AP mode" parameter when attempting connection to external AP
+    embui.getConfig().remove(V_APonly);             // remove "force AP mode" parameter when attempting connection to external AP
     embui.wifi->connect(data[V_WCSSID].as<const char*>(), data[V_WCPASS].as<const char*>());
 
-    page_system_settings(interf, {});           // display "settings" page
+    page_system_settings(interf, {});               // display "settings" page
+    embui.autosave();
 }
 
 /**
@@ -252,6 +253,7 @@ void set_settings_wifiAP(Interface *interf, JsonObjectConst data, const char* ac
     embui.wifi->aponly(val.as<bool>());
 
     if (interf) page_system_settings(interf, {});                // go to "Options" page
+    embui.autosave();
 }
 
 /**
@@ -302,6 +304,7 @@ void set_settings_mqtt(Interface *interf, JsonObjectConst data, const char* acti
         embui.mqttStop();
 
     if (interf) page_system_settings(interf, {});
+    embui.autosave();
 }
 
 /**
@@ -332,8 +335,9 @@ void set_settings_time(Interface *interf, JsonObjectConst data, const char* acti
 
     TimeProcessor::getInstance().setcustomntp(data[V_userntp]);
 
-    if (data[V_noNTPoDHCP])
+    if (data[V_noNTPoDHCP]){
         embui.getConfig()[V_noNTPoDHCP] = true;
+    }
     else
         embui.getConfig().remove(V_noNTPoDHCP);
 
@@ -343,6 +347,7 @@ void set_settings_time(Interface *interf, JsonObjectConst data, const char* acti
     if (data[P_datetime])
         set_sys_datetime(nullptr, data, NULL);
 
+    embui.autosave();
     if (interf) page_settings_time(interf, {});   // refresh same page
 }
 
