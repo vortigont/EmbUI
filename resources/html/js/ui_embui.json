@@ -217,12 +217,6 @@
           "block":[]
         },
         {
-          "id":"userntp",
-          "html":"input",
-          "label":"BackUp NTP-server (optional)",
-          "type":"text"
-        },
-        {
           "html":"comment",
           "label":"Optional ISO Date/Time, YYYY-MM-DDThh:mm:ss"
         },
@@ -362,7 +356,7 @@
         },
         {
           "html":"comment",
-          "label":"Изменить префикс MQTT топиков. '$id' макро в строке будет заменён на 'device ID', напр. 'mydev/$id/'. Оставьте строку пустой что бы использовать префикс по-умолчанию"
+          "label": "Activate FTP server. Use 'ftp/ftp' as default credentials"
         },
         {
           "id":"ftp_usr",

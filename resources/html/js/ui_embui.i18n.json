@@ -126,9 +126,6 @@
               "block": []
             },
             {
-              "label": "BackUp NTP-server (optional)"
-            },
-            {
               "label": "Optional ISO Date/Time, YYYY-MM-DDThh:mm:ss"
             },
             {
@@ -205,7 +202,6 @@
           ]
         },
         "ftp": {
-          "section": "set_ntwrk_ftp",
           "block": [
             {
               "label": "Enable FTP Server"
@@ -420,9 +416,6 @@
             {
               "section": "ntp_servers",
               "block": []
-            },
-            {
-              "label": "Резервный NTP-server (опционально)"
             },
             {
               "label": "Задать время/дату в формате ISO, YYYY-MM-DDThh:mm:ss"
