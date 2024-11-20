@@ -93,6 +93,7 @@ static constexpr const char* P_menu = "menu";
 static constexpr const char* P_merge = "merge";
 static constexpr const char* P_min = "min";
 static constexpr const char* P_number = "number";
+static constexpr const char* P_ntp = "ntp";
 static constexpr const char* P_ntp_servers = "ntp_servers";     // section name with list of NTPs
 static constexpr const char* P_onChange = "onChange";
 static constexpr const char* P_opt = "opt";

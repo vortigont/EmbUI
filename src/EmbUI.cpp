@@ -8,6 +8,7 @@
 #include "ui.h"
 #include "basicui.h"
 #include "ftpsrv.h"
+#include "nvs_handle.hpp"
 
 #define POST_ACTION_DELAY   10      // delay for large posts processing in ms
 //#define POST_LARGE_SIZE     1024    // large post threshold
@@ -148,16 +149,17 @@ void EmbUI::begin(){
     _lang = _cfg[V_LANGUAGE] | "en";
 
     // restore Time settings
-    if (_cfg[V_userntp])
-        TimeProcessor::getInstance().setcustomntp(_cfg[V_userntp].as<const char*>());
-
     if (_cfg[V_timezone]){
         std::string_view tzrule(_cfg[V_timezone].as<const char*>());
         TimeProcessor::getInstance().tzsetup(tzrule.substr(4).data());   // cutoff '000_' prefix
+    } else {
+        // instantiate NTP to set required hooks
+        TimeProcessor::getInstance();
     }
 
     if (_cfg[V_noNTPoDHCP])
         TimeProcessor::getInstance().ntpodhcp(false);
+
 
     // start-up WiFi
     wifi = std::make_unique<WiFiController>(this, _cfg[V_APonly]);
@@ -341,11 +343,10 @@ void EmbUI::save(const char *cfg){
 }
 
 void EmbUI::load(const char *cfgfile){
-    LOGD(P_EmbUI, print, "Config file load ");
+    LOGD(P_EmbUI, println, "Load config file");
     auto err = embuifs::deserializeFile(_cfg, cfgfile ? cfgfile : EMBUI_cfgfile);
     if (err.code() != DeserializationError::Code::Ok || _cfg.isNull()){
         _cfg.to<JsonObject>();
-        LOGD(P_EmbUI, println, "Convert to JObj ");
     }
 }
 
@@ -353,6 +354,11 @@ void EmbUI::cfgclear(){
     LOGI(P_EmbUI, println, "!CLEAR SYSTEM CONFIG!");
     _cfg.to<JsonObject>();
     LittleFS.remove(EMBUI_cfgfile);
+    // wipe NVS entries
+    esp_err_t err;
+    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle(P_EmbUI, NVS_READWRITE, &err);
+    if (err == ESP_OK)
+        handle->erase_all();
 }
 
 
