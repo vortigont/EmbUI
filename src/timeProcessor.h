@@ -14,17 +14,10 @@
  * otherwise a general pool "pool.ntp.org" is used as a fallback and vniiftri.ru's ntp is used as a primary
  * 
  */
-#if !defined NTP1SERVER && !defined NTP2SERVER
-#ifdef CONTRY
-    #define NTP1SERVER        COUNTRY ".pool.ntp.org"      // пул серверов времени для NTP
-    #define NTP2SERVER        "ntp3.vniiftri.ru"           // https://vniiftri.ru/catalog/services/sinkhronizatsiya-vremeni-cherez-ntp-servera/
-#else
-    #define NTP1SERVER        "ntp3.vniiftri.ru"
-    #define NTP2SERVER        ("pool.ntp.org")
-#endif
+#if !defined EMBUI_NTP_SERVER
+    #define EMBUI_NTP_SERVER        "pool.ntp.org"
 #endif
 
-#define CUSTOM_NTP_INDEX    2
 using callback_function_t = std::function<void(void)>;
 
 // TimeProcessor class is a Singleton
@@ -33,9 +26,7 @@ class TimeProcessor
 private:
     TimeProcessor();
 
-    const char* ntp1 = NTP1SERVER;
-    const char* ntp2 = NTP2SERVER;
-    std::string* userntp = nullptr;          // user defined NTP server
+    std::array<std::string, SNTP_MAX_SERVERS> _ntp_servers;
 
     /**
      * обратный вызов при подключении к WiFi точке доступа
@@ -67,6 +58,13 @@ public:
     }
 
     /**
+     * @brief apply NTP servers configuration from NVS
+     * should be called when IP/DNS has been set already
+     */
+    void setNTPservers();
+
+
+    /**
      * Функция установки системного времени, принимает в качестве аргумента указатель на строку в формате
      * "YYYY-MM-DDThh:mm:ss"
      */
@@ -85,24 +83,9 @@ public:
     void tzsetup(const char* tz);
 
     /**
-     * установка пользовательского ntp-сервера
-     * сервер имеет низший приоритет
-     * @param ntp - сервер в виде ip или hostname
-     */
-    void setcustomntp(const char* ntp);
-
-    /**
      * @brief - retreive NTP server name or IP
      */
     String getserver(uint8_t idx);
-
-    /**
-     *  установка смещения текущего системного времени от UTC в секундах
-     *  можно применять если не получается выставить нормально зону
-     *  и правила перехода сезонного времени каким-либо другим способом.
-     *  При уставке правила перехода сезонного времени (если были) сбрасываются!
-     */
-    void setOffset(int val);
 
     /**
      * Attach user-defined call-back function that would be called on time-set event

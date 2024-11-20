@@ -50,18 +50,12 @@
          {"owner": "vortigont",
          "name": "esp32-flashz",
          "version": "~1.1",
-         "platforms": ["espressif32"]},
-        {"owner": "vortigont",
-         "name": "ESP32-DNSServerAsync",
-         "version": "https://github.com/vortigont/ESP32-DNSServerAsync",
          "platforms": ["espressif32"]}
     ],
     "build": {
         "srcDir": "src",
         "libLDFMode": "chain",
-        "libCompatMode": "strict",
-        "flags": "-std=gnu++17",
-        "unflags": "-std=gnu++11"
+        "libCompatMode": "strict"
     },
     "headers": ["EmbUI.h", "basicui.h", "ts.h", "ui.h"],
     "export": {

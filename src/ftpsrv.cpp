@@ -39,8 +39,6 @@ void page_settings_ftp(Interface *interf, const JsonObjectConst data, const char
 }
 
 void set_settings_ftp(Interface *interf, const JsonObjectConst data, const char* action){
-    if (!data) return;
-
     bool newstate = data[P_ftp];
 
     embui.getConfig()[P_ftp] = newstate;                           // ftp on/off

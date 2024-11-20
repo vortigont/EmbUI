@@ -1,6 +1,7 @@
 #include "basicui.h"
 #include "ftpsrv.h"
 #include "EmbUI.h"
+#include "nvs_handle.hpp"
 
 uint8_t lang = 0;
 
@@ -20,9 +21,6 @@ void register_handlers(){
 
     // обработка базовых настроек
     embui.action.add(A_sys_hostname, set_sys_hostname);             // hostname setup
-#ifndef EMBUI_NOFTP
-    embui.action.add(A_sys_ntwrk_ftp, set_settings_ftp);           // обработка настроек FTP Client
-#endif  // #ifdef EMBUI_NOFTP
     embui.action.add(A_sys_cfgclr, set_sys_cfgclear);               // clear sysconfig
     embui.action.add(A_sys_datetime, set_sys_datetime);             // set system date/time from a ISO string value
     embui.action.add(A_sys_language, set_language);                 // смена языка интерфейса
@@ -31,7 +29,9 @@ void register_handlers(){
     embui.action.add(A_sys_ntwrk_wifi, set_settings_wifi);          // обработка настроек WiFi Client
     embui.action.add(A_sys_ntwrk_wifiap, set_settings_wifiAP);      // обработка настроек WiFi AP
     embui.action.add(A_sys_ntwrk_mqtt, set_settings_mqtt);          // обработка настроек MQTT
-    embui.action.add(A_sys_ntwrk_ftp, set_settings_ftp);            // обработка настроек FTP
+#ifndef EMBUI_NOFTP
+    embui.action.add(A_sys_ntwrk_ftp, set_settings_ftp);           // обработка настроек FTP Client
+#endif  // #ifdef EMBUI_NOFTP
 }
 
 // dummy intro page that simply calls for "system setup page"
@@ -158,9 +158,12 @@ void page_settings_time(Interface *interf, JsonObjectConst data, const char* act
         interf->json_section_end();
 
         // replace section with NTP servers information
-        interf->json_section_begin(P_ntp_servers, "Configured NTP Servers", false, false, true);
-            for (uint8_t i = 0; i <= CUSTOM_NTP_INDEX; ++i)
-                interf->constant(TimeProcessor::getInstance().getserver(i));
+        interf->json_section_begin(P_ntp_servers, "NTP Servers", false, false, true);
+            for (size_t i = 0; i != SNTP_MAX_SERVERS; ++i){
+                String srv(P_ntp);
+                srv += i;
+                interf->text(srv, TimeProcessor::getInstance().getserver(i), srv);
+            }
         interf->json_section_end();
 
         interf->json_section_begin(P_value);
@@ -338,8 +341,29 @@ void set_settings_time(Interface *interf, JsonObjectConst data, const char* acti
     else
         embui.getConfig().remove(V_userntp);
 
-    TimeProcessor::getInstance().setcustomntp(data[V_userntp]);
+    // open NVS storage
+    esp_err_t err;
+    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle(P_EmbUI, NVS_READWRITE, &err);
 
+    if (err == ESP_OK) {
+        for (size_t i = 0; i != SNTP_MAX_SERVERS; ++i){
+            String srv(P_ntp);
+            srv += i;
+
+            if (data[srv].is<const char*>()){
+                std::string_view s(data[srv].as<const char*>());
+                // save only non-empy servers
+                if (s.length() && s.compare("0.0.0.0") != 0){
+                    handle->set_string(srv.c_str(), data[srv].as<const char*>());
+                    LOGD("basicui", printf, "save ntp%u:%s\n", i, data[srv].as<const char*>());
+                }
+            }
+        }
+        // apply NVS changes
+        TimeProcessor::getInstance().setNTPservers();
+    }
+
+#if LWIP_DHCP_GET_NTP_SRV
     if (data[V_noNTPoDHCP]){
         embui.getConfig()[V_noNTPoDHCP] = true;
     }
@@ -347,6 +371,7 @@ void set_settings_time(Interface *interf, JsonObjectConst data, const char* acti
         embui.getConfig().remove(V_noNTPoDHCP);
 
     TimeProcessor::getInstance().ntpodhcp(!data[V_noNTPoDHCP]);
+#endif
 
     // if there is a field with custom ISO date/time, call time setter
     if (data[P_datetime])
@@ -408,6 +433,8 @@ void embuistatus(Interface *interf){
     interf->value(P_pRSSI, buff, true);
 
     interf->json_frame_flush();
+
+    //LOGI("DBG", printf, "sync:%u, sr1:%s st1:%u\n", esp_sntp_enabled(), esp_sntp_getservername(0), esp_sntp_getreachability(0));
 }
 
 void set_sys_reboot(Interface *interf, JsonObjectConst data, const char* action){
