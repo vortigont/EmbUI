@@ -14,11 +14,11 @@
 #define TOSTRING(x) __STRINGIFY(x)
 
 #define EMBUI_VERSION_MAJOR     4
-#define EMBUI_VERSION_MINOR     0
-#define EMBUI_VERSION_REVISION  2
+#define EMBUI_VERSION_MINOR     1
+#define EMBUI_VERSION_REVISION  0
 
 // API version for JS frontend
-#define EMBUI_JSAPI             7
+#define EMBUI_JSAPI             8
 // loadable UI blocks version requirement (loaded from js/ui_sys.json)
 #define EMBUI_UIOBJECTS         6
 

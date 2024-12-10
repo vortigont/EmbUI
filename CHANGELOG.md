@@ -1,5 +1,12 @@
 ## Changelog
 
+### v4.1.0
+JS API
+  - add "value"-type section, allow to interleave 'interface' frame with ui and data objects
+  could be handy when creating sections with async xload'ed data, i.e. drop-down lists
+NTP refactoring
+some action handlers fixes
+
 ### v4.0.1
 major js API braking changes. In fact it should all be in 4.0.0 :)
 improved async xloads in ui data
