@@ -2,7 +2,7 @@
     "name": "EmbUI",
     "frameworks": "arduino",
     "platforms": ["espressif32"],
-    "version": "4.1.0",
+    "version": "4.1.1",
     "keywords": "embui, arduino",
     "description": "Embeded Web UI framework for ESP32 IoT prototyping",
     "url": "https://github.com/vortigont/EmbUI",
@@ -66,7 +66,7 @@
     "headers": ["EmbUI.h", "basicui.h", "ts.h", "ui.h"],
     "export": {
         "include": [
-            "EmbUI/*",
+            "src/*",
             "examples/*",
             "*.md",
             "*.json",
