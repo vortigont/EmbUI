@@ -77,4 +77,22 @@ namespace embuifs {
 
     DeserializationError deserializeFileWFilter(JsonDocument& doc, const String& filepath, JsonDocument& filter, size_t buffsize){ return deserializeFileWFilter(doc, filepath, filter, buffsize); };
 
+    void obj_merge(JsonObject dst, JsonObjectConst src){
+        for (JsonPairConst kvp : src){
+            dst[kvp.key()] = kvp.value();
+        }
+    }
+
+    void obj_deepmerge(JsonVariant dst, JsonVariantConst src){
+        if (src.is<JsonObjectConst>()){
+            for (JsonPairConst kvp : src.as<JsonObjectConst>()){
+            if (dst[kvp.key()])
+                obj_deepmerge(dst[kvp.key()], kvp.value());
+            else
+                dst[kvp.key()] = kvp.value();
+            }
+        } else
+            dst.set(src);
+    }
+
 }
