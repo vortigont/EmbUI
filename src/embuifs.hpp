@@ -52,4 +52,21 @@ namespace embuifs{
     size_t serialize2file(const JsonDocument& doc, const char* filepath, size_t buffsize = EMBUIFS_FILE_WRITE_BUFF_SIZE);
     size_t serialize2file(const JsonDocument& doc, const String& filepath, size_t buffsize = EMBUIFS_FILE_WRITE_BUFF_SIZE);
 
+    /**
+     * @brief shallow merge objects
+     * from https://arduinojson.org/v6/how-to/merge-json-objects/
+     * 
+     * @param dst 
+     * @param src 
+     */
+    void obj_merge(JsonObject dst, JsonObjectConst src);
+
+    /**
+     * @brief deep merge objects
+     * from https://arduinojson.org/v6/how-to/merge-json-objects/
+     * 
+     * @param dst 
+     * @param src 
+     */
+    void obj_deepmerge(JsonVariant dst, JsonVariantConst src);
 }
