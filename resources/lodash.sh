@@ -4,8 +4,8 @@
 #npm i -g lodash-cli
 
 # make custom build of lodash js lib
-#lodash include=at,get,has,hasIn,merge,mergeWith,set,unset,setWith
-lodash include=at,get,has,merge,mergeWith,set,unset
+#lodash include=at,get,find,findIndex,has,hasIn,merge,mergeWith,set,unset,setWith
+lodash include=at,get,find,findIndex,has,merge,mergeWith,set,unset
 zopfli lodash.custom.min.js
 mv -f lodash.custom.min.js.gz ../data/js/lodash.custom.js.gz
 rm -f *.js *.gz
