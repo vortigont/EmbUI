@@ -567,7 +567,7 @@ var global = {
  * EmbUI's js api version
  * used to set compatibilty dependency between backend firmware and WebUI js
  */
-const ui_jsapi = 8;
+const ui_jsapi = 7;
 
 /**
  * User application versions - frontend/backend
@@ -1049,10 +1049,11 @@ var render = function(){
       ws.send_post(id, data);
     },
     // run custom user-js function
-    on_js: function(event, callback) {
-      if (callback in customFuncs)
-        customFuncs[callback](event);
-      else
+    on_js: function(event, callback, arg, id) {
+      if (callback in customFuncs){
+        //console.log("run user function:", callback, ", arg:", arg, ", id:", id);
+        customFuncs[callback](event, arg, id);
+      } else
         console.log("User function undefined: ", callback);
     }
   },
