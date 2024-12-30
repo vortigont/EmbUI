@@ -12,9 +12,9 @@ version of EmbUI project https://github.com/DmytroKorniienko/EmbUI
 
 #pragma once
 
-#include <WiFi.h>
-#include <ESPmDNS.h>
-#include <DNSServerAsync.h>
+#include "WiFi.h"
+#include "DNSServer.h"
+#include "ESPmDNS.h"
 #include "ts.h"
 
 using mdns_callback_t = std::function< void (void)>;
