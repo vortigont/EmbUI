@@ -28,7 +28,7 @@ jobs:
       max-parallel: 2
       matrix:
         example:
-          - "ci_core3.ini"
+          - "ci_core2.ini"
           #- "ci_core3.ini"
 
     steps:
