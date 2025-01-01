@@ -55,7 +55,7 @@ void EmbUI::http_set_handlers(){
 
 
     server.on("/version", HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        request->send(200, PGmimetxt, F("EmbUI ver: " TOSTRING(EMBUIVER)));
+        request->send(200, PGmimetxt, "EmbUI ver: " TOSTRING(EMBUIVER));
     });
 
     // postponed reboot (TODO: convert to CMD)
@@ -77,7 +77,7 @@ void EmbUI::http_set_handlers(){
     // serve all static files from LittleFS root /
     server.serveStatic("/", LittleFS, "/")
         .setDefaultFile("index.html")
-        .setCacheControl("max-age=10, must-revalidate");  // 10 second for caching, then revalidate based on etag/IMS headers
+        .setCacheControl(asyncsrv::T_no_cache);  // revalidate based on etag/IMS headers
 
 
     // 404 handler - disabled to allow override in user code
@@ -103,7 +103,7 @@ uint8_t uploadProgress(size_t len, size_t total){
 
 void EmbUI::_http_api_hndlr(AsyncWebServerRequest *request, JsonVariant &json){
     // TODO:
-    // the specific for this handler is that it won't inject action responces to regostered feeders
+    // the specific for this handler is that it won't inject action responces to registered feeders
     // it's a design gap, I can't handle WS multimessaging and HTTP call in the same manner
     Interface interf(request);
     action.exec(&interf, json[P_data], json[P_action].as<const char*>());
