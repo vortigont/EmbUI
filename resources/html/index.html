@@ -85,6 +85,10 @@
 
 		{{#if html == "button"}}
 		<button id="{{id}}" {{#if2 color}}style="background-color: {{color}}"{{/if2}} class="pure-u-1 pure-button pure-button-primary mr"
+			{{#if2 type == "generic"}}{{onevent "click", "on_change", id, value}}{{/if2}}
+			{{#if2 type == "submit"}}{{onevent "click", "on_submit", id, value}}{{/if2}}
+			{{#if2 type == "js"}}{{onevent "click", "on_js", function, id, value}}{{/if2}}
+			{{#if2 type == "href"}} onclick="location.href='{{value}}'"{{/if2}}
 			{{#if2 type == 0}}{{onevent "click", "on_change", id, value}}{{/if2}}
 			{{#if2 type == 1}}{{onevent "click", "on_submit", id, value}}{{/if2}}
 			{{#if2 type == 2}}{{onevent "click", "on_js", function, value, id}}{{/if2}}
