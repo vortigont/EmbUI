@@ -4,8 +4,10 @@
 // and others people
 
 #include "ui.h"
+#include "embuifs.hpp"
 
 static constexpr const char* MGS_empty_stack =  "no opened section for an object!";
+static constexpr const char* MGS_no_store =  "no-store";
 
 Interface::~Interface(){
     json_frame_clear();
@@ -204,36 +206,40 @@ void FrameSendChain::send(const char* data){
 }
 
 void FrameSendAsyncJS::send(const JsonVariantConst& data){
-    if (flushed) return;    // we can send only ONCE!
+    /*
+        this is HTTP responce - we can send only ONCE!
+        a reply might be malformed if contains split sections,
+        but I do not have proper solution for this.
+        More complicated API calls should use websocket
+    */
+    if (flushed) return;
 
-    if (data[P_pkg] == P_value){
-        response.getRoot()[P_block] = data[P_block];
-    } else
-        return;     // won't reply with non-value packets
+    response = new AsyncJsonResponse();
 
-    response.setLength();
-    req->send(&response);
+    // TODO
+    // this is not beautiful and requres double mem to send Object
+    embuifs::obj_deepmerge(response->getRoot(), data);
+    response->setLength();
+    req->send(response);
     flushed = true;
 };
 
 FrameSendAsyncJS::~FrameSendAsyncJS() {
     if (!flushed){
-        // there were no usefull data, let's reply with empty obj
-        response.setLength();
-        req->send(&response);
+        // there were no usefull data, send proper empty reply
+        req->send(204);
     }
-    req = nullptr;
 }
 
 void FrameSendHttp::send(const char* data){
     AsyncWebServerResponse* r = req->beginResponse(200, asyncsrv::T_application_json, data);
-    r->addHeader(asyncsrv::T_Cache_Control, asyncsrv::T_no_cache);
+    r->addHeader(asyncsrv::T_Cache_Control, MGS_no_store);
     req->send(r);
 }
 
 void FrameSendHttp::send(const JsonVariantConst& data) {
     AsyncResponseStream* stream = req->beginResponseStream(asyncsrv::T_application_json);
-    stream->addHeader(asyncsrv::T_Cache_Control, asyncsrv::T_no_cache);
+    stream->addHeader(asyncsrv::T_Cache_Control, MGS_no_store);
     serializeJson(data, *stream);
     req->send(stream);
 };

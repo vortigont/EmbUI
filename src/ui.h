@@ -147,7 +147,7 @@ class FrameSendAsyncJS: public FrameSend {
     private:
         bool flushed = false;
         AsyncWebServerRequest *req;
-        AsyncJsonResponse response{ AsyncJsonResponse(false) };
+        AsyncJsonResponse *response;
     public:
         explicit FrameSendAsyncJS(AsyncWebServerRequest *request) : req(request) {}
         ~FrameSendAsyncJS();
@@ -210,7 +210,8 @@ class Interface {
 
         explicit Interface(AsyncWebSocket *server): _delete_handler_on_destruct(true), send_hndl(new FrameSendWSServer(server)) {}
         explicit Interface(AsyncWebSocketClient *client): _delete_handler_on_destruct(true), send_hndl(new FrameSendWSClient(client)) {}
-        explicit Interface(AsyncWebServerRequest *request): _delete_handler_on_destruct(true), send_hndl(new FrameSendHttp(request)) {}
+        explicit Interface(AsyncWebServerRequest *request): _delete_handler_on_destruct(true), send_hndl(new FrameSendAsyncJS(request)) {}
+
         // no copy c-tor
         Interface(const Interface&) = delete;
         Interface & operator=(const Interface&) = delete;

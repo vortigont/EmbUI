@@ -42,11 +42,6 @@ void EmbUI::_notFound(AsyncWebServerRequest *request) {
  */
 void EmbUI::http_set_handlers(){
 
-    // HTTP REST API handler
-    _ajs_handler = std::make_unique<AsyncCallbackJsonWebHandler>("/api", [this](AsyncWebServerRequest *r, JsonVariant &json) { _http_api_hndlr(r, json); });
-
-    server.addHandler(_ajs_handler.get());
-
     // returns run-time system config serialized in JSON
     server.on("/config", HTTP_ANY, [this](AsyncWebServerRequest *request) {
 
@@ -60,7 +55,7 @@ void EmbUI::http_set_handlers(){
 
 
     server.on("/version", HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        request->send(200, PGmimetxt, F("EmbUI ver: " TOSTRING(EMBUIVER)));
+        request->send(200, PGmimetxt, "EmbUI ver: " TOSTRING(EMBUIVER));
     });
 
     // postponed reboot (TODO: convert to CMD)
@@ -70,6 +65,11 @@ void EmbUI::http_set_handlers(){
         request->redirect("/");
     });
 
+    // HTTP REST API handler
+    _ajs_handler = std::make_unique<AsyncCallbackJsonWebHandler>("/api", [this](AsyncWebServerRequest *r, JsonVariant &json) { _http_api_hndlr(r, json); });
+    if (_ajs_handler)
+        server.addHandler(_ajs_handler.get());
+
     // esp32 handles updates via external lib
     fz.provide_ota_form(&server, UPDATE_URI);
     fz.handle_ota_form(&server, UPDATE_URI);
@@ -77,7 +77,7 @@ void EmbUI::http_set_handlers(){
     // serve all static files from LittleFS root /
     server.serveStatic("/", LittleFS, "/")
         .setDefaultFile("index.html")
-        .setCacheControl("max-age=10, must-revalidate");  // 10 second for caching, then revalidate based on etag/IMS headers
+        .setCacheControl(asyncsrv::T_no_cache);  // revalidate based on etag/IMS headers
 
 
     // 404 handler - disabled to allow override in user code
@@ -102,15 +102,9 @@ uint8_t uploadProgress(size_t len, size_t total){
  */
 
 void EmbUI::_http_api_hndlr(AsyncWebServerRequest *request, JsonVariant &json){
-
-    // NOTE: this is a bad design attaching/detaching http responder to the chain of fram-based feeders, but I have no better ideas for now
-    //std::unique_ptr<FrameSendAsyncJS> responder = std::make_unique<FrameSendAsyncJS>(request);
-    int rid = feeders.add(std::make_unique<FrameSendAsyncJS>(request));    // hook up feeder to the chain
-
-    JsonObject jsonObj = json.as<JsonObject>();
-    // execute actions
-    post(jsonObj);
-
-    // unhook our http responder from chain
-    feeders.remove(rid);
+    // TODO:
+    // the specific for this handler is that it won't inject action responces to registered feeders
+    // it's a design gap, I can't handle WS multimessaging and HTTP call in the same manner
+    Interface interf(request);
+    action.exec(&interf, json[P_data], json[P_action].as<const char*>());
 }
