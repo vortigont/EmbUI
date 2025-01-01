@@ -38,8 +38,9 @@ void EmbUI::_mqttConnTask(bool state){
 void EmbUI::_connectToMqtt() {
     LOGI(P_EmbUI_mqtt, println, "Connecting to MQTT...");
 
-    if (_cfg[V_mqtt_topic]){
-        mqtt_topic = _cfg[V_mqtt_topic].as<const char*>();
+    mqtt_topic = _cfg[V_mqtt_topic].as<const char*>();
+    if (mqtt_topic.length()){
+        // if configured value is not empty
         mqtt_topic.replace("$id", mc);
     } else {
         mqtt_topic = "EmbUI/";
