@@ -172,6 +172,7 @@
 			<span>{{label}}</span>
 			<select id="{{id}}" name="{{id}}" value="{{value}}" class="pure-u-1"
 				{{#if2 onChange}}{{onevent "change", "on_change", id}}{{/if2}}
+				{{#if2 onJS}}{{onevent "input", "on_js", function, id, value}}{{/if2}}
 			>
 			{{#block}}
 				<option value="{{value}}" {{#if2 value == _this.value}}selected{{/if2}}>{{label}}</option>
