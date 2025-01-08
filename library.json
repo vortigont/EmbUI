@@ -2,7 +2,7 @@
     "name": "EmbUI",
     "frameworks": "arduino",
     "platforms": ["espressif32"],
-    "version": "4.1.1",
+    "version": "4.2.0",
     "keywords": "embui, arduino",
     "description": "Embeded Web UI framework for ESP32 IoT prototyping",
     "url": "https://github.com/vortigont/EmbUI",
@@ -31,7 +31,7 @@
     [
         {"owner": "bblanchon",
          "name": "ArduinoJson",
-         "version": "~7.2"},
+         "version": "^7.2,<7.4"},
         {"owner": "mathieucarbou",
          "name": "ESPAsyncWebServer",
          "version": "~3.4"},

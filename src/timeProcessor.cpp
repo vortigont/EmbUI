@@ -71,7 +71,11 @@ void TimeProcessor::setNTPservers(){
     }
   }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  esp_sntp_init();
+#else
   sntp_init();
+#endif
 }
 
 String TimeProcessor::getFormattedShortTime()

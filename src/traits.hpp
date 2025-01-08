@@ -61,9 +61,13 @@ template<typename T>
 struct is_string_obj : public std::disjunction<
         std::is_same<std::string, std::decay_t<T>>,
         std::is_same<String, std::decay_t<T>>,
-        std::is_same<StringSumHelper, std::decay_t<T>>,          // String derived helper class
+        std::is_same<StringSumHelper, std::decay_t<T>>,         // String derived helper class
+#if ARDUINOJSON_VERSION_MAJOR <= 7 && ARDUINOJSON_VERSION_MINOR < 3
         std::is_same<detail::StaticStringAdapter, std::decay_t<T>>,     // ArduinoJson type
         std::is_same<detail::SizedRamString, std::decay_t<T>>           // ArduinoJson type
+#else
+        std::is_same<detail::RamString, std::decay_t<T>>        // ArduinoJson type
+#endif
     > {};
 
 // value helper
@@ -88,10 +92,17 @@ is_empty_string(const T &label){
         return label.empty();
     if constexpr(std::is_same_v<String, std::decay_t<decltype(label)>>)                 // specialisation for String
         return label.isEmpty();
+#if ARDUINOJSON_VERSION_MAJOR <= 7 && ARDUINOJSON_VERSION_MINOR < 3
     if constexpr(std::is_same_v<detail::StaticStringAdapter, std::decay_t<decltype(label)>>)
         return label.isNull();
     if constexpr(std::is_same_v<detail::SizedRamString, std::decay_t<decltype(label)>>)
         return label.isNull();
+#else
+    if constexpr(std::is_same_v<JsonString, std::decay_t<decltype(label)>>)
+        return label.isNull();
+    if constexpr(std::is_same_v<detail::RamString, std::decay_t<decltype(label)>>)
+        return label.isNull();
+#endif
 
     return false;   // UB, not a known string type for us
 };

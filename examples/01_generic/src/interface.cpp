@@ -78,7 +78,7 @@ void block_demopage(Interface *interf, JsonObjectConst data, const char* action)
     // переключатель, связанный с переменной конфигурации V_LED - Изменяется синхронно
     interf->checkbox(V_LED, embui.getConfig()[V_LED],"Onboard LED", true);
 
-    interf->text(V_VAR1, embui.getConfig()[V_VAR1], "text field label");   // create text field with value from the system config
+    interf->text(V_VAR1, embui.getConfig()[V_VAR1].as<JsonVariant>(), "text field label");   // create text field with value from the system config
     interf->text(V_VAR2, "some default val", "another text label");         // текстовое поле со значением "по-умолчанию"
 
     /*  кнопка отправки данных секции на обработку

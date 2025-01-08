@@ -805,6 +805,19 @@ function recurseforeachkey(obj, f) {
   }
 }
 
+// recursive block find, look for an obj with matching key,val
+function findBlockElement(array, key, value) {
+  let o;
+  array.some(function iter(a){
+      if (a[key] === value) {
+          o = a;
+          return true;
+      }
+      return Array.isArray(a.block) && a.block.some(iter);
+  });
+  return o;
+}
+
 /**
  * scan frame object for 'uidata' instruction objects
  * loads/updates objects in uidata container or implaces data into packet from uidata
@@ -883,6 +896,9 @@ async function process_uidata(arr){
             if (aw.suffix){
               ui_obj.section += aw.suffix;
               recurseforeachkey(ui_obj, function(key, object){ if (key === "id"){ object[key] += aw.suffix; } })
+            }
+            if (aw.newid){
+              ui_obj["id"] = aw.newid
             }
             newblocks.push(ui_obj)
           }

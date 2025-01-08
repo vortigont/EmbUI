@@ -1,5 +1,27 @@
 ## Changelog
 
+### v4.2.0
+ - ArduinoJson 7.3 compliant
+ - fix deprecated sntp_init() for Arduino core 3.x
+ - add find,findIndex into lodash build
+ - embuifs - add merge and deepmerge functions
+
+ui.h
+ - Frame send async js - refactor class for HTTP API, execute callbacks out of feeders chain
+
+mqtt:
+ - fix missing topic prefix when config contains "" value
+
+js api:
+ - on ui_data pick allow to override element's id with additional parameter
+ - add findBlockElement() function to recoursively find elements in nested sections
+ - on_js function call passes arbitrary argument and callee id to the function
+
+template
+ - add string types for button
+ - align with FireLamp's template
+ - fix 'disabled' state for checkbox
+
 ### v4.1.0
 JS API
   - add "value"-type section, allow to interleave 'interface' frame with ui and data objects
