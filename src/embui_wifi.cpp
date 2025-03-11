@@ -11,6 +11,7 @@ version of EmbUI project https://github.com/DmytroKorniienko/EmbUI
 // and others people
 
 #include "embui_wifi.hpp"
+#include "embui_log.h"
 
 #define WIFI_STA_CONNECT_TIMEOUT    10                      // timer for WiFi STA connection attempt 
 #define WIFI_STA_COOLDOWN_TIMOUT    90                      // timer for STA connect retry
@@ -101,9 +102,12 @@ void WiFiController::setupAP(bool force){
         return;
 
     // clear password if invalid
-    String pwd(emb->getConfig()[V_APpwd]);
-    if (pwd.length() < WIFI_PSK_MIN_LENGTH)
-        emb->getConfig().remove(V_APpwd);
+    String pwd;
+    if (emb->getConfig()[V_APpwd].is<const char*>()){
+        pwd = emb->getConfig()[V_APpwd].as<const char*>();
+        if (pwd.length() < WIFI_PSK_MIN_LENGTH)
+            emb->getConfig().remove(V_APpwd);
+    }
 
     LOGD(P_EmbUI_WiFi, printf, "set AP params to SSID:'%s', pwd:'%s'\n", emb->hostname(), pwd.c_str());
 
@@ -135,7 +139,6 @@ void WiFiController::_onWiFiEvent(arduino_event_id_t event, arduino_event_info_t
 void WiFiController::_onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 #endif
 {
-    LOGI(P_EmbUI_WiFi, println, "Got event");
     switch (event){
 /*
     case SYSTEM_EVENT_AP_START:
