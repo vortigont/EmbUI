@@ -93,8 +93,7 @@ time_t TimeProcessor::setTime(const char *datetimestr){
     //"YYYY-MM-DDThh:mm:ss"    [19]
     LOGI(P_EmbUI_time, print, "Set datetime to: "); LOG(println, datetimestr);
 
-    struct tm tmStruct;
-    memset(&tmStruct, 0, sizeof(tmStruct));
+    tm tmStruct{};
     strptime(datetimestr, strlen(datetimestr) < 19 ? "%Y-%m-%dT%H:%M" : "%Y-%m-%dT%H:%M:%S", &tmStruct);
 
     time_t time = mktime(&tmStruct);
@@ -203,10 +202,8 @@ void TimeProcessor::setOffset(int val){
  * корректно установленно ранее каким-либо методом)
  */
 long int TimeProcessor::getOffset(){
-    time_t now;
-    time(&now);
-    struct tm local_time = *localtime(&now);
-    return difftime(now, mktime(&local_time));
+    std::time_t now = std::time({});
+    return difftime(now, mktime(localtime(&now)));
 }
 
 /**
@@ -238,7 +235,7 @@ String TimeProcessor::getserver(uint8_t idx){
  * 
  */
 void TimeProcessor::attach_callback(callback_function_t callback){
-    timecb = std::move(callback);
+    timecb = callback;
 }
 
 
