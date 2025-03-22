@@ -163,9 +163,8 @@
 		{{/if}}
 
 		{{#if html == "input" && type != "checkbox"}}
-			<span>{{label}}</span>
-			{{#if2 type == "range" || type == "color"}}<span id="{{id}}-val">: {{value}}</span>{{/if2}}
-			{{#if2 type == "text" || type == "password"}}<span id="{{id}}-val"> ({{calc value.length || 0}})</span>{{/if2}}
+			{{#if2 type == "range" || type == "color"}}<span>{{label}}</span><span id="{{id}}-val"></span>{{/if2}}
+			{{#if2 type == "text" || type == "password"}}<span>{{label}}</span><span id="{{id}}-val"></span>{{/if2}}
 			<input type="{{type}}" id="{{id}}" name="{{id}}" class="pure-u-1" value="{{value}}"
 				{{#if2 (min || min === 0)}}min="{{min}}"{{/if2}}
 				{{#if2 (max || max === 0)}}max="{{max}}"{{/if2}}
@@ -175,6 +174,7 @@
 				{{#if2 onChange}}{{onevent "change", "on_change", id}}{{/if2}}
 				{{onevent "input", "on_input", id}}
 			>
+			{{#if2 type == "number"}}<span>{{label}}</span>{{/if2}}
 		{{/if}}
 		{{#if html == "select"}}
 			<span>{{label}}</span>
