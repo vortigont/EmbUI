@@ -12,6 +12,7 @@
 
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include "StreamUtils.h"
 
 #define EMBUIFS_FILE_WRITE_BUFF_SIZE    256
 
@@ -26,8 +27,28 @@ namespace embuifs{
      *  @param doc - JsonDocument куда будет загружен джейсон
      *  @param jsonfile - файл, для загрузки
      */
-    DeserializationError deserializeFile(JsonDocument& doc, const char* filepath, size_t buffsize = EMBUIFS_FILE_WRITE_BUFF_SIZE);
-    DeserializationError deserializeFile(JsonDocument& doc, const String& filepath, size_t buffsize = EMBUIFS_FILE_WRITE_BUFF_SIZE);
+    template <typename TDestination>
+    DeserializationError deserializeFile(TDestination&& dst, const char* filepath, size_t buffsize = EMBUIFS_FILE_WRITE_BUFF_SIZE){
+        if (!filepath || !*filepath)
+            return DeserializationError::Code::InvalidInput;
+
+        //LOGV(P_EmbUI, printf, T_load_file, filepath);
+        File jfile = LittleFS.open(filepath);
+
+        if (!jfile){
+            //LOGD(P_EmbUI, printf, T_cant_open_file, filepath);
+            return DeserializationError::Code::InvalidInput;
+        }
+
+        ReadBufferingStream bufferingStream(jfile, buffsize);
+        return deserializeJson(dst, bufferingStream);
+        /*
+        DeserializationError error = deserializeJson(doc, bufferingStream);
+        if (!error) return error;
+        LOGE(P_EmbUI, printf, T_deserialize_err, filepath, error.c_str());
+        return error;
+        */
+    }
 
     /**
      *  метод загружает и пробует десериализовать джейсон из файла в предоставленный документ,
@@ -39,8 +60,28 @@ namespace embuifs{
      *  @param doc - JsonDocument куда будет загружен джейсон
      *  @param jsonfile - файл, для загрузки
      */
-    DeserializationError deserializeFileWFilter(JsonDocument& doc, const char* filepath, JsonDocument& filter, size_t buffsize = EMBUIFS_FILE_WRITE_BUFF_SIZE);
-    DeserializationError deserializeFileWFilter(JsonDocument& doc, const String& filepath, JsonDocument& filter, size_t buffsize = EMBUIFS_FILE_WRITE_BUFF_SIZE);
+    template <typename TDestination>
+    DeserializationError deserializeFileWFilter(TDestination&& dst, const char* filepath, JsonDocument& filter, size_t buffsize = EMBUIFS_FILE_WRITE_BUFF_SIZE){
+        if (!filepath || !*filepath)
+            return DeserializationError::Code::InvalidInput;
+
+        //LOGV(P_EmbUI, printf, T_load_file, filepath);
+        File jfile = LittleFS.open(filepath);
+
+        if (!jfile){
+            //LOGD(P_EmbUI, printf, T_cant_open_file, filepath);
+            return DeserializationError::Code::InvalidInput;
+        }
+
+        ReadBufferingStream bufferingStream(jfile, buffsize);
+        return deserializeJson(dst, jfile, DeserializationOption::Filter(filter));
+        /*
+        DeserializationError error = deserializeJson(doc, jfile, DeserializationOption::Filter(filter));
+        if (!error) return error;
+        LOGE(P_EmbUI, printf, T_deserialize_err, filepath, error.c_str());
+        return error;
+        */
+    };
 
     /**
      * @brief serialize and write JsonDocument to a file using buffered writes
@@ -49,8 +90,7 @@ namespace embuifs{
      * @param filepath to write to
      * @return size_t bytes written
      */
-    size_t serialize2file(const JsonDocument& doc, const char* filepath, size_t buffsize = EMBUIFS_FILE_WRITE_BUFF_SIZE);
-    size_t serialize2file(const JsonDocument& doc, const String& filepath, size_t buffsize = EMBUIFS_FILE_WRITE_BUFF_SIZE);
+    size_t serialize2file(JsonVariantConst v, const char* filepath, size_t buffsize = EMBUIFS_FILE_WRITE_BUFF_SIZE);
 
     /**
      * @brief shallow merge objects
