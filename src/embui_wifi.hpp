@@ -40,9 +40,11 @@ class WiFiController {
     wifi_event_id_t eid;
     wifi_recon_t  wconn = {wifi_recon_t::none};    // WiFi (re)connection state
 
+    bool _ntpodhcp{true};
+
     // timer counters
-    uint8_t ap_ctr={0};   // AccessPoint status counter
-    uint8_t sta_ctr={0};  // Station status counter
+    uint8_t ap_ctr{0};   // AccessPoint status counter
+    uint8_t sta_ctr{0};  // Station status counter
 
     // WiFi events callback handler
     void _onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
@@ -116,6 +118,9 @@ public:
      * 
      */
     inline bool aponly(){ return (wconn == wifi_recon_t::ap_only); };
+
+    void ntpodhcp(bool enable);
+
 };
 
 #include "EmbUI.h"

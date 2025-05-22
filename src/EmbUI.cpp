@@ -157,12 +157,12 @@ void EmbUI::begin(){
         TimeProcessor::getInstance();
     }
 
-    if (_cfg[V_noNTPoDHCP])
-        TimeProcessor::getInstance().ntpodhcp(false);
-
-
     // start-up WiFi
     wifi = std::make_unique<WiFiController>(this, _cfg[V_APonly]);
+
+    if (_cfg[V_noNTPoDHCP])
+        wifi->ntpodhcp(false);
+
     wifi->init();
     
     // set WebSocket event handler

@@ -27,18 +27,9 @@ TimeProcessor::TimeProcessor()
 {
     sntp_set_time_sync_notification_cb( [](struct timeval *tv){ timeavailable(tv);} );
 
-// enable NTPoDHCP
-#if LWIP_DHCP_GET_NTP_SRV
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-    esp_sntp_servermode_dhcp(1);
-#else
-    sntp_servermode_dhcp(1);
-#endif
-#endif
-
     //configTzTime(TZONE, _ntp_servers., ntp2, userntp ? userntp->data() : NULL);
 
-    // we hook up WiFi events handler here, servers configuration would be done one we get the IP and working DNS
+    // we hook up WiFi events handler here, ntp servers configuration would be done once we got the IP and working DNS
     WiFi.onEvent([this](WiFiEvent_t event, WiFiEventInfo_t info){ _onWiFiEvent(event, info); } );
 }
 
@@ -237,23 +228,6 @@ String TimeProcessor::getserver(uint8_t idx){
 void TimeProcessor::attach_callback(callback_function_t callback){
     timecb = callback;
 }
-
-
-void TimeProcessor::ntpodhcp(bool enable){
-    #if LWIP_DHCP_GET_NTP_SRV
-        #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-        esp_sntp_servermode_dhcp(enable);
-        #else
-        sntp_servermode_dhcp(enable);
-        #endif
-    #endif
-
-    if (!enable){
-        LOGI(P_EmbUI_time, println, "Disabling NTP over DHCP");
-        setNTPservers();
-    }
-};
-
 
 
 #ifdef EMBUI_WORLDTIMEAPI

@@ -10,6 +10,7 @@ version of EmbUI project https://github.com/DmytroKorniienko/EmbUI
 // also many thanks to Vortigont (https://github.com/vortigont), kDn (https://github.com/DmytroKorniienko)
 // and others people
 
+#include <esp_sntp.h>
 #include "embui_wifi.hpp"
 #include "embui_log.h"
 
@@ -126,6 +127,18 @@ void WiFiController::init(){
     }
 
     LOGI(P_EmbUI_WiFi, println, "STA mode");
+
+    WiFi.mode(wifi_mode_t::WIFI_MODE_STA);
+    // enable NTPoDHCP
+#if LWIP_DHCP_GET_NTP_SRV
+    if (_ntpodhcp){
+    #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+        esp_sntp_servermode_dhcp(1);
+    #else
+        sntp_servermode_dhcp(1);
+    #endif
+    }
+#endif
 
     wconn = wifi_recon_t::ap_grace_enable;      // start in gracefull AP mode in case if MCU does not have any stored creds
     ap_ctr = WIFI_AP_GRACE_PERIOD;
@@ -289,3 +302,7 @@ void WiFiController::aponly(bool ap){
         WiFi.begin();
     }
 }
+
+void WiFiController::ntpodhcp(bool enable){
+    _ntpodhcp = enable;
+};

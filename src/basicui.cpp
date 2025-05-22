@@ -370,7 +370,7 @@ void set_settings_time(Interface *interf, JsonObjectConst data, const char* acti
     else
         embui.getConfig().remove(V_noNTPoDHCP);
 
-    TimeProcessor::getInstance().ntpodhcp(!data[V_noNTPoDHCP]);
+    embui.wifi->ntpodhcp(!data[V_noNTPoDHCP]);
 #endif
 
     // if there is a field with custom ISO date/time, call time setter

@@ -149,12 +149,6 @@ public:
         else
           return true;
     }
-
-    /**
-     * @brief enable/disable NTP over DHCP
-     */
-    void ntpodhcp(bool enable);
-
 };
 
 
