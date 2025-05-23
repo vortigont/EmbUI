@@ -22,7 +22,6 @@
 #include "no_esp8266"
 #endif
 
-//#define U_FS   U_SPIFFS
 
 
 //---------------------- Callbak functions
@@ -64,7 +63,7 @@ public:
      * @param response callback function
      * 
      */
-    void add(const char* id, actionCallback_t callback);
+    void add(const char* id, const actionCallback_t& callback);
 
     /**
      * @brief replace callback for specified id
@@ -73,7 +72,7 @@ public:
      * @param id 
      * @param callback 
      */
-    void replace(const char* id, actionCallback_t callback);
+    void replace(const char* id, const actionCallback_t& callback);
 
     /**
      * @brief remove all handlers matching id
@@ -103,16 +102,16 @@ public:
      * 
      * @param callback function to call
      */
-    void set_mainpage_cb(actionCallback_t callback);
+    void set_mainpage_cb(const actionCallback_t& callback);
 
     /**
      * @brief Set the settings object
      * 
      * @param callback 
      */
-    void set_settings_cb(actionCallback_t callback);
+    void set_settings_cb(const actionCallback_t& callback);
 
-    void set_publish_cb(actionCallback_t callback);
+    void set_publish_cb(const actionCallback_t& callback);
 
 };
 

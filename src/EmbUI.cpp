@@ -363,12 +363,13 @@ void EmbUI::cfgclear(){
 
 
 
-void ActionHandler::add(const char* id, actionCallback_t callback){
+void ActionHandler::add(const char* id, const actionCallback_t& callback){
+    if (!id) return;
     actions.emplace_back(id, callback);
     LOGD(P_EmbUI, printf, "action register: %s\n", id);
 }
 
-void ActionHandler::replace(const char* id, actionCallback_t callback){
+void ActionHandler::replace(const char* id, const actionCallback_t& callback){
     auto i = std::find_if(actions.begin(), actions.end(), [&id](const section_handler_t &arg) { return std::string_view(arg.action).compare(id) == 0; } );
 
     if ( i == actions.end() )
@@ -412,13 +413,11 @@ size_t ActionHandler::exec(Interface *interf, JsonObjectConst data, const char* 
     return cnt;
 }
 
-void ActionHandler::set_mainpage_cb(actionCallback_t callback){
-    remove(A_ui_page_main);
-    add(A_ui_page_main, callback);
+void ActionHandler::set_mainpage_cb(const actionCallback_t& callback){
+    replace(A_ui_page_main, callback);
 }
 
-void ActionHandler::set_settings_cb(actionCallback_t callback){
-    remove(A_ui_blk_usersettings);
-    add(A_ui_blk_usersettings, callback);
+void ActionHandler::set_settings_cb(const actionCallback_t& callback){
+    replace(A_ui_blk_usersettings, callback);
 }
 

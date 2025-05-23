@@ -1,5 +1,14 @@
 ## Changelog
 
+### v4.2.2
+ - ActionHandler accepts function arg as reference
+ - fix: refactor NTPoDHCP
+ - embuifs - make deserializeFile as templates
+ - small time config related changes
+ - fix AP password converted to 'null' if unconfigured
+ - update lib deps
+
+
 ### v4.2.0
  - ArduinoJson 7.3 compliant
  - fix deprecated sntp_init() for Arduino core 3.x
