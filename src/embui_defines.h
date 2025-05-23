@@ -15,7 +15,7 @@
 
 #define EMBUI_VERSION_MAJOR     4
 #define EMBUI_VERSION_MINOR     2
-#define EMBUI_VERSION_REVISION  1
+#define EMBUI_VERSION_REVISION  2
 
 // API version for JS frontend
 #define EMBUI_JSAPI             8
