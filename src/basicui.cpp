@@ -267,6 +267,8 @@ void set_settings_mqtt(Interface *interf, JsonObjectConst data, const char* acti
     // сохраняем настройки в конфиг
     if (data[V_mqtt_enable])
         embui.getConfig()[V_mqtt_enable] = true;
+    else
+        embui.getConfig().remove(V_mqtt_enable);
 
     if (data[V_mqtt_host])
         embui.getConfig()[V_mqtt_host] = data[V_mqtt_host];
@@ -297,8 +299,6 @@ void set_settings_mqtt(Interface *interf, JsonObjectConst data, const char* acti
         embui.getConfig()[V_mqtt_ka] = data[V_mqtt_ka];
     else
         embui.getConfig().remove(V_mqtt_ka);
-
-    embui.autosave();
 
     // reconnect/disconnect MQTT
     if (data[V_mqtt_enable])
