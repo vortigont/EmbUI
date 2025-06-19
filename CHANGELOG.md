@@ -1,5 +1,8 @@
 ## Changelog
 
+### v4.2.3
+  - fix - mqtt disable was not saved in config file
+
 ### v4.2.2
  - ActionHandler accepts function arg as reference
  - fix: refactor NTPoDHCP
