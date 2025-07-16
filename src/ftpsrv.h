@@ -11,7 +11,7 @@ namespace basicui {
 /**
  *  BasicUI ftp server setup UI block
  */
-void page_settings_ftp(Interface *interf, const JsonObjectConst data, const char* action = NULL);
+void page_settings_ftp(Interface *interf);
 
 void set_settings_ftp(Interface *interf, const JsonObjectConst data, const char* action = NULL);
 

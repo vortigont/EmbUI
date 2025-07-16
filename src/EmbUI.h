@@ -26,7 +26,7 @@
 
 //---------------------- Callbak functions
 using asyncsrv_callback_t = std::function< bool (AsyncWebServerRequest *req)>;
-using actionCallback_t = std::function< void (Interface *interf, JsonObjectConst data, const char* action)>;
+using embui_cb_t = std::function< void (Interface *interf, JsonVariantConst data, const char* action)>;
 // embui's language setting callback
 using embui_lang_cb_t = std::function< void (const char* lang)>;
 
@@ -40,9 +40,9 @@ struct section_handler_t {
     // action id
     const char* action;
     // callback function
-    actionCallback_t cb;
+    embui_cb_t cb;
 
-    section_handler_t(const char* id, const actionCallback_t& callback) : action(id), cb(callback){};
+    section_handler_t(const char* id, const embui_cb_t& callback) : action(id), cb(callback){};
 };
 
 /**
@@ -63,7 +63,7 @@ public:
      * @param response callback function
      * 
      */
-    void add(const char* id, const actionCallback_t& callback);
+    void add(const char* id, const embui_cb_t& callback);
 
     /**
      * @brief replace callback for specified id
@@ -72,7 +72,7 @@ public:
      * @param id 
      * @param callback 
      */
-    void replace(const char* id, const actionCallback_t& callback);
+    void replace(const char* id, const embui_cb_t& callback);
 
     /**
      * @brief remove all handlers matching id
@@ -92,7 +92,7 @@ public:
      * 
      * @return number of callbacks executed, 0 - if no callback were registered for such action
      */
-    size_t exec(Interface *interf, JsonObjectConst data, const char* action);
+    size_t exec(Interface *interf, JsonVariantConst data, const char* action);
 
     /**
      * @brief Set mainpage callback with predefined id - 'mainpage' 
@@ -102,16 +102,16 @@ public:
      * 
      * @param callback function to call
      */
-    void set_mainpage_cb(const actionCallback_t& callback);
+    void set_mainpage_cb(const embui_cb_t& callback);
 
     /**
      * @brief Set the settings object
      * 
      * @param callback 
      */
-    void set_settings_cb(const actionCallback_t& callback);
+    void set_settings_cb(const embui_cb_t& callback);
 
-    void set_publish_cb(const actionCallback_t& callback);
+    void set_publish_cb(const embui_cb_t& callback);
 
 };
 

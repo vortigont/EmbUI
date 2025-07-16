@@ -9,12 +9,14 @@
 // Empty string
 #define P_EMPTY static_cast<const char*>(0)
 
-// UI blocks generator actions (IDs)
-static constexpr const char* A_ui_page = "ui_page";
-static constexpr const char* A_ui_page_settings = "ui_page_settings";
-static constexpr const char* A_ui_page_network = "ui_page_network";
+// reserved actions for calling user defined actions
 static constexpr const char* A_ui_page_main = "ui_page_main";
 static constexpr const char* A_ui_blk_usersettings = "ui_blk_usersettings";
+
+// UI blocks generator actions (IDs)
+static constexpr const char* A_sys_page = "sys_page";
+static constexpr const char* A_sys_page_settings = "sys_page_settings";
+static constexpr const char* A_sys_page_network = "sys_page_network";
 
 // setter actions (IDs)
 static constexpr const char* A_sys_ntwrk_ftp = "sys_ntwrk_ftp";

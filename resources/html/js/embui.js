@@ -505,8 +505,10 @@ var wbs = function(url){
         if (lastmsg){ send(lastmsg); lastmsg = null; }
       })}, 500);
     },
-    send_post: function(id, dt){
-      send_msg({pkg:"post", action:id, data:dt});
+    // send an action with optional data object
+    send_post: function(id, val){
+      //console.log("POST action:", id, "data:", val);
+      send_msg({pkg:"post", "action":id, "data":val});
     }
   };
   return out;
@@ -567,7 +569,7 @@ var global = {
  * EmbUI's js api version
  * used to set compatibilty dependency between backend firmware and WebUI js
  */
-const ui_jsapi = 7;
+const ui_jsapi = 9;
 
 /**
  * User application versions - frontend/backend
@@ -585,7 +587,7 @@ var uiblocks = {};
 
 /**
  * callback for unknown pkg types - Stub function to handle user-defined types messages.
- * Data could be sent from the controller with any 'pkg' types except internal ones used by EmnUI
+ * Data could be sent from the controller with any 'pkg' types except internal ones used by EmbUI
  * and handled in a user-define js function via reassigning this value
  */
 var unknown_pkg_callback = function (msg){
@@ -623,8 +625,7 @@ var customFuncs = {
     } else {
       // if there was no 'value' given, than simply post browser's date string to MCU that triggers time/date setup
       console.log("Set browser's date:", isodate)
-      data["sys_datetime"] = isodate;
-      ws.send_post("sys_datetime", data);
+      ws.send_post("sys_datetime", isodate);
     }
   }//,
   //func2: function (event) {     console.log('Called func 2'); }
@@ -788,19 +789,19 @@ return 'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
 }
 
 // a simple recursive iterator with callback
-function recurseforeachkey(obj, f) {
+function recurseforeachkey(obj, f, ...args) {
   for (let key in obj) {
     if (typeof obj[key] === 'object') {
       if (Array.isArray(obj[key])) {
         for (let i = 0; i < obj[key].length; i++) {
-          recurseforeachkey(obj[key][i], f);
+          recurseforeachkey(obj[key][i], f, args);
         }
       } else {
-        recurseforeachkey(obj[key], f);
+        recurseforeachkey(obj[key], f, args);
       }
     } else {
       // run callback
-      f(key, obj);
+      f(key, obj, args);
     }
   }
 }
@@ -988,9 +989,22 @@ async function process_XLoadSection(arr){
   return
 }
 
+function extend_ids(obj, prefix){
+  if (!(obj instanceof Object) || !(obj.block instanceof Array)) return
+  if (obj.extended_ids)
+    prefix += prefix ? '.' + obj.section : obj.section
 
+  for (item of obj.block){
+    if (item instanceof Object && ("section" in item)){
+      extend_ids(item, prefix)
+      continue
+    }
+    if (obj.extended_ids && ("id" in item) )
+      item.id = prefix + '.' + item.id
+  }
+}
 
-// template renderer
+// Page data renderer
 var render = function(){
   let chkNumeric = function(v){
     // cast empty strings to null
@@ -1019,6 +1033,7 @@ var render = function(){
     },
     // handle dynamicaly changed elements on a page which should send value to WS server on each change
     on_change: function(d, id, val) {
+      console.log("execute on_change, id:", id, ", val:", val);
       let value;
 
       // check if value has been supplied by templater
@@ -1045,10 +1060,7 @@ var render = function(){
       if (this.id != id){
         custom_hook(this.id, d, id);
       }
-      let data = {};
-      data[id] = value;
-
-      ws.send_post(id, data);
+      ws.send_post(id, value);
     },
     // show or hide section on a page
     on_showhide: function(d, id) {
@@ -1056,13 +1068,27 @@ var render = function(){
     },
     /**
      *  Process Submited form
-     *  'submit' key defines action to be taken by the backend
+     *  'submit' event defines action to be taken by the backend
      */
-    on_submit: function(d, id, val) {
-      var form = go("#"+id), data = go.formdata(go("input, textarea, select", form));
-      //data['submit'] = id;
-      if (val !== undefined && typeof val !== 'object') { data[id] = val; }  // submit button _might_ have it's own value
-      ws.send_post(id, data);
+    on_submit: function(d, id, val, extended_ids) {
+      //console.log("execute on_submit, id:", id, ", val:", val);
+      let form = go("#"+id), data = go.formdata(go("input, textarea, select", form));
+      // submit executor _might_ provide it's own value
+      if (val !== undefined && typeof val !== 'object'){
+        // if data is an empty object (i.e. no form data, reassign a supplied value to it)
+        if (Object.keys(obj).length)
+          data[id] = val;
+        else
+          data = val;
+      }
+      if (extended_ids){
+        let d = {}
+        for (const [key, v] of Object.entries(data)){
+          _.set(d, key, v)
+        }
+        ws.send_post(id, d[id]);
+      } else
+        ws.send_post(id, data);
     },
     // run custom user-js function
     on_js: function(event, callback, arg, id) {
@@ -1086,8 +1112,7 @@ var render = function(){
       this.menu();
       go("#main > div").display("none");
       // go("#main #"+menu_id).display("block");
-      // var data = {}; data[menu_id] = null
-      ws.send_post(menu_id, {});
+      ws.send_post(menu_id);
     },
     menu: function(){
       go("#menu").clear().append(tmpl_menu.parse(global));
@@ -1120,6 +1145,7 @@ var render = function(){
       // deep iterate and process "uidata" sections
       const ui_processed = await process_uidata(frame);
       const xload_processed = await process_XLoadSection(frame);
+      extend_ids(obj, "")
       console.log("Processed packet:", obj);
 
       // go through sections and render it according to type of data
@@ -1164,7 +1190,6 @@ var render = function(){
           this.value(v)
           return;
         }
-
 
         // look for nested xload sections and await for side-load, if found
         //section_xload(v).then( () => { this.section(v); } );
@@ -1305,7 +1330,6 @@ window.addEventListener("load", async function(ev){
 window.addEventListener("popstate", function(e){
   if (e = e.state && e.state.hist) {
     rdr.lockhist = true;
-    //var data = {}; data[e] = null;
-    ws.send_post(e, {});
+    ws.send_post(e);
   }
 });

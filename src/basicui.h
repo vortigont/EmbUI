@@ -5,23 +5,22 @@
 
 #include "ui.h"
 
-/**
- * List of UI languages in predefined i18n resources
- */
-enum LANG : uint8_t {
-    EN = (0U),
-    RU = (1U),
-};
-
 extern uint8_t lang;
 
 /*
     A namespace with functions to handle basic EmbUI WebUI interface
 */
 namespace basicui {
+    /**
+     * List of UI languages in predefined i18n resources
+     */
+    enum LANG : uint8_t {
+        EN = (0U),
+        RU = (1U),
+    };
 
     // numeric indexes for pages
-    enum class page : uint16_t {
+    enum class page : int32_t {
         main = 0,
         settings,
         network,
@@ -43,12 +42,11 @@ namespace basicui {
    */
   void menuitem_settings(Interface *interf);
 
-  void show_uipage(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void page_settings_gnrl(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void page_settings_netw(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void page_settings_mqtt(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void page_settings_time(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void page_settings_sys(Interface *interf, JsonObjectConst data, const char* action = NULL);
+  void show_uipage(Interface *interf, JsonVariantConst data, const char* action = NULL);
+  void page_settings_netw(Interface *interf, JsonVariantConst data, const char* action);
+  void page_settings_mqtt(Interface *interf);
+  void page_settings_time(Interface *interf);
+  void page_settings_sys(Interface *interf);
 
   /**
    * @brief Build WebUI "Settings" page
@@ -59,12 +57,12 @@ namespace basicui {
    * @param data 
    * @param action 
    */
-  void page_system_settings(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void set_settings_wifi(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void set_settings_wifiAP(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void set_settings_mqtt(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void set_settings_time(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void set_language(Interface *interf, JsonObjectConst data, const char* action = NULL);
+  void page_system_settings(Interface *interf, JsonVariantConst data, const char* action = NULL);
+  void set_settings_wifi(Interface *interf, JsonVariantConst data, const char* action = NULL);
+  void set_settings_wifiAP(Interface *interf, JsonVariantConst data, const char* action = NULL);
+  void set_settings_mqtt(Interface *interf, JsonVariantConst data, const char* action = NULL);
+  void set_settings_time(Interface *interf, JsonVariantConst data, const char* action = NULL);
+  void set_language(Interface *interf, JsonVariantConst data, const char* action = NULL);
   void embuistatus(Interface *interf);
 
   /**
@@ -72,14 +70,14 @@ namespace basicui {
    * i.e. free ram, uptime, etc... 
    */
   void embuistatus();
-  void set_sys_reboot(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void set_sys_hostname(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void set_sys_datetime(Interface *interf, JsonObjectConst data, const char* action = NULL);
-  void set_sys_cfgclear(Interface *interf, JsonObjectConst data, const char* action = NULL);
+  void set_sys_reboot(Interface *interf, JsonVariantConst data, const char* action = NULL);
+  void set_sys_hostname(Interface *interf, JsonVariantConst data, const char* action = NULL);
+  void set_sys_datetime(Interface *interf, JsonVariantConst data, const char* action = NULL);
+  void set_sys_cfgclear(Interface *interf, JsonVariantConst data, const char* action = NULL);
 
   /**
-   * @brief default main_page with a simple "settings" menu entry
-   * 
+   * @brief default main_page with a single "settings" menu entry
+   * could be used as an example, pretty useless otherwise
    */
-  void page_main(Interface *interf, JsonObjectConst data, const char* action = NULL);
+  void page_main(Interface *interf);
 }   // end of "namespace basicui"
