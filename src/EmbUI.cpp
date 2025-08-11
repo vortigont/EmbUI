@@ -202,14 +202,15 @@ void EmbUI::begin(){
  * looks for registered action for the section name and calls the action with post data if found
  */
 void EmbUI::post(JsonObjectConst data){
-    LOGD(P_EmbUI, print, "post() "); LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
+    LOGV(P_EmbUI, print, "post() ");
+    #if EMBUI_DEBUG_LEVEL == 5
+    LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
+    #endif
     const char* act = data[P_action].as<const char*>();
     if (!act)
         return;     // do not allow empty actions
 
     JsonVariantConst jv(data[P_data]);
-    //LOGV(P_EmbUI, print, "jv: ");
-    //LOG_CALL(serializeJson(jv, EMBUI_DEBUG_PORT)); LOG(println);
     Interface interf(&feeders);
     if (feeders.available()){
         // echo back injected data to all available feeders IF request 'data' object is not empty

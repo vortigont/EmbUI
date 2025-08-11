@@ -90,7 +90,6 @@ void page_system_settings(Interface *interf, JsonVariantConst data, const char* 
  */
 void show_uipage(Interface *interf, JsonVariantConst data, const char* action){
     if (!interf) return;  // bail out if no section specifier
-    LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
 
     // find page enum index
     page idx = static_cast<page>(data.as<int>());
@@ -449,6 +448,7 @@ void set_sys_reboot(Interface *interf, JsonVariantConst data, const char* action
  */
 void set_sys_hostname(Interface *interf, JsonVariantConst data, const char* action){
     const char* h = data[V_hostname];
+    LOGI(P_EmbUI, printf, "Set hostname:%s\n", h);
     if (!h) return;
 
     embui.hostname(h);
