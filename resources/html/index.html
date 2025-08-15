@@ -67,7 +67,7 @@
 
 	<script type="text/html" id="tmpl_section">
 		<section id="{{section}}">
-			{{#if hidden}}<div class="pure-u-1 pure-button mr" {{onevent "click", "on_showhide", "block_"+section}} >{{label}}</div>{{/if}}
+			{{#if hidden && show_btn != false}}<div class="{{#class}}{{class}}{{/class}}{{^class}}pure-u-1 pure-button mr{{/class}}" {{onevent "click", "on_showhide", "block_"+section}} >{{label}}</div>{{/if}}
 			{{#if !hidden && label}}<div class="header-block">{{label}}</div>{{/if}}
 			<div id="block_{{section}}" class="{{#if !line}}pure-g{{/if}} {{#if label}}nested{{/if}}" {{#if hidden}}style="display:none;"{{/if}}>
 			{{#block}}
