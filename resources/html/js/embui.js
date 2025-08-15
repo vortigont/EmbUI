@@ -889,20 +889,35 @@ async function process_uidata(arr){
               continue
             }
           }
-          if (Object.keys(ui_obj).length !== 0){
-            if (aw.prefix){
-              ui_obj.section = aw.prefix + ui_obj.section;
-              recurseforeachkey(ui_obj, function(key, object){ if (key === "id"){ object[key] = aw.prefix + obj[key]; } })
+          let add_prefix_suffix = function(pick_obj, uidata_obj){
+            if (Object.keys(uidata_obj).length !== 0){
+              if (pick_obj.prefix){
+                uidata_obj.section = pick_obj.prefix + uidata_obj.section;
+                recurseforeachkey(uidata_obj, function(key, object){ if (key === "id"){ object[key] = aw.prefix + obj[key]; } })
+              }
+              if (pick_obj.suffix){
+                uidata_obj.section += pick_obj.suffix;
+                recurseforeachkey(uidata_obj, function(key, object){ if (key === "id"){ object[key] += aw.suffix; } })
+              }
+              if (pick_obj.newid){
+                uidata_obj["id"] = pick_obj.newid
+              }
             }
-            if (aw.suffix){
-              ui_obj.section += aw.suffix;
-              recurseforeachkey(ui_obj, function(key, object){ if (key === "id"){ object[key] += aw.suffix; } })
+          }
+          // we have an array in ui data, iterate it
+          if ((ui_obj instanceof Array)){
+            for (el of ui_obj){
+              add_prefix_suffix(aw, el);
+              newblocks.push(el)
             }
-            if (aw.newid){
-              ui_obj["id"] = aw.newid
-            }
+            continue
+          }
+          // have a single obj, change pref/siff if needed
+          if ((ui_obj instanceof Object)){
+            add_prefix_suffix(aw, ui_obj);
             newblocks.push(ui_obj)
           }
+          // go on with next ui item in this section
           continue
         }
         // Set/update UI object with supplied data
@@ -916,7 +931,7 @@ async function process_uidata(arr){
           continue
         }
   
-      }
+      } // (aw of item.block)
 
       // a function that will replace current section item with uidata items
       function implaceArrayAt(array, idx, arrayToInsert) {
@@ -1027,9 +1042,11 @@ var render = function(){
       if (type == "range") go("#"+id+"-val").html(": " + value);
       if (type == "text" || type == "password") go("#"+id+"-val").html(" ("+value.length+")");
       if (type == "color") go("#"+id+"-val").html(" ("+value+")");
+/*
       if (this.id != id){
         custom_hook(this.id, d, id);
       }
+*/
     },
     // handle dynamicaly changed elements on a page which should send value to WS server on each change
     on_change: function(d, id, val) {
@@ -1057,9 +1074,11 @@ var render = function(){
             value = this.value;
         }
       }
+/*
       if (this.id != id){
         custom_hook(this.id, d, id);
       }
+*/
       ws.send_post(id, value);
     },
     // show or hide section on a page
@@ -1129,11 +1148,15 @@ var render = function(){
         go("#main").append(tmpl_section_main.parse(obj));
         if (!out.lockhist) out.history(obj.section);
       } else {
-        if ( Object.keys(go("#"+obj.section)).length === 0 && !obj.replace ){
-          go("#main").append(tmpl_section_main.parse(obj));
-        } else {
+        if (obj.replace){
           console.log("replacing section:", obj.section)
           go("#"+obj.section).replace(tmpl_section.parse(obj));
+        } else if (obj.append){
+          console.log("Append to section:", obj.section)
+          go("#"+obj.append).append(tmpl_section.parse(obj));
+        } else {
+          // ( Object.keys(go("#"+obj.section)).length === 0 && !obj.replace )
+          go("#main").append(tmpl_section_main.parse(obj));
         }
       }
     },
@@ -1177,9 +1200,10 @@ var render = function(){
         // callback section contains actions that UI should request back from MCU
         if (v.section == "callback") {
           for (item of v.block){
-            let data = {};
+            let data = undefined;
             if (item.data)
               data = item.data
+            console.log("sending callback - action:", item.action, "data:", data)
             ws.send_post(item.action, data);
           }
           return;
@@ -1276,6 +1300,7 @@ window.addEventListener("load", async function(ev){
   var rdr = this.rdr = render();
   var ws = this.ws = wbs("ws://"+location.host+"/ws");
 
+  // process "pkg":"interface"
   ws.oninterface = function(msg) { rdr.make(msg) }
 
   // run custom js function in window context
