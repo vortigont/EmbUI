@@ -172,6 +172,7 @@
 				{{#if2 placeholder}}placeholder="{{placeholder}}"{{/if2}}
 				{{#if2 type == "color"}}style="height: 50px"{{/if2}}
 				{{#if2 onChange}}{{onevent "change", "on_change", id}}{{/if2}}
+				{{#if2 data_color}}data-color="{{data_color}}"{{/if2}}
 				{{onevent "input", "on_input", id}}
 			>
 			{{#if2 type == "number"}}<span>{{label}}</span>{{/if2}}

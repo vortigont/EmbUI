@@ -24,6 +24,10 @@ go.formdata = function(form){
         return chkNumeric(element);
       case 'radio':
         if(element.checked) return chkNumeric(element);
+      case 'color':
+        if (element.dataset.color == 'rgb565')
+          return hexToRGB565(element.value)
+        return element.value;
       case 'input':
       case 'textarea':
         return (typeof element.value == 'string' && element.value == "") ? null : this.value;
@@ -788,6 +792,41 @@ function colorGradient(colors, fadeFraction) {
 return 'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
 }
 
+// color conversion
+function hexToRGB565(hex) {
+    // Remove the '#' if present
+    hex = hex.replace(/^#/, '');
+
+    // Parse the R, G, B values from the hex string
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    // Convert to RGB565
+    const r5 = (r >> 3) & 0x1F; // 5 bits for red
+    const g6 = (g >> 2) & 0x3F; // 6 bits for green
+    const b5 = (b >> 3) & 0x1F; // 5 bits for blue
+
+    // Combine into a single 16-bit value
+    return (r5 << 11) | (g6 << 5) | b5;
+}
+
+// color conversion
+function rgb565ToHex(rgb565) {
+  // Extract the red, green, and blue components
+  const r = (rgb565 >> 11) & 0x1F; // 5 bits for red
+  const g = (rgb565 >> 5) & 0x3F;  // 6 bits for green
+  const b = rgb565 & 0x1F;         // 5 bits for blue
+
+  // Scale to 8-bit values
+  const red = Math.round((r / 31) * 255);
+  const green = Math.round((g / 63) * 255);
+  const blue = Math.round((b / 31) * 255);
+
+  // Convert to hex string
+  return `#${((1 << 24) | (red << 16) | (green << 8) | blue).toString(16).slice(1).toUpperCase()}`;
+}
+
 // a simple recursive iterator with callback
 function recurseforeachkey(obj, f, ...args) {
   for (let key in obj) {
@@ -1244,6 +1283,12 @@ var render = function(){
         if (el[0].type == "checkbox") {
           // allow multiple types of TRUE value for checkboxes
           el[0].checked = (val == true  ||  val == 1 || val == "1" || val == "true" );
+          return;
+        }
+
+        // color picker conversion
+        if (el[0].type == "color" && el[0].dataset.color == 'rgb565') {
+          el[0].value = rgb565ToHex(val);
           return;
         }
 
