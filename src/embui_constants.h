@@ -86,6 +86,7 @@ static constexpr const char* P_key = "key";
 static constexpr const char* P_label = "label";
 static constexpr const char* P_lang = "lang";
 static constexpr const char* P_line = "line";
+static constexpr const char* P_list = "list";
 static constexpr const char* P_MQTT = "MQTT";
 static constexpr const char* P_MQTTTopic = "MQTTTopic";
 static constexpr const char* P_manifest = "manifest";
