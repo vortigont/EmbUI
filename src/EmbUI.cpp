@@ -307,6 +307,8 @@ const char* EmbUI::hostname(const char* name){
     else
         _cfg.remove(V_hostname);
 
+    // save config
+    save();
     return hostname();
 };
 
