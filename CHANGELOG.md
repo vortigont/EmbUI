@@ -1,5 +1,25 @@
 ## Changelog
 
+### v4.3.0
+ - change callbacks type to JsonVariantConst
+  now `data` argument passed to callback has JsonVariantConst
+  it allows to pass simple data types as bools, ints, etc as-is and avoid
+  embedding it into data[action] member
+ - bugs
+    - hostname was not saved properly
+     - MQTT section exit button was not working
+     - removed excessibe debuggin
+ - embui.js support array objects in uidata
+ - fix key name in language data
+ - {"show_btn":false} property in "hidden" section would disable creation of show/hide button to control the visibility of section
+ - RGB hex to RGB565 color conversion in color picker
+ - Embui Units
+ - fixed bug when hostname change was not saved unless some other change also was done
+ - reformat log messages
+ - Update html template with a new features
+ - Bump TaskScheduler lib ver to 4.0
+
+
 ### v4.2.3
   - fix - mqtt disable was not saved in config file
 

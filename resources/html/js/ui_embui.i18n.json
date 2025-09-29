@@ -196,7 +196,7 @@
               "html": "spacer"
             },
             {
-              "id": "ui_page_settings",
+              "id": "sys_page_settings",
               "label": "Exit"
             }
           ]

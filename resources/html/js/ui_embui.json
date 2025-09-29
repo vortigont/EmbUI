@@ -1,10 +1,10 @@
 {
   "type":"interface",
-  "version":6,
+  "version":7,
   "descr":"EmbUI settings and configuration UI object blocks",
   "settings":{
     "network":{
-      "section":"ui_page_network",
+      "section":"sys_page_network",
       "label":"WiFi Settings",
       "main":true,
       "block":[
@@ -148,9 +148,9 @@
           "html":"spacer"
         },
         {
-          "id":"ui_page_settings",
+          "id":"sys_page_settings",
           "html":"button",
-          "type":1,
+          "type":0,
           "label":"Exit"
         }
       ]
@@ -236,9 +236,9 @@
           "html":"spacer"
         },
         {
-          "id":"ui_page_settings",
+          "id":"sys_page_settings",
           "html":"button",
-          "type":1,
+          "type":0,
           "label":"Exit"
         }
       ]
@@ -336,7 +336,7 @@
           "html":"spacer"
         },
         {
-          "id":"ui_page_settings",
+          "id":"sys_page_settings",
           "html":"button",
           "type":0,
           "label":"Exit"
@@ -378,7 +378,7 @@
           "color":"green"
         },
         {
-          "id":"ui_page_settings",
+          "id":"sys_page_settings",
           "html":"button",
           "type":1,
           "label":"Выход"
@@ -435,7 +435,7 @@
           "html":"spacer"
         },
         {
-          "id":"ui_page_settings",
+          "id":"sys_page_settings",
           "html":"button",
           "type":0,
           "label":"Выход"
@@ -443,7 +443,7 @@
       ]
     },
     "settings":{
-      "section": "ui_page_settings",
+      "section": "sys_page_settings",
       "label": "Settings",
       "main": true,
       "block": [
@@ -467,38 +467,38 @@
           "label": null
         },
         {
-          "id": "ui_page",
+          "id": "sys_page",
           "html": "button",
           "type": 0,
           "value": 2,
           "label": "WiFi Setup"
         },
         {
-          "id": "ui_page",
+          "id": "sys_page",
           "html": "button",
           "type": 0,
           "value": 3,
           "label": "Date / Time / Time Zone"
         },
         {
-          "id": "ui_page",
+          "id": "sys_page",
           "html": "button",
-          "type": 0,
           "label": "MQTT",
+          "type": 0,
           "value": 4
         },
         {
-          "id": "ui_page",
+          "id": "sys_page",
           "html": "button",
-          "type": 0,
           "label": "FTP Server",
+          "type": 0,
           "value": 5
         },
         {
-          "id": "ui_page",
+          "id": "sys_page",
           "html": "button",
-          "type": 0,
           "label": "System setup",
+          "type": 0,
           "value": 6
         }
       ]
