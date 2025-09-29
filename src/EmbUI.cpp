@@ -43,7 +43,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
             embui.publish_language(&interf);
 
             if (!embui.action.exec(&interf, {}, A_ui_page_main))    // call user defined mainpage callback
-                basicui::page_main(&interf, {}, NULL);             // if no callback was registered, then show default stub page
+                basicui::page_main(&interf);                        // if no callback was registered, then show default stub page
         }
         embui.send_pub();
         return;
@@ -55,7 +55,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     }
 
     if(type == WS_EVT_ERROR){
-        LOGD(P_EmbUI, printf, "ws[%s][%u] WS_EVT_ERROR(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
+        LOGD(P_EmbUI, printf, "ws[%s], client:%u, WS_EVT_ERROR(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
         //httpCallback("sys_WS_EVT_ERROR", "", false); // сообщим об ошибке сокета
         return;
     }
@@ -95,15 +95,16 @@ void wsDataHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
     // switch context to the main loop() for processing data
     Task *t = new Task(POST_ACTION_DELAY, TASK_ONCE,
         [res](){
-            JsonObject o = res->as<JsonObject>();
             // if there is nested data in the object
             // call action handler for post'ed data
-            embui.post(o);
+            embui.post(res->as<JsonObject>());
             delete res; },
         &ts, false, nullptr, nullptr, true
     );
     if (t)
         t->enableDelayed();
+    else
+        delete res;
 }
 
 // EmbUI constructor
@@ -173,7 +174,7 @@ void EmbUI::begin(){
     feeders.add(std::make_unique<FrameSendWSServer> (&ws));
 
     // install EmbUI http handlers
-    http_set_handlers();
+    _http_set_handlers();
     server.begin();
 
     // register system menu handlers
@@ -201,22 +202,34 @@ void EmbUI::begin(){
  * looks for registered action for the section name and calls the action with post data if found
  */
 void EmbUI::post(JsonObjectConst data){
-    LOGD(P_EmbUI, print, "post() "); //LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
-    JsonObjectConst odata = data[P_data].as<JsonObjectConst>();
-    Interface interf(&feeders);
+    LOGV(P_EmbUI, print, "post() ");
+    #if EMBUI_DEBUG_LEVEL == 5
+    LOG_CALL(serializeJson(data, EMBUI_DEBUG_PORT)); LOG(println);
+    #endif
+    const char* act = data[P_action].as<const char*>();
+    if (!act)
+        return;     // do not allow empty actions
 
-    // echo back injected data to all available feeders IF request 'data' object is not empty
-    if (odata.size() && feeders.available()){
-        interf.json_frame_value(odata);
-        interf.json_frame_flush();
+    JsonVariantConst jv(data[P_data]);
+    Interface interf(&feeders);
+    if (feeders.available()){
+        // echo back injected data to all available feeders IF request 'data' object is not empty
+        if (jv.is<JsonObjectConst>() || jv.is<JsonArrayConst>()){
+            interf.json_frame_value(jv);
+            interf.json_frame_flush();
+        } else if (!jv.isNull()) {
+            // reflect as action=value pair
+            interf.json_frame_value();
+            interf.value(act, jv);
+            interf.json_frame_flush();
+        }
     }
 
     // reflect post'ed data to MQTT (todo: do this on-demand)
-    JsonVariantConst jvc(data);
-    publish(C_pub_post, jvc);
+    publish(C_pub_post, jv);
 
     // execute callback actions
-    action.exec(&interf, odata, data[P_action].as<const char*>());
+    action.exec(&interf, jv, act);
 }
 
 void EmbUI::send_pub(){
@@ -294,6 +307,8 @@ const char* EmbUI::hostname(const char* name){
     else
         _cfg.remove(V_hostname);
 
+    // save config
+    save();
     return hostname();
 };
 
@@ -363,13 +378,13 @@ void EmbUI::cfgclear(){
 
 
 
-void ActionHandler::add(const char* id, const actionCallback_t& callback){
+void ActionHandler::add(const char* id, const embui_cb_t& callback){
     if (!id) return;
     actions.emplace_back(id, callback);
     LOGD(P_EmbUI, printf, "action register: %s\n", id);
 }
 
-void ActionHandler::replace(const char* id, const actionCallback_t& callback){
+void ActionHandler::replace(const char* id, const embui_cb_t& callback){
     auto i = std::find_if(actions.begin(), actions.end(), [&id](const section_handler_t &arg) { return std::string_view(arg.action).compare(id) == 0; } );
 
     if ( i == actions.end() )
@@ -382,7 +397,7 @@ void ActionHandler::remove(const char* id){
     actions.remove_if([&id](const section_handler_t &arg) { return std::string_view(arg.action).compare(id) == 0; });
 }
 
-size_t ActionHandler::exec(Interface *interf, JsonObjectConst data, const char* action){
+size_t ActionHandler::exec(Interface *interf, JsonVariantConst data, const char* action){
     size_t cnt{0};
     if (!action) return cnt;      // return if action is empty string
     std::string_view a(action);
@@ -413,11 +428,10 @@ size_t ActionHandler::exec(Interface *interf, JsonObjectConst data, const char* 
     return cnt;
 }
 
-void ActionHandler::set_mainpage_cb(const actionCallback_t& callback){
+void ActionHandler::set_mainpage_cb(const embui_cb_t& callback){
     replace(A_ui_page_main, callback);
 }
 
-void ActionHandler::set_settings_cb(const actionCallback_t& callback){
+void ActionHandler::set_settings_cb(const embui_cb_t& callback){
     replace(A_ui_blk_usersettings, callback);
 }
-

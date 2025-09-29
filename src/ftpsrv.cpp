@@ -25,16 +25,16 @@ bool ftp_status(){ return ftpsrv; };
 
 namespace basicui {
 
-void page_settings_ftp(Interface *interf, const JsonObjectConst data, const char* action){
+void page_settings_ftp(Interface *interf){
     interf->json_frame_interface();
-        interf->json_section_uidata();
-        interf->uidata_pick("sys.settings.ftp");
-    interf->json_frame_flush();
+      interf->json_section_uidata();
+      interf->uidata_pick("sys.settings.ftp");
+    interf->json_section_end();
 
-    interf->json_frame_value();
-        interf->value(P_ftp, ftp_status());    // enable FTP checkbox
-        interf->value(P_ftp_usr, embui.getConfig()[P_ftp_usr].is<const char*>() ? embui.getConfig()[P_ftp_usr].as<const char*>() : P_ftp );
-        interf->value(P_ftp_pwd, embui.getConfig()[P_ftp_pwd].is<const char*>() ? embui.getConfig()[P_ftp_pwd].as<const char*>() : P_ftp );
+    interf->json_section_begin(P_value);
+      interf->value(P_ftp, ftp_status());    // enable state FTP checkbox
+      interf->value(P_ftp_usr, embui.getConfig()[P_ftp_usr].is<const char*>() ? embui.getConfig()[P_ftp_usr].as<const char*>() : P_ftp );
+      interf->value(P_ftp_pwd, embui.getConfig()[P_ftp_pwd].is<const char*>() ? embui.getConfig()[P_ftp_pwd].as<const char*>() : P_ftp );
     interf->json_frame_flush();
 }
 

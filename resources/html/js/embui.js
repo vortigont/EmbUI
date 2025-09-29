@@ -24,6 +24,10 @@ go.formdata = function(form){
         return chkNumeric(element);
       case 'radio':
         if(element.checked) return chkNumeric(element);
+      case 'color':
+        if (element.dataset.color == 'rgb565')
+          return hexToRGB565(element.value)
+        return element.value;
       case 'input':
       case 'textarea':
         return (typeof element.value == 'string' && element.value == "") ? null : this.value;
@@ -505,8 +509,10 @@ var wbs = function(url){
         if (lastmsg){ send(lastmsg); lastmsg = null; }
       })}, 500);
     },
-    send_post: function(id, dt){
-      send_msg({pkg:"post", action:id, data:dt});
+    // send an action with optional data object
+    send_post: function(id, val){
+      //console.log("POST action:", id, "data:", val);
+      send_msg({pkg:"post", "action":id, "data":val});
     }
   };
   return out;
@@ -567,7 +573,7 @@ var global = {
  * EmbUI's js api version
  * used to set compatibilty dependency between backend firmware and WebUI js
  */
-const ui_jsapi = 7;
+const ui_jsapi = 10;
 
 /**
  * User application versions - frontend/backend
@@ -585,7 +591,7 @@ var uiblocks = {};
 
 /**
  * callback for unknown pkg types - Stub function to handle user-defined types messages.
- * Data could be sent from the controller with any 'pkg' types except internal ones used by EmnUI
+ * Data could be sent from the controller with any 'pkg' types except internal ones used by EmbUI
  * and handled in a user-define js function via reassigning this value
  */
 var unknown_pkg_callback = function (msg){
@@ -623,8 +629,7 @@ var customFuncs = {
     } else {
       // if there was no 'value' given, than simply post browser's date string to MCU that triggers time/date setup
       console.log("Set browser's date:", isodate)
-      data["sys_datetime"] = isodate;
-      ws.send_post("sys_datetime", data);
+      ws.send_post("sys_datetime", isodate);
     }
   }//,
   //func2: function (event) {     console.log('Called func 2'); }
@@ -787,20 +792,55 @@ function colorGradient(colors, fadeFraction) {
 return 'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
 }
 
+// color conversion
+function hexToRGB565(hex) {
+    // Remove the '#' if present
+    hex = hex.replace(/^#/, '');
+
+    // Parse the R, G, B values from the hex string
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    // Convert to RGB565
+    const r5 = (r >> 3) & 0x1F; // 5 bits for red
+    const g6 = (g >> 2) & 0x3F; // 6 bits for green
+    const b5 = (b >> 3) & 0x1F; // 5 bits for blue
+
+    // Combine into a single 16-bit value
+    return (r5 << 11) | (g6 << 5) | b5;
+}
+
+// color conversion
+function rgb565ToHex(rgb565) {
+  // Extract the red, green, and blue components
+  const r = (rgb565 >> 11) & 0x1F; // 5 bits for red
+  const g = (rgb565 >> 5) & 0x3F;  // 6 bits for green
+  const b = rgb565 & 0x1F;         // 5 bits for blue
+
+  // Scale to 8-bit values
+  const red = Math.round((r / 31) * 255);
+  const green = Math.round((g / 63) * 255);
+  const blue = Math.round((b / 31) * 255);
+
+  // Convert to hex string
+  return `#${((1 << 24) | (red << 16) | (green << 8) | blue).toString(16).slice(1).toUpperCase()}`;
+}
+
 // a simple recursive iterator with callback
-function recurseforeachkey(obj, f) {
+function recurseforeachkey(obj, f, ...args) {
   for (let key in obj) {
     if (typeof obj[key] === 'object') {
       if (Array.isArray(obj[key])) {
         for (let i = 0; i < obj[key].length; i++) {
-          recurseforeachkey(obj[key][i], f);
+          recurseforeachkey(obj[key][i], f, args);
         }
       } else {
-        recurseforeachkey(obj[key], f);
+        recurseforeachkey(obj[key], f, args);
       }
     } else {
       // run callback
-      f(key, obj);
+      f(key, obj, args);
     }
   }
 }
@@ -888,20 +928,35 @@ async function process_uidata(arr){
               continue
             }
           }
-          if (Object.keys(ui_obj).length !== 0){
-            if (aw.prefix){
-              ui_obj.section = aw.prefix + ui_obj.section;
-              recurseforeachkey(ui_obj, function(key, object){ if (key === "id"){ object[key] = aw.prefix + obj[key]; } })
+          let add_prefix_suffix = function(pick_obj, uidata_obj){
+            if (Object.keys(uidata_obj).length !== 0){
+              if (pick_obj.prefix){
+                uidata_obj.section = pick_obj.prefix + uidata_obj.section;
+                recurseforeachkey(uidata_obj, function(key, object){ if (key === "id"){ object[key] = aw.prefix + obj[key]; } })
+              }
+              if (pick_obj.suffix){
+                uidata_obj.section += pick_obj.suffix;
+                recurseforeachkey(uidata_obj, function(key, object){ if (key === "id"){ object[key] += aw.suffix; } })
+              }
+              if (pick_obj.newid){
+                uidata_obj["id"] = pick_obj.newid
+              }
             }
-            if (aw.suffix){
-              ui_obj.section += aw.suffix;
-              recurseforeachkey(ui_obj, function(key, object){ if (key === "id"){ object[key] += aw.suffix; } })
+          }
+          // we have an array in ui data, iterate it
+          if ((ui_obj instanceof Array)){
+            for (el of ui_obj){
+              add_prefix_suffix(aw, el);
+              newblocks.push(el)
             }
-            if (aw.newid){
-              ui_obj["id"] = aw.newid
-            }
+            continue
+          }
+          // have a single obj, change pref/siff if needed
+          if ((ui_obj instanceof Object)){
+            add_prefix_suffix(aw, ui_obj);
             newblocks.push(ui_obj)
           }
+          // go on with next ui item in this section
           continue
         }
         // Set/update UI object with supplied data
@@ -915,7 +970,7 @@ async function process_uidata(arr){
           continue
         }
   
-      }
+      } // (aw of item.block)
 
       // a function that will replace current section item with uidata items
       function implaceArrayAt(array, idx, arrayToInsert) {
@@ -988,9 +1043,22 @@ async function process_XLoadSection(arr){
   return
 }
 
+function extend_ids(obj, prefix){
+  if (!(obj instanceof Object) || !(obj.block instanceof Array)) return
+  if (obj.extended_ids)
+    prefix += prefix ? '.' + obj.section : obj.section
 
+  for (item of obj.block){
+    if (item instanceof Object && ("section" in item)){
+      extend_ids(item, prefix)
+      continue
+    }
+    if (obj.extended_ids && ("id" in item) )
+      item.id = prefix + '.' + item.id
+  }
+}
 
-// template renderer
+// Page data renderer
 var render = function(){
   let chkNumeric = function(v){
     // cast empty strings to null
@@ -1013,12 +1081,15 @@ var render = function(){
       if (type == "range") go("#"+id+"-val").html(": " + value);
       if (type == "text" || type == "password") go("#"+id+"-val").html(" ("+value.length+")");
       if (type == "color") go("#"+id+"-val").html(" ("+value+")");
+/*
       if (this.id != id){
         custom_hook(this.id, d, id);
       }
+*/
     },
     // handle dynamicaly changed elements on a page which should send value to WS server on each change
     on_change: function(d, id, val) {
+      console.log("execute on_change, id:", id, ", val:", val);
       let value;
 
       // check if value has been supplied by templater
@@ -1042,13 +1113,12 @@ var render = function(){
             value = this.value;
         }
       }
+/*
       if (this.id != id){
         custom_hook(this.id, d, id);
       }
-      let data = {};
-      data[id] = value;
-
-      ws.send_post(id, data);
+*/
+      ws.send_post(id, value);
     },
     // show or hide section on a page
     on_showhide: function(d, id) {
@@ -1056,13 +1126,27 @@ var render = function(){
     },
     /**
      *  Process Submited form
-     *  'submit' key defines action to be taken by the backend
+     *  'submit' event defines action to be taken by the backend
      */
-    on_submit: function(d, id, val) {
-      var form = go("#"+id), data = go.formdata(go("input, textarea, select", form));
-      //data['submit'] = id;
-      if (val !== undefined && typeof val !== 'object') { data[id] = val; }  // submit button _might_ have it's own value
-      ws.send_post(id, data);
+    on_submit: function(d, id, val, extended_ids) {
+      //console.log("execute on_submit, id:", id, ", val:", val);
+      let form = go("#"+id), data = go.formdata(go("input, textarea, select", form));
+      // submit executor _might_ provide it's own value
+      if (val !== undefined && typeof val !== 'object'){
+        // if data is an empty object (i.e. no form data, reassign a supplied value to it)
+        if (Object.keys(obj).length)
+          data[id] = val;
+        else
+          data = val;
+      }
+      if (extended_ids){
+        let d = {}
+        for (const [key, v] of Object.entries(data)){
+          _.set(d, key, v)
+        }
+        ws.send_post(id, d[id]);
+      } else
+        ws.send_post(id, data);
     },
     // run custom user-js function
     on_js: function(event, callback, arg, id) {
@@ -1086,8 +1170,7 @@ var render = function(){
       this.menu();
       go("#main > div").display("none");
       // go("#main #"+menu_id).display("block");
-      // var data = {}; data[menu_id] = null
-      ws.send_post(menu_id, {});
+      ws.send_post(menu_id);
     },
     menu: function(){
       go("#menu").clear().append(tmpl_menu.parse(global));
@@ -1104,11 +1187,15 @@ var render = function(){
         go("#main").append(tmpl_section_main.parse(obj));
         if (!out.lockhist) out.history(obj.section);
       } else {
-        if ( Object.keys(go("#"+obj.section)).length === 0 && !obj.replace ){
-          go("#main").append(tmpl_section_main.parse(obj));
-        } else {
+        if (obj.replace){
           console.log("replacing section:", obj.section)
           go("#"+obj.section).replace(tmpl_section.parse(obj));
+        } else if (obj.append){
+          console.log("Append to section:", obj.section)
+          go("#"+obj.append).append(tmpl_section.parse(obj));
+        } else {
+          // ( Object.keys(go("#"+obj.section)).length === 0 && !obj.replace )
+          go("#main").append(tmpl_section_main.parse(obj));
         }
       }
     },
@@ -1120,6 +1207,7 @@ var render = function(){
       // deep iterate and process "uidata" sections
       const ui_processed = await process_uidata(frame);
       const xload_processed = await process_XLoadSection(frame);
+      extend_ids(obj, "")
       console.log("Processed packet:", obj);
 
       // go through sections and render it according to type of data
@@ -1151,9 +1239,10 @@ var render = function(){
         // callback section contains actions that UI should request back from MCU
         if (v.section == "callback") {
           for (item of v.block){
-            let data = {};
+            let data = undefined;
             if (item.data)
               data = item.data
+            console.log("sending callback - action:", item.action, "data:", data)
             ws.send_post(item.action, data);
           }
           return;
@@ -1164,7 +1253,6 @@ var render = function(){
           this.value(v)
           return;
         }
-
 
         // look for nested xload sections and await for side-load, if found
         //section_xload(v).then( () => { this.section(v); } );
@@ -1195,6 +1283,12 @@ var render = function(){
         if (el[0].type == "checkbox") {
           // allow multiple types of TRUE value for checkboxes
           el[0].checked = (val == true  ||  val == 1 || val == "1" || val == "true" );
+          return;
+        }
+
+        // color picker conversion
+        if (el[0].type == "color" && el[0].dataset.color == 'rgb565') {
+          el[0].value = rgb565ToHex(val);
           return;
         }
 
@@ -1251,6 +1345,7 @@ window.addEventListener("load", async function(ev){
   var rdr = this.rdr = render();
   var ws = this.ws = wbs("ws://"+location.host+"/ws");
 
+  // process "pkg":"interface"
   ws.oninterface = function(msg) { rdr.make(msg) }
 
   // run custom js function in window context
@@ -1305,7 +1400,6 @@ window.addEventListener("load", async function(ev){
 window.addEventListener("popstate", function(e){
   if (e = e.state && e.state.hist) {
     rdr.lockhist = true;
-    //var data = {}; data[e] = null;
-    ws.send_post(e, {});
+    ws.send_post(e);
   }
 });
