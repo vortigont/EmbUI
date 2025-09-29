@@ -573,7 +573,7 @@ var global = {
  * EmbUI's js api version
  * used to set compatibilty dependency between backend firmware and WebUI js
  */
-const ui_jsapi = 9;
+const ui_jsapi = 10;
 
 /**
  * User application versions - frontend/backend
