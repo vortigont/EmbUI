@@ -55,7 +55,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     }
 
     if(type == WS_EVT_ERROR){
-        LOGD(P_EmbUI, printf, "ws[%s][%u] WS_EVT_ERROR(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
+        LOGD(P_EmbUI, printf, "ws[%s], client:%u, WS_EVT_ERROR(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
         //httpCallback("sys_WS_EVT_ERROR", "", false); // сообщим об ошибке сокета
         return;
     }
@@ -174,7 +174,7 @@ void EmbUI::begin(){
     feeders.add(std::make_unique<FrameSendWSServer> (&ws));
 
     // install EmbUI http handlers
-    http_set_handlers();
+    _http_set_handlers();
     server.begin();
 
     // register system menu handlers
@@ -435,4 +435,3 @@ void ActionHandler::set_mainpage_cb(const embui_cb_t& callback){
 void ActionHandler::set_settings_cb(const embui_cb_t& callback){
     replace(A_ui_blk_usersettings, callback);
 }
-

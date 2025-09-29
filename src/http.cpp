@@ -40,7 +40,7 @@ void EmbUI::_notFound(AsyncWebServerRequest *request) {
 /**
  * @brief Set HTTP-handlers for EmbUI related URL's
  */
-void EmbUI::http_set_handlers(){
+void EmbUI::_http_set_handlers(){
 
     // returns run-time system config serialized in JSON
     server.on("/config", HTTP_ANY, [this](AsyncWebServerRequest *request) {
@@ -83,7 +83,7 @@ void EmbUI::http_set_handlers(){
     // 404 handler - disabled to allow override in user code
     server.onNotFound([this](AsyncWebServerRequest *r){_notFound(r);});
 
-}   //  end of EmbUI::http_set_handlers
+}   //  end of EmbUI::_http_set_handlers
 
 /*
  * OTA update progress calculator
