@@ -403,6 +403,7 @@ size_t ActionHandler::exec(Interface *interf, JsonVariantConst data, const char*
     std::string_view a(action);
 
     for (const auto& i : actions){
+        LOGV(P_EmbUI, printf, "Check action:%s against:%s\n", action, i.action);
         std::string_view item(i.action);
         if (a.length() < item.length()) continue;  // skip handlers with longer names, obviously a mismatch
 

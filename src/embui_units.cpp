@@ -282,7 +282,7 @@ void EmbUI_Unit_Manager::unsetHandlers(){
 
 
 void EmbUI_Unit_Manager::getConfig(std::string_view label, JsonObject obj){
-  LOGV(T_UnitMgr, printf, "getConfig for: %s\n", label.data);   // in general it's wrong to pass sv's data, but this sv was instantiated from a valid null-terminated string, so should be OK
+  LOGV(T_UnitMgr, printf, "getConfig for: %s\n", label.data());   // in general it's wrong to pass sv's data, but this sv was instantiated from a valid null-terminated string, so should be OK
 
   auto i = std::find_if(units.begin(), units.end(), EmbUIUnit_MatchLabel<EmbUIUnit_pt>(label));
   if ( i != units.end() ) {
