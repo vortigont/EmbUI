@@ -90,6 +90,9 @@ time_t TimeProcessor::setTime(const char *datetimestr){
     time_t time = mktime(&tmStruct);
     timeval tv = { time, 0 };
     settimeofday(&tv, NULL);
+    // call the callback if set
+    if(timecb)
+        timecb();
     return time;
 }
 

@@ -21,7 +21,7 @@
  * переопределенный метод фреймфорка, который начинает строить корень нашего Web-интерфейса
  * 
  */
-void section_main_frame(Interface *interf, JsonObjectConst data, const char* action){
+void section_main_frame(Interface *interf, JsonVariantConst data, const char* action){
   if (!interf) return;
 
   interf->json_frame_interface();                                 // open interface frame
@@ -36,7 +36,7 @@ void section_main_frame(Interface *interf, JsonObjectConst data, const char* act
     block_demopage(interf, data, NULL);             // Строим блок с demo переключателями
   } else {
     LOG(println, "UI: Opening network setup page");
-    basicui::page_settings_netw(interf, {});
+    basicui::page_settings_netw(interf, {}, action);
   }
 
 };
