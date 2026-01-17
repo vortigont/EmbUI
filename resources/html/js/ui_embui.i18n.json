@@ -189,7 +189,7 @@
               ]
             },
             {
-              "id": "set_ntwrk_mqtt",
+              "id": "sys_ntwrk_mqtt",
               "label": "Save"
             },
             {
