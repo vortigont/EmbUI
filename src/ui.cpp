@@ -84,8 +84,15 @@ void Interface::_json_frame_next(){
 }
 
 JsonObject Interface::json_frame_value(const JsonVariantConst val){
-    json_frame_flush();     // ensure this will purge existing frame
     json_frame(P_value);
+    return json_object_add(val);
+}
+
+JsonObject Interface::json_frame_value_extid(const JsonVariantConst val, const char* prefix){
+    json_frame(P_value);
+    json[P_extend_ids] = true;
+    if (prefix)
+        json[P_extend_ids_prefix] = prefix;
     return json_object_add(val);
 }
 
