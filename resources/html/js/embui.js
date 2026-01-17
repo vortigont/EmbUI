@@ -1058,6 +1058,34 @@ function extend_ids(obj, prefix){
   }
 }
 
+/**
+ *
+ * normalize id's in "value" frames for updating elements created with "extened ids"
+ * {"fet":{"gpio":40,"logicL":0}, "i2c0":{ "sda":41, "scl":42 } =>
+ * {"fet.gpio":40, "fet.logicL":0, "i2c0.sda":41, "i2c0.scl":42}
+}
+ * @param {*} obj
+ * @param {*} prefix - static prefix
+ * @returns 
+ */
+function extend_value_ids(obj, prefix){
+  console.log("Extended iDs for values:", arr)
+  if (!(obj instanceof Object) && !(obj instanceof Array)) return
+  //prefix += prefix ? '.' + obj.section : obj.section
+  let arr = []
+  //for (item of obj){
+  for (const [key, v] of Object.entries(obj)){
+    let p = prefix ? prefix + '.' + key : key
+    if (v instanceof Object || v instanceof Array){
+      arr.push(extend_value_ids(v, p))
+    } else {
+      arr.push({[p]: v})
+    }
+  }
+  console.log("Extended iDs for values:", arr)
+  return arr
+}
+
 // Page data renderer
 var render = function(){
   let chkNumeric = function(v){
@@ -1140,11 +1168,12 @@ var render = function(){
           data = val;
       }
       if (extended_ids){
-        let d = {}
+        // unwrap id into nested objects, i.e. "gpiocfg.i2c0.enable":true becomes {"gpiocfg":{"i2c0":{"enable":true}
+        let dict = {}
         for (const [key, v] of Object.entries(data)){
-          _.set(d, key, v)
+          _.set(dict, key, v)
         }
-        ws.send_post(id, d[id]);
+        ws.send_post(id, dict[id]);
       } else
         ws.send_post(id, data);
     },
@@ -1264,8 +1293,15 @@ var render = function(){
     // processing packets with values - "pkg":"value"
     // блок разбирается на объекты по id и их value применяются к элементам шаблона на html странице
     value: function(obj){
-      let frame = obj.block;
       if (!obj.block) return;
+      let frame
+      // extend id for structured objects
+      if (obj.extend_ids)
+        frame = extend_value_ids(obj.block, obj.extend_ids_prefix ? obj.extend_ids_prefix : "" ) 
+      else
+        frame = obj.block
+
+      console.log("Processing vals", frame)
 
       /*
         Find DOM object with id 'key' and sets it's 'value' property to 'val'.
@@ -1321,16 +1357,17 @@ var render = function(){
         el[0].value = val;
       }
 
-      for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
+      for (const item of frame) if (typeof item == "object") {
+      //for (var i = 0; i < frame.length; i++) if (typeof frame[i] == "object") {
         /* check if the object contains just an object with key:value pairs (comes from echo-back packets)
           { "id": "someid", "value": "somevalue", "html": true }
         */
-        if ('id' in frame[i] && 'value' in frame[i]){
-          setValue(frame[i].id, frame[i].value, frame[i].html);
+        if ('id' in item && 'value' in item){
+          setValue(item.id, item.value, item.html);
         } else {
-          // else it's an object with k:v pairs
-          for(let k in frame[i]) {
-            setValue(k, frame[i][k]);
+          // else it's an obj of {k:v} pairs
+          for(let k in item) {
+            setValue(k, item[k]);
           }
         }
       }

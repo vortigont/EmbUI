@@ -290,10 +290,23 @@ class Interface {
          * Might be 
          * 1) an array of objects, i.e. [{"key1": "val1"}, {"key2":42}, {"key3":"val3"}]
          * 2) an array of labeled objects [{"id":"someid", "value":"someval", "html": true}] - used to update template placeholders
+         * 3) dict of key:val pairs
          * 
          * @param val json object with supplied data to be copied
          */
         JsonObject json_frame_value(const JsonVariantConst val);
+
+        /**
+         * @brief create value frame from a JsonObject, object should be treated as values for forms with extended id's
+         * i.e. for obj {"fet":{"gpio":40,"logicL":0}, "i2c0":{ "sda":41, "scl":42 } => it will be flattened and applied for elements with ID's like
+         * {"fet.gpio":40, "fet.logicL":0, "i2c0.sda":41, "i2c0.scl":42}
+         * 
+         * @param val - values object
+         * @param prefix - prepend prefix to IDs
+         * @return JsonObject 
+         */
+        JsonObject json_frame_value_extid(const JsonVariantConst val, const char* prefix = NULL);
+        
 
         /* *** Object getters/setters *** */
 
