@@ -37,7 +37,7 @@
             {
               "id":"sys_hostname",
               "html":"button",
-              "type":1,
+              "type":"submit",
               "label":"Save",
               "color":"green"
             }
@@ -67,7 +67,7 @@
             {
               "id":"sys_ntwrk_wifi",
               "html":"button",
-              "type":1,
+              "type":"submit",
               "label":"Connect",
               "color":"green"
             }
@@ -138,7 +138,7 @@
             {
               "id":"sys_ntwrk_wifiap",
               "html":"button",
-              "type":1,
+              "type":"submit",
               "label":"Save",
               "color":"green"
             }
@@ -150,7 +150,7 @@
         {
           "id":"sys_page_settings",
           "html":"button",
-          "type":0,
+          "type":"generic",
           "label":"Exit"
         }
       ]
@@ -228,7 +228,7 @@
         {
           "id":"sys_timeoptions",
           "html":"button",
-          "type":1,
+          "type":"submit",
           "label":"Save",
           "color":"green"
         },
@@ -238,7 +238,7 @@
         {
           "id":"sys_page_settings",
           "html":"button",
-          "type":0,
+          "type":"generic",
           "label":"Exit"
         }
       ]
@@ -328,7 +328,7 @@
         {
           "id":"sys_ntwrk_mqtt",
           "html":"button",
-          "type":1,
+          "type":"submit",
           "label":"Save",
           "color":"green"
         },
@@ -338,7 +338,7 @@
         {
           "id":"sys_page_settings",
           "html":"button",
-          "type":0,
+          "type":"generic",
           "label":"Exit"
         }
       ]
@@ -373,14 +373,14 @@
         {
           "id":"sys_ntwrk_ftp",
           "html":"button",
-          "type":1,
+          "type":"submit",
           "label":"Сохранить",
           "color":"green"
         },
         {
           "id":"sys_page_settings",
           "html":"button",
-          "type":1,
+          "type":"generic",
           "label":"Выход"
         }
       ]
@@ -420,14 +420,14 @@
         {
           "id":"sys_cfgclr",
           "html":"button",
-          "type":0,
+          "type":"generic",
           "label":"Clear sys config",
           "color":"red"
         },
         {
           "id":"sys_reboot",
           "html":"button",
-          "type":0,
+          "type":"generic",
           "label":"Перезагрузка",
           "color":"red"
         },
@@ -437,7 +437,7 @@
         {
           "id":"sys_page_settings",
           "html":"button",
-          "type":0,
+          "type":"generic",
           "label":"Выход"
         }
       ]
