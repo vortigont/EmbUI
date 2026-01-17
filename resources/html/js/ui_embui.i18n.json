@@ -332,7 +332,7 @@
               ]
             },
             {
-              "section": "set_ntwrk_wifiap",
+              "section": "sys_ntwrk_wifiap",
               "label": "WiFi AP",
               "block": [
                 {
