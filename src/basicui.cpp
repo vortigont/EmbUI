@@ -140,6 +140,9 @@ void page_settings_netw(Interface *interf, JsonVariantConst data, const char* ac
     interf->json_frame_value();
         interf->value(V_WCSSID, WiFi.SSID());                           // connected SSID
         interf->value(V_NOCaptP, embui.getConfig()[V_NOCaptP]);         // checkbox "Disable Captive-portal"
+        interf->value(V_APpwd, embui.getConfig()[V_APpwd]);             // WiFi AP password
+        interf->value(V_APonly, embui.getConfig()[V_APonly]);           // WiFi AP only checkbox
+
     interf->json_frame_flush();
 
 }
