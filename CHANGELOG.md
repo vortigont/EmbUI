@@ -1,5 +1,10 @@
 ## Changelog
 
+### v4.3.1
+ - basicui - change button types to literals
+ - fix saving WiFi AP options
+ - Using "extend id" for value frames
+
 ### v4.3.0
  - change callbacks type to JsonVariantConst
   now `data` argument passed to callback has JsonVariantConst
