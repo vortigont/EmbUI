@@ -43,7 +43,7 @@ void EmbUIUnit::setConfig(JsonVariantConst cfg){
 void EmbUIUnit::load(){
   JsonDocument doc;
   embuifs::deserializeFile(doc, mkFileName().c_str());
-  load_cfg(  use_shared_file ? doc[label] : doc);
+  load_cfg( use_shared_file ? doc[label] : doc);
   start();
 }
 

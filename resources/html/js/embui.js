@@ -440,7 +440,7 @@ var mustache = function(tmpl,func){
 }(mustache.prototype));
 
 var wbs = function(url){
-  var ws = null, frame = {}, connected = false, lastmsg = null, to = null,
+  var ws = null, frame = {} /* a container for message reassembly */, connected = false, lastmsg = null, to = null,
   open = function(fnopen, fnerror){
     ws = new WebSocket(url);
     ws.onerror = function(err){
@@ -468,18 +468,22 @@ var wbs = function(url){
       try{ m = JSON.parse(msg.data); } catch(e){ console.log('Error message', e); return; }
       //console.log('Received message:', msg.data);
       if (!(m instanceof Object)) return;
+      // an interface object that fits in one single message and is final
       if (m.section && !(m.section in frame) && m.final){
         receiv_msg(m);
         return;
       }
       if (m.section) {
+        // a message that spans multiple frames, so we need to reassemble it before sending to the handler
         if (!frame[m.section]) frame[m.section] = {};
         go.merge(frame[m.section], m);
         if (m.final) {
+          // if this is the last frame of the message, then send it to the handler and delete the frame from the container
           receiv_msg(frame[m.section]);
           delete frame[m.section];
         }
       } else {
+        // a message that is not an interface object, so we just send it to the handler
         receiv_msg(m);
       }
     }

@@ -50,3 +50,4 @@ Embedded WebUI Interface framework
 Подготовленные ресурсы для создания образа можно развернуть [из архива](https://github.com/vortigont/EmbUI/raw/main/resources/data.zip).
 В [Platformio](https://platformio.org/) это, обычно, каталог *data* в корне проекта.
 
+
