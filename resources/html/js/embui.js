@@ -852,9 +852,9 @@ function recurseforeachkey(obj, f, ...args) {
   }
 }
 
-// recursive block find, look for an obj with matching key,val
+// recursive block[] search, look for an obj where a defined {key:val} is present
 function findBlockElement(array, key, value) {
-  let o;
+  let o = undefined
   array.some(function iter(a){
       if (a[key] === value) {
           o = a;
