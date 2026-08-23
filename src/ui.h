@@ -160,6 +160,11 @@ class FrameSendAsyncJS: public FrameSend {
         [[ deprecated( "FrameSendAsyncJS ignores String argument" ) ]] void send(const char* data) override {};
 };
 
+/**
+ * @brief A message object that builds EmbUI interface packet
+ * 
+ * 
+ */
 class Interface {
 
     struct section_stack_t{
@@ -183,7 +188,7 @@ class Interface {
     void _json_frame_next();
 
     /**
-     * @brief - serialize and send Interface object to the WebSocket
+     * @brief - serialize and send content of Interface object to connected client(s)
      */
     inline void _json_frame_send(){ if (send_hndl) send_hndl->send(json); };
 
@@ -334,7 +339,7 @@ class Interface {
         JsonObject json_object_get();
 
         /**
-         * @brief - add new object to current section block
+         * @brief - add new object to current section's block
          * object is added via deep-copy
          * 
          * @warning returned JsonObject is invalidated on execution any of json_frame_clear()/json_frame_send()/json_frame_flush() calls

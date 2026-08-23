@@ -159,7 +159,8 @@ void page_settings_time(Interface *interf){
 
         interf->json_section_content();
             String clk("Device date/time: "); TimeProcessor::getDateTimeString(clk);
-            interf->constant(P_date, clk.c_str());
+            // it's safe to add via pointer since we'll flush in this same scope
+            interf->constant(P_date, JsonString(clk.c_str(), true));
         interf->json_section_end();
 
         // replace section with NTP servers information
@@ -186,16 +187,16 @@ void page_settings_mqtt(Interface *interf){
         interf->json_section_end();
 
         interf->json_section_content();
-            interf->constant(P_MQTTTopic, embui.mqttPrefix().c_str());
+            interf->constant(P_MQTTTopic, JsonString(embui.mqttPrefix().c_str(), true) );
         interf->json_section_end();
 
         interf->json_section_begin(P_value);
         interf->value(V_mqtt_enable, embui.getConfig()[V_mqtt_enable]);    // enable MQTT checkbox
-        interf->value(V_mqtt_host, embui.getConfig()[V_mqtt_host]);        // MQTT host text field
-        interf->value(V_mqtt_port, embui.getConfig()[V_mqtt_port].as<int>());        // MQTT port
-        interf->value(V_mqtt_user, embui.getConfig()[V_mqtt_user].as<const char*>());        // MQTT user
-        interf->value(V_mqtt_pass, embui.getConfig()[V_mqtt_pass].as<const char*>());        // MQTT passwd
-        interf->value(V_mqtt_topic, embui.getConfig()[V_mqtt_topic].as<const char*>());
+        interf->value(V_mqtt_host, JsonString(embui.getConfig()[V_mqtt_host].as<const char*>(), true));         // MQTT host text field
+        interf->value(V_mqtt_port, embui.getConfig()[V_mqtt_port].as<int>());                                   // MQTT port
+        interf->value(V_mqtt_user, JsonString(embui.getConfig()[V_mqtt_user].as<const char*>(), true));         // MQTT user
+        interf->value(V_mqtt_pass, JsonString(embui.getConfig()[V_mqtt_pass].as<const char*>(), true));         // MQTT passwd
+        interf->value(V_mqtt_topic, JsonString(embui.getConfig()[V_mqtt_topic].as<const char*>(), true));
         int t = embui.getConfig()[V_mqtt_ka];
         if (!t){    // default mqtt interval 30
             interf->value(V_mqtt_ka, t);
@@ -320,7 +321,7 @@ void set_settings_time(Interface *interf, JsonVariantConst data, const char* act
         if (!interf) return;    // todo: create new iface object
 
         interf->json_frame_value();
-            interf->value(V_timezone, embui.getConfig()[V_timezone]);
+            interf->value(V_timezone, JsonString( embui.getConfig()[V_timezone].as<const char*>(), true) );
         interf->json_frame_flush();
         return;
     }

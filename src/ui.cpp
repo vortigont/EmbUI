@@ -22,7 +22,7 @@ JsonArray Interface::json_block_get(){
 };
 
 JsonObject Interface::json_object_get(){
-    return section_stack.size() ? JsonObject (section_stack.back().block[section_stack.back().block.size()-1]) : JsonObject();
+    return section_stack.size() ? section_stack.back().block[ section_stack.back().block.size() - 1 ].as<JsonObject>() : JsonObject();
 };
 
 JsonObject Interface::json_object_add(const JsonVariantConst obj){
@@ -67,14 +67,14 @@ void Interface::json_frame_send(){
 
 void Interface::_json_frame_next(){
     if (!section_stack.size()) return;
-    json.clear();
+
     JsonObject obj = json.to<JsonObject>();
     if (section_stack.size() > 1){
         size_t idx{0};
         for ( auto i = section_stack.begin(); i != section_stack.end(); ++i ){
             if (idx++)
                 obj = (*std::prev(i)).block.add<JsonObject>();
-            obj[P_section] = (*i).name;
+            obj[P_section] = JsonString( (*i).name.c_str(), true ); // it's safe to add by pointer 'cause our section names are persists with the object lifetime
             obj[P_idx] = (*i).idx;
             (*i).block = obj[P_block].to<JsonArray>();
             //LOG(printf, "nesting section:'%s' [#%u] idx:%u\n", section_stack[i]->name.isEmpty() ? "-" : section_stack[i]->name.c_str(), i, section_stack[i]->idx);
