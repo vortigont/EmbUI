@@ -131,13 +131,16 @@ void EmbUI::begin(){
     int retry_cnt = 3;
 
     // монтируем ФС только один раз при старте
-    while(!LittleFS.begin(true)){   // format FS if corrupted
-        LOGE(P_EmbUI, println, "LittleFS initialization error, retrying...");
-        --retry_cnt;
-        delay(100);
-        if (!retry_cnt){
-            LOGE(P_EmbUI, println, "FS dirty, I Give up!");
-            return;
+    if (!LittleFS.begin(false)){   // try to mount FS without formatting
+        LOGW(P_EmbUI, println, "LittleFS mount failed, trying to format...");
+        while(!LittleFS.begin(true)){   // format FS if corrupted
+            LOGE(P_EmbUI, println, "LittleFS initialization error, retrying...");
+            --retry_cnt;
+            delay(100);
+            if (!retry_cnt){
+                LOGE(P_EmbUI, println, "FS dirty, I Give up!");
+                return;
+            }
         }
     }
 
